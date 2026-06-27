@@ -7,6 +7,7 @@
 - Resolved relative `export.path` values against the data root when the configuration file lives under `conf`.
 - Updated the SWT manager service diagnostics to show application root, data root, config file, service executable, and log file separately.
 - Updated installer, WinSW service configuration, service scripts, smoke tests, and documentation for the separated app/data layout.
+- Reorganized the README with table-based configuration, installation layout, service, mount, and verification references.
 
 ## 1.7.0 - 2026-06-27
 
