@@ -338,14 +338,6 @@ public class NfsV3Program implements RpcProgram {
 
 		// クライアントが許可されていない場合
 		if( !isClientAllowed( path)) {
-			logAccessDenied( "READLINK", path, "client-denied") ;
-			response.writeInt( NfsStatus.ACCES) ;
-			writePostOpAttr( response, path) ;
-			return ;
-		}
-
-		// クライアントが許可されていない場合
-		if( !isClientAllowed( path)) {
 			logAccessDenied( "GETATTR", path, "client-denied") ;
 			response.writeInt( NfsStatus.ACCES) ;
 			return ;
@@ -378,12 +370,13 @@ public class NfsV3Program implements RpcProgram {
 
 		Path path = handleTable.getPath( handle) ;
 		Path beforePath = path ;
+		PreOpAttributes beforeAttributes = capturePreOpAttr( beforePath) ;
 
 		// ファイルハンドルが不明な場合
 		if( path == null) {
 			logMutation( "SETATTR", path, NfsStatus.STALE, "unknown-handle") ;
 			response.writeInt( NfsStatus.STALE) ;
-			writeWccData( response, beforePath, path) ;
+			writeWccData( response, beforeAttributes, path) ;
 			return ;
 		}
 
@@ -391,7 +384,7 @@ public class NfsV3Program implements RpcProgram {
 		if( !isClientAllowed( path)) {
 			logMutation( "SETATTR", path, NfsStatus.ACCES, "client-denied") ;
 			response.writeInt( NfsStatus.ACCES) ;
-			writeWccData( response, beforePath, path) ;
+			writeWccData( response, beforeAttributes, path) ;
 			return ;
 		}
 
@@ -399,7 +392,7 @@ public class NfsV3Program implements RpcProgram {
 		if( !isWritable( path)) {
 			logMutation( "SETATTR", path, NfsStatus.ROFS, "read-only") ;
 			response.writeInt( NfsStatus.ROFS) ;
-			writeWccData( response, beforePath, path) ;
+			writeWccData( response, beforeAttributes, path) ;
 			return ;
 		}
 
@@ -409,13 +402,13 @@ public class NfsV3Program implements RpcProgram {
 			int status = mapIoStatus( ioex) ;
 			logMutation( "SETATTR", path, status, ioex.getClass().getSimpleName()) ;
 			response.writeInt( status) ;
-			writeWccData( response, beforePath, path) ;
+			writeWccData( response, beforeAttributes, path) ;
 			return ;
 		}
 
 		logMutation( "SETATTR", path, NfsStatus.OK, attributes.describe()) ;
 		response.writeInt( NfsStatus.OK) ;
-		writeWccData( response, beforePath, path) ;
+		writeWccData( response, beforeAttributes, path) ;
 	}
 
 	//--------------------------------------------------------------------------
@@ -610,11 +603,12 @@ public class NfsV3Program implements RpcProgram {
 		byte[] data = arguments.readOpaque() ;
 		Path path = handleTable.getPath( handle) ;
 		Path beforePath = path ;
+		PreOpAttributes beforeAttributes = capturePreOpAttr( beforePath) ;
 
 		// ファイルハンドルが不明な場合
 		if( path == null) {
 			response.writeInt( NfsStatus.STALE) ;
-			writeWccData( response, beforePath, path) ;
+			writeWccData( response, beforeAttributes, path) ;
 			return ;
 		}
 
@@ -622,7 +616,7 @@ public class NfsV3Program implements RpcProgram {
 		if( !isClientAllowed( path)) {
 			logMutation( "WRITE", path, NfsStatus.ACCES, "client-denied offset=" + offset + " bytes=" + data.length) ;
 			response.writeInt( NfsStatus.ACCES) ;
-			writeWccData( response, beforePath, path) ;
+			writeWccData( response, beforeAttributes, path) ;
 			return ;
 		}
 
@@ -630,7 +624,7 @@ public class NfsV3Program implements RpcProgram {
 		if( !isWritable( path)) {
 			logMutation( "WRITE", path, NfsStatus.ROFS, "read-only offset=" + offset + " bytes=" + data.length) ;
 			response.writeInt( NfsStatus.ROFS) ;
-			writeWccData( response, beforePath, path) ;
+			writeWccData( response, beforeAttributes, path) ;
 			return ;
 		}
 
@@ -638,7 +632,7 @@ public class NfsV3Program implements RpcProgram {
 		if( !Files.isRegularFile( path, LinkOption.NOFOLLOW_LINKS)) {
 			logMutation( "WRITE", path, NfsStatus.ISDIR, "not-regular offset=" + offset + " bytes=" + data.length) ;
 			response.writeInt( NfsStatus.ISDIR) ;
-			writeWccData( response, beforePath, path) ;
+			writeWccData( response, beforeAttributes, path) ;
 			return ;
 		}
 
@@ -652,13 +646,13 @@ public class NfsV3Program implements RpcProgram {
 			int status = mapIoStatus( ioex) ;
 			logMutation( "WRITE", path, status, ioex.getClass().getSimpleName() + " offset=" + offset + " bytes=" + writeLength) ;
 			response.writeInt( status) ;
-			writeWccData( response, beforePath, path) ;
+			writeWccData( response, beforeAttributes, path) ;
 			return ;
 		}
 
 		logMutation( "WRITE", path, NfsStatus.OK, "offset=" + offset + " bytes=" + writeLength) ;
 		response.writeInt( NfsStatus.OK) ;
-		writeWccData( response, beforePath, path) ;
+		writeWccData( response, beforeAttributes, path) ;
 		response.writeInt( writeLength) ;
 		response.writeInt( FILE_SYNC) ;
 		response.writeFixedOpaque( WRITE_VERIFIER) ;
@@ -698,18 +692,19 @@ public class NfsV3Program implements RpcProgram {
 
 		Path path = target.getPath() ;
 		Path directory = target.getDirectory() ;
+		PreOpAttributes directoryBefore = capturePreOpAttr( directory) ;
 
 		// 書込不可の場合
 		if( !isWritable( path)) {
 			logMutation( "CREATE", path, NfsStatus.ROFS, "read-only") ;
-			writeCreateResult( response, NfsStatus.ROFS, path, directory, null) ;
+			writeCreateResult( response, NfsStatus.ROFS, path, directory, directoryBefore, null) ;
 			return ;
 		}
 
 		// guarded作成で既に存在する場合
 		if( mode == CREATE_GUARDED && Files.exists( path, LinkOption.NOFOLLOW_LINKS)) {
 			logMutation( "CREATE", path, NfsStatus.EXIST, "exists") ;
-			writeCreateResult( response, NfsStatus.EXIST, path, directory, null) ;
+			writeCreateResult( response, NfsStatus.EXIST, path, directory, directoryBefore, null) ;
 			return ;
 		}
 
@@ -726,13 +721,13 @@ public class NfsV3Program implements RpcProgram {
 		} catch( IOException ioex) {
 			int status = mapIoStatus( ioex) ;
 			logMutation( "CREATE", path, status, ioex.getClass().getSimpleName()) ;
-			writeCreateResult( response, status, path, directory, null) ;
+			writeCreateResult( response, status, path, directory, directoryBefore, null) ;
 			return ;
 		}
 
 		FileHandle handle = handleTable.getOrCreate( path) ;
 		logMutation( "CREATE", path, NfsStatus.OK, "mode=" + mode) ;
-		writeCreateResult( response, NfsStatus.OK, path, directory, handle) ;
+		writeCreateResult( response, NfsStatus.OK, path, directory, directoryBefore, handle) ;
 	}
 
 	//--------------------------------------------------------------------------
@@ -757,11 +752,12 @@ public class NfsV3Program implements RpcProgram {
 		}
 
 		Path path = target.getPath() ;
+		PreOpAttributes directoryBefore = capturePreOpAttr( target.getDirectory()) ;
 
 		// 書込不可の場合
 		if( !isWritable( path)) {
 			logMutation( "MKDIR", path, NfsStatus.ROFS, "read-only") ;
-			writeCreateResult( response, NfsStatus.ROFS, path, target.getDirectory(), null) ;
+			writeCreateResult( response, NfsStatus.ROFS, path, target.getDirectory(), directoryBefore, null) ;
 			return ;
 		}
 
@@ -771,13 +767,13 @@ public class NfsV3Program implements RpcProgram {
 		} catch( IOException ioex) {
 			int status = mapIoStatus( ioex) ;
 			logMutation( "MKDIR", path, status, ioex.getClass().getSimpleName()) ;
-			writeCreateResult( response, status, path, target.getDirectory(), null) ;
+			writeCreateResult( response, status, path, target.getDirectory(), directoryBefore, null) ;
 			return ;
 		}
 
 		FileHandle handle = handleTable.getOrCreate( path) ;
 		logMutation( "MKDIR", path, NfsStatus.OK, attributes.describe()) ;
-		writeCreateResult( response, NfsStatus.OK, path, target.getDirectory(), handle) ;
+		writeCreateResult( response, NfsStatus.OK, path, target.getDirectory(), directoryBefore, handle) ;
 	}
 
 	//--------------------------------------------------------------------------
@@ -803,11 +799,12 @@ public class NfsV3Program implements RpcProgram {
 		}
 
 		Path path = target.getPath() ;
+		PreOpAttributes directoryBefore = capturePreOpAttr( target.getDirectory()) ;
 
 		// 書込不可の場合
 		if( !isWritable( path)) {
 			logMutation( "SYMLINK", path, NfsStatus.ROFS, "read-only") ;
-			writeCreateResult( response, NfsStatus.ROFS, path, target.getDirectory(), null) ;
+			writeCreateResult( response, NfsStatus.ROFS, path, target.getDirectory(), directoryBefore, null) ;
 			return ;
 		}
 
@@ -816,13 +813,13 @@ public class NfsV3Program implements RpcProgram {
 		} catch( IOException | UnsupportedOperationException | SecurityException ex) {
 			int status = ex instanceof IOException ioex ? mapIoStatus( ioex) : NfsStatus.PERM ;
 			logMutation( "SYMLINK", path, status, ex.getClass().getSimpleName()) ;
-			writeCreateResult( response, status, path, target.getDirectory(), null) ;
+			writeCreateResult( response, status, path, target.getDirectory(), directoryBefore, null) ;
 			return ;
 		}
 
 		FileHandle handle = handleTable.getOrCreate( path) ;
 		logMutation( "SYMLINK", path, NfsStatus.OK, "target=" + linkTarget) ;
-		writeCreateResult( response, NfsStatus.OK, path, target.getDirectory(), handle) ;
+		writeCreateResult( response, NfsStatus.OK, path, target.getDirectory(), directoryBefore, handle) ;
 	}
 
 	//--------------------------------------------------------------------------
@@ -838,8 +835,9 @@ public class NfsV3Program implements RpcProgram {
 	//--------------------------------------------------------------------------
 	private void handleMknod(XdrReader arguments, XdrWriter response) throws IOException {
 		ResolvedPath target = readOperationPath( arguments) ;
+		PreOpAttributes directoryBefore = capturePreOpAttr( target.getDirectory()) ;
 		response.writeInt( NfsStatus.NOTSUPP) ;
-		writeWccData( response, target.getDirectory(), target.getDirectory()) ;
+		writeWccData( response, directoryBefore, target.getDirectory()) ;
 	}
 
 	//--------------------------------------------------------------------------
@@ -864,12 +862,13 @@ public class NfsV3Program implements RpcProgram {
 		}
 
 		Path path = target.getPath() ;
+		PreOpAttributes directoryBefore = capturePreOpAttr( target.getDirectory()) ;
 
 		// 書込不可の場合
 		if( !isWritable( path)) {
 			logMutation( "REMOVE", path, NfsStatus.ROFS, "read-only") ;
 			response.writeInt( NfsStatus.ROFS) ;
-			writeWccData( response, target.getDirectory(), target.getDirectory()) ;
+			writeWccData( response, directoryBefore, target.getDirectory()) ;
 			return ;
 		}
 
@@ -880,13 +879,13 @@ public class NfsV3Program implements RpcProgram {
 			int status = mapIoStatus( ioex) ;
 			logMutation( "REMOVE", path, status, ioex.getClass().getSimpleName()) ;
 			response.writeInt( status) ;
-			writeWccData( response, target.getDirectory(), target.getDirectory()) ;
+			writeWccData( response, directoryBefore, target.getDirectory()) ;
 			return ;
 		}
 
 		logMutation( "REMOVE", path, NfsStatus.OK, "") ;
 		response.writeInt( NfsStatus.OK) ;
-		writeWccData( response, target.getDirectory(), target.getDirectory()) ;
+		writeWccData( response, directoryBefore, target.getDirectory()) ;
 	}
 
 	//--------------------------------------------------------------------------
@@ -911,12 +910,13 @@ public class NfsV3Program implements RpcProgram {
 		}
 
 		Path path = target.getPath() ;
+		PreOpAttributes directoryBefore = capturePreOpAttr( target.getDirectory()) ;
 
 		// 書込不可の場合
 		if( !isWritable( path)) {
 			logMutation( "RMDIR", path, NfsStatus.ROFS, "read-only") ;
 			response.writeInt( NfsStatus.ROFS) ;
-			writeWccData( response, target.getDirectory(), target.getDirectory()) ;
+			writeWccData( response, directoryBefore, target.getDirectory()) ;
 			return ;
 		}
 
@@ -927,13 +927,13 @@ public class NfsV3Program implements RpcProgram {
 			int status = mapIoStatus( ioex) ;
 			logMutation( "RMDIR", path, status, ioex.getClass().getSimpleName()) ;
 			response.writeInt( status) ;
-			writeWccData( response, target.getDirectory(), target.getDirectory()) ;
+			writeWccData( response, directoryBefore, target.getDirectory()) ;
 			return ;
 		}
 
 		logMutation( "RMDIR", path, NfsStatus.OK, "") ;
 		response.writeInt( NfsStatus.OK) ;
-		writeWccData( response, target.getDirectory(), target.getDirectory()) ;
+		writeWccData( response, directoryBefore, target.getDirectory()) ;
 	}
 
 	//--------------------------------------------------------------------------
@@ -967,11 +967,14 @@ public class NfsV3Program implements RpcProgram {
 			return ;
 		}
 
+		PreOpAttributes sourceDirectoryBefore = capturePreOpAttr( source.getDirectory()) ;
+		PreOpAttributes targetDirectoryBefore = capturePreOpAttr( target.getDirectory()) ;
+
 		// 書込不可の場合
 		if( !isWritable( source.getPath()) || !isWritable( target.getPath())) {
 			response.writeInt( NfsStatus.ROFS) ;
-			writeWccData( response, source.getDirectory(), source.getDirectory()) ;
-			writeWccData( response, target.getDirectory(), target.getDirectory()) ;
+			writeWccData( response, sourceDirectoryBefore, source.getDirectory()) ;
+			writeWccData( response, targetDirectoryBefore, target.getDirectory()) ;
 			return ;
 		}
 
@@ -982,15 +985,15 @@ public class NfsV3Program implements RpcProgram {
 			int status = mapIoStatus( ioex) ;
 			logMutation( "RENAME", source.getPath(), status, ioex.getClass().getSimpleName() + " target=" + target.getPath()) ;
 			response.writeInt( status) ;
-			writeWccData( response, source.getDirectory(), source.getDirectory()) ;
-			writeWccData( response, target.getDirectory(), target.getDirectory()) ;
+			writeWccData( response, sourceDirectoryBefore, source.getDirectory()) ;
+			writeWccData( response, targetDirectoryBefore, target.getDirectory()) ;
 			return ;
 		}
 
 		logMutation( "RENAME", source.getPath(), NfsStatus.OK, "target=" + target.getPath()) ;
 		response.writeInt( NfsStatus.OK) ;
-		writeWccData( response, source.getDirectory(), source.getDirectory()) ;
-		writeWccData( response, target.getDirectory(), target.getDirectory()) ;
+		writeWccData( response, sourceDirectoryBefore, source.getDirectory()) ;
+		writeWccData( response, targetDirectoryBefore, target.getDirectory()) ;
 	}
 
 	//--------------------------------------------------------------------------
@@ -1008,12 +1011,13 @@ public class NfsV3Program implements RpcProgram {
 		FileHandle sourceHandle = readHandle( arguments) ;
 		ResolvedPath target = readOperationPath( arguments) ;
 		Path source = handleTable.getPath( sourceHandle) ;
+		PreOpAttributes directoryBefore = capturePreOpAttr( target.getDirectory()) ;
 
 		// 移動元が不明な場合
 		if( source == null) {
 			response.writeInt( NfsStatus.STALE) ;
 			writePostOpAttr( response, source) ;
-			writeWccData( response, target.getDirectory(), target.getDirectory()) ;
+			writeWccData( response, directoryBefore, target.getDirectory()) ;
 			return ;
 		}
 
@@ -1021,7 +1025,7 @@ public class NfsV3Program implements RpcProgram {
 		if( !isClientAllowed( source)) {
 			response.writeInt( NfsStatus.ACCES) ;
 			writePostOpAttr( response, source) ;
-			writeWccData( response, target.getDirectory(), target.getDirectory()) ;
+			writeWccData( response, directoryBefore, target.getDirectory()) ;
 			return ;
 		}
 
@@ -1029,7 +1033,7 @@ public class NfsV3Program implements RpcProgram {
 		if( !target.isOk()) {
 			response.writeInt( target.getStatus()) ;
 			writePostOpAttr( response, source) ;
-			writeWccData( response, target.getDirectory(), target.getDirectory()) ;
+			writeWccData( response, directoryBefore, target.getDirectory()) ;
 			return ;
 		}
 
@@ -1037,7 +1041,7 @@ public class NfsV3Program implements RpcProgram {
 		if( !isWritable( source) || !isWritable( target.getPath())) {
 			response.writeInt( NfsStatus.ROFS) ;
 			writePostOpAttr( response, source) ;
-			writeWccData( response, target.getDirectory(), target.getDirectory()) ;
+			writeWccData( response, directoryBefore, target.getDirectory()) ;
 			return ;
 		}
 
@@ -1048,13 +1052,13 @@ public class NfsV3Program implements RpcProgram {
 			int status = ex instanceof IOException ioex ? mapIoStatus( ioex) : NfsStatus.PERM ;
 			response.writeInt( status) ;
 			writePostOpAttr( response, source) ;
-			writeWccData( response, target.getDirectory(), target.getDirectory()) ;
+			writeWccData( response, directoryBefore, target.getDirectory()) ;
 			return ;
 		}
 
 		response.writeInt( NfsStatus.OK) ;
 		writePostOpAttr( response, source) ;
-		writeWccData( response, target.getDirectory(), target.getDirectory()) ;
+		writeWccData( response, directoryBefore, target.getDirectory()) ;
 	}
 
 	//--------------------------------------------------------------------------
@@ -1318,23 +1322,36 @@ public class NfsV3Program implements RpcProgram {
 		arguments.readLong() ;
 		arguments.readInt() ;
 		Path path = handleTable.getPath( handle) ;
+		PreOpAttributes beforeAttributes = capturePreOpAttr( path) ;
 
 		// ファイルハンドルが不明な場合
 		if( path == null) {
 			response.writeInt( NfsStatus.STALE) ;
-			writeWccData( response, path, path) ;
+			writeWccData( response, beforeAttributes, path) ;
 			return ;
 		}
 
 		// クライアントが許可されていない場合
 		if( !isClientAllowed( path)) {
+			logMutation( "COMMIT", path, NfsStatus.ACCES, "client-denied") ;
 			response.writeInt( NfsStatus.ACCES) ;
-			writeWccData( response, path, path) ;
+			writeWccData( response, beforeAttributes, path) ;
 			return ;
 		}
 
+		try {
+			syncExistingFile( path) ;
+		} catch( IOException ioex) {
+			int status = mapIoStatus( ioex) ;
+			logMutation( "COMMIT", path, status, ioex.getClass().getSimpleName()) ;
+			response.writeInt( status) ;
+			writeWccData( response, beforeAttributes, path) ;
+			return ;
+		}
+
+		logMutation( "COMMIT", path, NfsStatus.OK, "") ;
 		response.writeInt( NfsStatus.OK) ;
-		writeWccData( response, path, path) ;
+		writeWccData( response, beforeAttributes, path) ;
 		response.writeFixedOpaque( WRITE_VERIFIER) ;
 	}
 
@@ -1431,6 +1448,25 @@ public class NfsV3Program implements RpcProgram {
 	 */
 	//--------------------------------------------------------------------------
 	private void writeCreateResult(XdrWriter response, int status, Path path, Path directory, FileHandle handle) throws IOException {
+		writeCreateResult( response, status, path, directory, capturePreOpAttr( directory), handle) ;
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * 作成結果を書き込みます。<br><br>
+	 *
+	 * <p>メソッド名称： 作成結果書込</p>
+	 *
+	 * @param response		応答
+	 * @param status		ステータス
+	 * @param path			作成対象パス
+	 * @param directory		親ディレクトリ
+	 * @param directoryBefore 親ディレクトリ更新前属性
+	 * @param handle		ファイルハンドル
+	 * @throws IOException 属性取得異常
+	 */
+	//--------------------------------------------------------------------------
+	private void writeCreateResult(XdrWriter response, int status, Path path, Path directory, PreOpAttributes directoryBefore, FileHandle handle) throws IOException {
 		response.writeInt( status) ;
 
 		// 正常終了の場合
@@ -1440,7 +1476,7 @@ public class NfsV3Program implements RpcProgram {
 			writePostOpAttr( response, path) ;
 		}
 
-		writeWccData( response, directory, directory) ;
+		writeWccData( response, directoryBefore, directory) ;
 	}
 
 	//--------------------------------------------------------------------------
@@ -1478,6 +1514,22 @@ public class NfsV3Program implements RpcProgram {
 	 */
 	//--------------------------------------------------------------------------
 	private void writeWccData(XdrWriter response, Path before, Path after) throws IOException {
+		writeWccData( response, capturePreOpAttr( before), after) ;
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * wcc_dataを書き込みます。<br><br>
+	 *
+	 * <p>メソッド名称： wcc_data書込</p>
+	 *
+	 * @param response	応答
+	 * @param before	更新前属性
+	 * @param after		更新後パス
+	 * @throws IOException 属性取得異常
+	 */
+	//--------------------------------------------------------------------------
+	private void writeWccData(XdrWriter response, PreOpAttributes before, Path after) throws IOException {
 		writePreOpAttr( response, before) ;
 		writePostOpAttr( response, after) ;
 	}
@@ -1494,17 +1546,51 @@ public class NfsV3Program implements RpcProgram {
 	 */
 	//--------------------------------------------------------------------------
 	private void writePreOpAttr(XdrWriter response, Path path) throws IOException {
+		writePreOpAttr( response, capturePreOpAttr( path)) ;
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * pre_op_attrを書き込みます。<br><br>
+	 *
+	 * <p>メソッド名称： pre_op_attr書込</p>
+	 *
+	 * @param response	応答
+	 * @param attributes	更新前属性
+	 */
+	//--------------------------------------------------------------------------
+	private void writePreOpAttr(XdrWriter response, PreOpAttributes attributes) {
 		// パスが存在しない場合
-		if( path == null || !Files.exists( path, LinkOption.NOFOLLOW_LINKS)) {
+		if( !attributes.exists()) {
 			response.writeBoolean( false) ;
 			return ;
 		}
 
-		BasicFileAttributes attributes = Files.readAttributes( path, BasicFileAttributes.class, LinkOption.NOFOLLOW_LINKS) ;
 		response.writeBoolean( true) ;
-		response.writeLong( attributes.size()) ;
-		writeTime( response, attributes.lastModifiedTime()) ;
-		writeTime( response, attributes.lastModifiedTime()) ;
+		response.writeLong( attributes.getSize()) ;
+		writeTime( response, attributes.getModifiedTime()) ;
+		writeTime( response, attributes.getChangedTime()) ;
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * pre_op_attrを取得します。<br><br>
+	 *
+	 * <p>メソッド名称： pre_op_attr取得</p>
+	 *
+	 * @param path	パス
+	 * @return 更新前属性
+	 * @throws IOException 属性取得異常
+	 */
+	//--------------------------------------------------------------------------
+	private PreOpAttributes capturePreOpAttr(Path path) throws IOException {
+		// パスが存在しない場合
+		if( path == null || !Files.exists( path, LinkOption.NOFOLLOW_LINKS)) {
+			return PreOpAttributes.missing() ;
+		}
+
+		BasicFileAttributes attributes = Files.readAttributes( path, BasicFileAttributes.class, LinkOption.NOFOLLOW_LINKS) ;
+		return PreOpAttributes.present( attributes.size(), attributes.lastModifiedTime(), attributes.lastModifiedTime()) ;
 	}
 
 	//--------------------------------------------------------------------------
@@ -1674,6 +1760,27 @@ public class NfsV3Program implements RpcProgram {
 		// 時刻指定がある場合
 		if( attributes.getAccessTime() != null || attributes.getModifiedTime() != null) {
 			view.setTimes( attributes.getModifiedTime(), attributes.getAccessTime(), null) ;
+		}
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * 既存ファイルを同期します。<br><br>
+	 *
+	 * <p>メソッド名称： 既存ファイル同期</p>
+	 *
+	 * @param path	対象パス
+	 * @throws IOException 同期異常
+	 */
+	//--------------------------------------------------------------------------
+	private void syncExistingFile(Path path) throws IOException {
+		// 通常ファイルではない場合
+		if( !Files.isRegularFile( path, LinkOption.NOFOLLOW_LINKS)) {
+			return ;
+		}
+
+		try( RandomAccessFile file = new RandomAccessFile( path.toFile(), "r")) {
+			file.getFD().sync() ;
 		}
 	}
 
@@ -2015,6 +2122,130 @@ public class NfsV3Program implements RpcProgram {
 		}
 
 		ServerLog.info( message.toString()) ;
+	}
+
+	//------------------------------------------------------------------------------
+	/**
+	 * pre_op_attr保持クラスです。<br><br>
+	 *
+	 * <p>クラス名称： pre_op_attr保持</p>
+	 *
+	 * @author Shunji Ogawa
+	 * @version 01.00.00
+	 */
+	//------------------------------------------------------------------------------
+	private static class PreOpAttributes {
+		/** 存在有無 */
+		private final boolean			exists ;
+
+		/** サイズ */
+		private final long				size ;
+
+		/** 更新時刻 */
+		private final FileTime			modifiedTime ;
+
+		/** 変更時刻 */
+		private final FileTime			changedTime ;
+
+		//----------------------------------------------------------------------
+		/**
+		 * インスタンスを生成します。<br><br>
+		 *
+		 * <p>メソッド名称： コンストラクタ</p>
+		 *
+		 * @param exists		存在有無
+		 * @param size			サイズ
+		 * @param modifiedTime	更新時刻
+		 * @param changedTime	変更時刻
+		 */
+		//----------------------------------------------------------------------
+		private PreOpAttributes(boolean exists, long size, FileTime modifiedTime, FileTime changedTime) {
+			this.exists = exists ;
+			this.size = size ;
+			this.modifiedTime = modifiedTime ;
+			this.changedTime = changedTime ;
+		}
+
+		//----------------------------------------------------------------------
+		/**
+		 * 存在属性を生成します。<br><br>
+		 *
+		 * <p>メソッド名称： 存在属性生成</p>
+		 *
+		 * @param size			サイズ
+		 * @param modifiedTime	更新時刻
+		 * @param changedTime	変更時刻
+		 * @return pre_op_attr
+		 */
+		//----------------------------------------------------------------------
+		static PreOpAttributes present(long size, FileTime modifiedTime, FileTime changedTime) {
+			return new PreOpAttributes( true, size, modifiedTime, changedTime) ;
+		}
+
+		//----------------------------------------------------------------------
+		/**
+		 * 不存在属性を生成します。<br><br>
+		 *
+		 * <p>メソッド名称： 不存在属性生成</p>
+		 *
+		 * @return pre_op_attr
+		 */
+		//----------------------------------------------------------------------
+		static PreOpAttributes missing() {
+			return new PreOpAttributes( false, 0L, FileTime.fromMillis( 0L), FileTime.fromMillis( 0L)) ;
+		}
+
+		//----------------------------------------------------------------------
+		/**
+		 * 存在有無を取得します。<br><br>
+		 *
+		 * <p>メソッド名称： 存在有無取得</p>
+		 *
+		 * @return true:存在 false:不存在
+		 */
+		//----------------------------------------------------------------------
+		boolean exists() {
+			return exists ;
+		}
+
+		//----------------------------------------------------------------------
+		/**
+		 * サイズを取得します。<br><br>
+		 *
+		 * <p>メソッド名称： サイズ取得</p>
+		 *
+		 * @return サイズ
+		 */
+		//----------------------------------------------------------------------
+		long getSize() {
+			return size ;
+		}
+
+		//----------------------------------------------------------------------
+		/**
+		 * 更新時刻を取得します。<br><br>
+		 *
+		 * <p>メソッド名称： 更新時刻取得</p>
+		 *
+		 * @return 更新時刻
+		 */
+		//----------------------------------------------------------------------
+		FileTime getModifiedTime() {
+			return modifiedTime ;
+		}
+
+		//----------------------------------------------------------------------
+		/**
+		 * 変更時刻を取得します。<br><br>
+		 *
+		 * <p>メソッド名称： 変更時刻取得</p>
+		 *
+		 * @return 変更時刻
+		 */
+		//----------------------------------------------------------------------
+		FileTime getChangedTime() {
+			return changedTime ;
+		}
 	}
 
 	//------------------------------------------------------------------------------

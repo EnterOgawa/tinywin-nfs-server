@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
+import java.nio.file.LinkOption;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -290,6 +291,7 @@ public class NfsServerConfig {
 		// 公開定義を検証する
 		for( NfsExport export : exports) {
 			validateExportName( export.getName()) ;
+			validateExportPath( export) ;
 
 			// 公開名が重複している場合
 			if( !names.add( export.getName())) {
@@ -325,6 +327,39 @@ public class NfsServerConfig {
 		// 読込サイズが不正な場合
 		if( readSize <= 0) {
 			throw new IllegalArgumentException( "read.size must be greater than zero.") ;
+		}
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * 公開パスを検証します。<br><br>
+	 *
+	 * <p>メソッド名称： 公開パス検証</p>
+	 *
+	 * @param export	公開定義
+	 */
+	//--------------------------------------------------------------------------
+	private void validateExportPath(NfsExport export) {
+		Path path = export.getPath() ;
+
+		// 公開パスが存在しない場合
+		if( !Files.exists( path, LinkOption.NOFOLLOW_LINKS)) {
+			throw new IllegalArgumentException( "export path does not exist: " + path) ;
+		}
+
+		// 公開パスがディレクトリではない場合
+		if( !Files.isDirectory( path, LinkOption.NOFOLLOW_LINKS)) {
+			throw new IllegalArgumentException( "export path is not a directory: " + path) ;
+		}
+
+		// 公開パスが読込不可の場合
+		if( !Files.isReadable( path)) {
+			throw new IllegalArgumentException( "export path is not readable: " + path) ;
+		}
+
+		// 書込共有だが公開パスが書込不可の場合
+		if( export.isWritable() && !Files.isWritable( path)) {
+			throw new IllegalArgumentException( "export path is not writable: " + path) ;
 		}
 	}
 

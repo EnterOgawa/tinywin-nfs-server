@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.5.0 - 2026-06-27
+
+- Hardened NFSv3 weak cache consistency data so mutation replies return pre-operation attributes captured before file changes.
+- Added NFSv3 COMMIT file sync handling and operation logging.
+- Strengthened server-side export validation for missing, non-directory, unreadable, and unwritable paths.
+- Made the SWT manager write configuration through a validated temporary file before replacing the existing configuration.
+- Added regression coverage for missing export paths and NFSv3 WCC pre-operation sizes.
+- Added a service stability script and v1.5.0 release checklist.
+- Updated README and installer upgrade documentation for operational hardening.
+
 ## 1.4.0 - 2026-06-27
 
 - Added NFSv3 over UDP alongside the existing NFSv2 implementation.

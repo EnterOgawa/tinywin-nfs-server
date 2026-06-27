@@ -26,6 +26,31 @@ Install tasks:
 
 The installer requires administrator privileges because service installation and firewall changes are privileged operations.
 
+## Upgrade Check
+
+Before a release, verify upgrade behavior from the previous public installer:
+
+1. Install the previous release.
+2. Configure at least one writable export.
+3. Confirm `TinyWinNfsServer` is running.
+4. Run:
+
+```powershell
+.\scripts\smoke-service.ps1 -VerifyFileIntegrity
+```
+
+5. Install the new package over the existing installation.
+6. Confirm the service was stopped, replaced, and started again.
+7. Confirm `conf\nfs-server.properties` still contains the configured exports.
+8. Run:
+
+```powershell
+.\scripts\smoke-service.ps1
+.\scripts\smoke-service.ps1 -VerifyFileIntegrity
+```
+
+The upgrade must not leave stale `TinyWinNfsServer`, `OgawaNfsServer`, or `QnxNfsServer` services installed.
+
 ## Icon
 
 The application and setup icon are generated from:

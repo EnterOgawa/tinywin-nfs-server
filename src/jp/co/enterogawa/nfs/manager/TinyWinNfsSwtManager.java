@@ -9,8 +9,10 @@ import java.net.InetAddress;
 import java.net.URISyntaxException;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.AtomicMoveNotSupportedException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.security.CodeSource;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -44,6 +46,7 @@ import org.eclipse.swt.widgets.TableColumn;
 import org.eclipse.swt.widgets.TableItem;
 import org.eclipse.swt.widgets.Text;
 
+import jp.co.enterogawa.nfs.config.NfsServerConfig;
 import jp.co.enterogawa.nfs.export.FileHandle;
 import jp.co.enterogawa.nfs.rpc.RpcConstants;
 import jp.co.enterogawa.nfs.xdr.XdrReader;
@@ -1266,7 +1269,8 @@ public class TinyWinNfsSwtManager {
 		try {
 			applySelectedShare() ;
 			validateFields() ;
-			Files.createDirectories( configPath.getParent()) ;
+			Path configDirectory = configPath.getParent() ;
+			Files.createDirectories( configDirectory) ;
 			List<String> lines = new ArrayList<String>() ;
 			ShareEntry firstShare = shareEntries.get( 0) ;
 			lines.add( "# " + PRODUCT_NAME + " configuration.") ;
@@ -1303,7 +1307,7 @@ public class TinyWinNfsSwtManager {
 			lines.add( "block.size=" + blockSizeText.getText().trim()) ;
 			lines.add( "read.size=" + readSizeText.getText().trim()) ;
 			lines.add( "filename.charset=" + filenameCharsetText.getText().trim()) ;
-			Files.write( configPath, lines, StandardCharsets.UTF_8) ;
+			writeValidatedConfig( configDirectory, lines) ;
 			updateMountCommand() ;
 			appendLog( text( "log.configurationSaved")) ;
 			return true ;
@@ -1311,6 +1315,51 @@ public class TinyWinNfsSwtManager {
 			appendLog( format( "log.configurationSaveFailed", ex.getMessage())) ;
 			showError( text( "error.configurationSaveFailed"), ex) ;
 			return false ;
+		}
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * 検証済み設定を書き込みます。<br><br>
+	 *
+	 * <p>メソッド名称： 検証済み設定書込</p>
+	 *
+	 * @param configDirectory	設定ディレクトリ
+	 * @param lines				設定行
+	 * @throws IOException 書込異常
+	 */
+	//--------------------------------------------------------------------------
+	private void writeValidatedConfig(Path configDirectory, List<String> lines) throws IOException {
+		Path temporaryPath = Files.createTempFile( configDirectory, "nfs-server-", ".properties") ;
+
+		try {
+			Files.write( temporaryPath, lines, StandardCharsets.UTF_8) ;
+			NfsServerConfig.load( temporaryPath) ;
+			moveConfigIntoPlace( temporaryPath) ;
+		} finally {
+			Files.deleteIfExists( temporaryPath) ;
+		}
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * 設定ファイルを配置します。<br><br>
+	 *
+	 * <p>メソッド名称： 設定ファイル配置</p>
+	 *
+	 * @param temporaryPath	一時設定ファイル
+	 * @throws IOException 移動異常
+	 */
+	//--------------------------------------------------------------------------
+	private void moveConfigIntoPlace(Path temporaryPath) throws IOException {
+		try {
+			Files.move(
+					temporaryPath,
+					configPath,
+					StandardCopyOption.REPLACE_EXISTING,
+					StandardCopyOption.ATOMIC_MOVE) ;
+		} catch( AtomicMoveNotSupportedException amnsex) {
+			Files.move( temporaryPath, configPath, StandardCopyOption.REPLACE_EXISTING) ;
 		}
 	}
 

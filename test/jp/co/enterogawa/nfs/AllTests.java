@@ -325,6 +325,14 @@ public class AllTests {
 					"/export",
 					"999.0.0.1") ;
 			assertThrows( "invalid allowed client", () -> NfsServerConfig.load( invalidClientConfig)) ;
+
+			Path missingRoot = root.resolve( "missing-export") ;
+			Path missingPathConfig = writeConfig(
+					"test-missing-path-config.properties",
+					missingRoot,
+					"/export",
+					"" ) ;
+			assertThrows( "missing export path", () -> NfsServerConfig.load( missingPathConfig)) ;
 		} finally {
 			deleteDirectory( root) ;
 		}
@@ -627,7 +635,7 @@ public class AllTests {
 		XdrReader writeReader = new XdrReader( handle( program, RpcConstants.PROGRAM_NFS, 3, 7, writeArguments).toByteArray()) ;
 
 		assertEquals( "v3 write status", NfsStatus.OK, writeReader.readInt()) ;
-		skipWccDataV3( writeReader) ;
+		assertWccPreSizeV3( writeReader, "hello qnx".length()) ;
 		assertEquals( "v3 write count", data.length, writeReader.readInt()) ;
 		assertEquals( "v3 write committed", 2, writeReader.readInt()) ;
 		assertEquals( "v3 write verifier", 8, writeReader.readFixedOpaque( 8).length) ;
@@ -640,7 +648,7 @@ public class AllTests {
 		XdrReader commitReader = new XdrReader( handle( program, RpcConstants.PROGRAM_NFS, 3, 21, commitArguments).toByteArray()) ;
 
 		assertEquals( "v3 commit status", NfsStatus.OK, commitReader.readInt()) ;
-		skipWccDataV3( commitReader) ;
+		assertWccPreSizeV3( commitReader, "v3 editnx".length()) ;
 		assertEquals( "v3 commit verifier", 8, commitReader.readFixedOpaque( 8).length) ;
 	}
 
@@ -664,7 +672,7 @@ public class AllTests {
 		XdrReader reader = new XdrReader( handle( program, RpcConstants.PROGRAM_NFS, 3, 2, arguments).toByteArray()) ;
 
 		assertEquals( "v3 setattr status", NfsStatus.OK, reader.readInt()) ;
-		skipWccDataV3( reader) ;
+		assertWccPreSizeV3( reader, "v3 editnx".length()) ;
 		assertEquals( "v3 setattr content", "v3 e", Files.readString( root.resolve( "hello.txt"), StandardCharsets.UTF_8)) ;
 	}
 
@@ -1895,6 +1903,26 @@ public class AllTests {
 
 	//--------------------------------------------------------------------------
 	/**
+	 * NFSv3 wcc_dataの更新前サイズを確認します。<br><br>
+	 *
+	 * <p>メソッド名称： NFSv3 wcc_data更新前サイズ確認</p>
+	 *
+	 * @param reader		XDR読込
+	 * @param expectedSize	期待サイズ
+	 */
+	//--------------------------------------------------------------------------
+	private void assertWccPreSizeV3(XdrReader reader, long expectedSize) {
+		assertTrue( "v3 wcc pre-op follows", reader.readBoolean()) ;
+		assertEquals( "v3 wcc pre-op size", expectedSize, reader.readLong()) ;
+		reader.readUnsignedInt() ;
+		reader.readUnsignedInt() ;
+		reader.readUnsignedInt() ;
+		reader.readUnsignedInt() ;
+		skipPostOpAttrV3( reader) ;
+	}
+
+	//--------------------------------------------------------------------------
+	/**
 	 * NFSv3 fattr3を読み飛ばします。<br><br>
 	 *
 	 * <p>メソッド名称： NFSv3 fattr3読飛</p>
@@ -2160,6 +2188,24 @@ public class AllTests {
 	 */
 	//--------------------------------------------------------------------------
 	private void assertEquals(String name, int expected, int actual) {
+		// 値が一致しない場合
+		if( expected != actual) {
+			throw new AssertionError( name + " expected=" + expected + " actual=" + actual) ;
+		}
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * long値を検証します。<br><br>
+	 *
+	 * <p>メソッド名称： long値検証</p>
+	 *
+	 * @param name		名称
+	 * @param expected	期待値
+	 * @param actual	実値
+	 */
+	//--------------------------------------------------------------------------
+	private void assertEquals(String name, long expected, long actual) {
 		// 値が一致しない場合
 		if( expected != actual) {
 			throw new AssertionError( name + " expected=" + expected + " actual=" + actual) ;
