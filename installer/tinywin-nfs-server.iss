@@ -35,7 +35,8 @@ Name: "installservice"; Description: "Windowsサービスをインストール�
 Name: "firewallrules"; Description: "Windows Firewallルールを追加する"; GroupDescription: "サービス:"
 
 [Files]
-Source: "{#SourceDir}\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "{#SourceDir}\*"; DestDir: "{app}"; Excludes: "conf\*"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "{#SourceDir}\conf\*"; DestDir: "{app}\conf"; Flags: ignoreversion recursesubdirs createallsubdirs onlyifdoesntexist
 
 [Icons]
 Name: "{group}\TinyWinNFS Manager"; Filename: "{app}\{#AppExeName}"; WorkingDir: "{app}"
