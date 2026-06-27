@@ -1,0 +1,14 @@
+<service>
+  <id>TinyWinNfsServer</id>
+  <name>TinyWinNFS Server</name>
+  <description>Java NFSv2/NFSv3 server for Windows clients.</description>
+  <executable>C:\develop\tools\eclipse202503\eclipse\jdk-21.0.8+9\bin\java.exe</executable>
+  <workingdirectory>%BASE%\..\..</workingdirectory>
+  <arguments>-cp "%BASE%\..\..\bin" jp.co.enterogawa.nfs.NfsServerMain "%BASE%\..\..\conf\nfs-server.properties"</arguments>
+  <stoptimeout>15 sec</stoptimeout>
+  <log mode="roll-by-size">
+    <sizeThreshold>10485760</sizeThreshold>
+    <keepFiles>5</keepFiles>
+  </log>
+  <onfailure action="restart" delay="10 sec"/>
+</service>

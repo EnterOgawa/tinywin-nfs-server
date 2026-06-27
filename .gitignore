@@ -1,0 +1,11 @@
+/bin/
+/.metadata/
+/.recommenders/
+/work/tmp/
+/qnxwork/
+/logs/
+/service/winsw/nfs-server.exe
+/service/winsw/*.log
+/dist/
+*.class
+*.log
