@@ -49,15 +49,15 @@ Source: "{#SourceDir}\service\*"; DestDir: "{app}\service"; Flags: ignoreversion
 Source: "{#SourceDir}\conf\*"; DestDir: "{app}\conf"; Flags: ignoreversion recursesubdirs createallsubdirs onlyifdoesntexist
 
 [Icons]
-Name: "{group}\TinyWinNFS Manager"; Filename: "{app}\{#AppExeName}"; WorkingDir: "{app}"
+Name: "{group}\TinyWinNFS Manager"; Filename: "{app}\TinyWinNfsManager-Admin.cmd"; WorkingDir: "{app}"; IconFilename: "{app}\{#AppExeName}"
 Name: "{group}\TinyWinNFS Manager (Admin)"; Filename: "{app}\TinyWinNfsManager-Admin.cmd"; WorkingDir: "{app}"; IconFilename: "{app}\{#AppExeName}"
-Name: "{autodesktop}\TinyWinNFS Manager"; Filename: "{app}\{#AppExeName}"; WorkingDir: "{app}"; Tasks: desktopicon
+Name: "{autodesktop}\TinyWinNFS Manager"; Filename: "{app}\TinyWinNfsManager-Admin.cmd"; WorkingDir: "{app}"; IconFilename: "{app}\{#AppExeName}"; Tasks: desktopicon
 
 [Run]
 Filename: "powershell.exe"; Parameters: "-NoProfile -ExecutionPolicy Bypass -File ""{app}\scripts\install-service.ps1"" -Force"; WorkingDir: "{app}"; StatusMsg: "Windowsサービスをインストールしています..."; Tasks: installservice; Flags: runhidden waituntilterminated
 Filename: "powershell.exe"; Parameters: "-NoProfile -ExecutionPolicy Bypass -File ""{app}\scripts\add-firewall-rules.ps1"""; WorkingDir: "{app}"; StatusMsg: "Windows Firewallルールを追加しています..."; Tasks: firewallrules; Flags: runhidden waituntilterminated
 Filename: "powershell.exe"; Parameters: "-NoProfile -ExecutionPolicy Bypass -File ""{app}\scripts\start-service.ps1"""; WorkingDir: "{app}"; StatusMsg: "Windowsサービスを開始しています..."; Tasks: installservice; Flags: runhidden waituntilterminated
-Filename: "{app}\{#AppExeName}"; Description: "TinyWinNFS Managerを起動する"; WorkingDir: "{app}"; Flags: nowait postinstall skipifsilent
+Filename: "{app}\TinyWinNfsManager-Admin.cmd"; Description: "TinyWinNFS Managerを起動する"; WorkingDir: "{app}"; Flags: nowait postinstall skipifsilent
 
 [UninstallRun]
 Filename: "powershell.exe"; Parameters: "-NoProfile -ExecutionPolicy Bypass -File ""{app}\scripts\uninstall-service.ps1"""; WorkingDir: "{app}"; StatusMsg: "Windowsサービスを削除しています..."; Flags: runhidden waituntilterminated; RunOnceId: "TinyWinNfsServerUninstallService"

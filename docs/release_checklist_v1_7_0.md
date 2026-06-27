@@ -82,6 +82,8 @@ Before creating the release tag:
 - Confirm Windows Client for NFS remains documented as NFSv3 UDP/TCP validation.
 - Confirm the installed runtime contains `runtime\conf\security\java.security`.
 - Confirm `TinyWinNfsManager.exe` starts from the installed folder without `Failed to launch JVM`.
+- Confirm the installed Start Menu/Desktop manager shortcuts launch through `TinyWinNfsManager-Admin.cmd`.
+- Confirm saving configuration from a non-Administrator direct launch shows the Administrator-required message instead of a temporary file path.
 
 ## Release metadata
 

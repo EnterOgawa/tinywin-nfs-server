@@ -9,6 +9,7 @@ import java.net.InetAddress;
 import java.net.URISyntaxException;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.AccessDeniedException;
 import java.nio.file.AtomicMoveNotSupportedException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -1298,6 +1299,13 @@ public class TinyWinNfsSwtManager {
 			applySelectedShare() ;
 			validateFields() ;
 			Path configDirectory = configPath.getParent() ;
+
+			// 保護されたインストール先に一般ユーザーで保存する場合
+			if( shouldRequireAdministratorForConfigSave( configDirectory)) {
+				showConfigurationSaveAdminRequired() ;
+				return false ;
+			}
+
 			Files.createDirectories( configDirectory) ;
 			List<String> lines = new ArrayList<String>() ;
 			ShareEntry firstShare = shareEntries.get( 0) ;
@@ -1343,6 +1351,9 @@ public class TinyWinNfsSwtManager {
 			updateMountCommand() ;
 			appendLog( text( "log.configurationSaved")) ;
 			return true ;
+		} catch( AccessDeniedException adex) {
+			showConfigurationSaveAdminRequired() ;
+			return false ;
 		} catch( Exception ex) {
 			appendLog( format( "log.configurationSaveFailed", ex.getMessage())) ;
 			showError( text( "error.configurationSaveFailed"), ex) ;
@@ -1393,6 +1404,80 @@ public class TinyWinNfsSwtManager {
 		} catch( AtomicMoveNotSupportedException amnsex) {
 			Files.move( temporaryPath, configPath, StandardCopyOption.REPLACE_EXISTING) ;
 		}
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * 設定保存に管理者権限が必要か確認します。<br><br>
+	 *
+	 * <p>メソッド名称： 設定保存権限確認</p>
+	 *
+	 * @param configDirectory	設定ディレクトリ
+	 * @return true:管理者権限が必要 false:不要
+	 */
+	//--------------------------------------------------------------------------
+	private boolean shouldRequireAdministratorForConfigSave(Path configDirectory) {
+		// 既に管理者権限を持つ場合
+		if( isAdministrator()) {
+			return false ;
+		}
+
+		return isProtectedInstallPath( configDirectory) ;
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * 保護されたインストール先か確認します。<br><br>
+	 *
+	 * <p>メソッド名称： 保護インストール先確認</p>
+	 *
+	 * @param path	確認パス
+	 * @return true:保護パス false:非保護パス
+	 */
+	//--------------------------------------------------------------------------
+	private boolean isProtectedInstallPath(Path path) {
+		Path absolutePath = path.toAbsolutePath().normalize() ;
+		return isUnderEnvironmentPath( absolutePath, "ProgramFiles")
+				|| isUnderEnvironmentPath( absolutePath, "ProgramFiles(x86)") ;
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * 環境変数で指定されるフォルダ配下か確認します。<br><br>
+	 *
+	 * <p>メソッド名称： 環境変数配下確認</p>
+	 *
+	 * @param path			確認パス
+	 * @param variableName	環境変数名
+	 * @return true:配下 false:配下ではない
+	 */
+	//--------------------------------------------------------------------------
+	private boolean isUnderEnvironmentPath(Path path, String variableName) {
+		String value = System.getenv( variableName) ;
+
+		// 環境変数が未設定の場合
+		if( value == null || value.isBlank()) {
+			return false ;
+		}
+
+		try {
+			Path root = Path.of( value).toAbsolutePath().normalize() ;
+			return path.startsWith( root) ;
+		} catch( RuntimeException rex) {
+			return false ;
+		}
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * 設定保存に管理者権限が必要であることを通知します。<br><br>
+	 *
+	 * <p>メソッド名称： 設定保存管理者権限通知</p>
+	 */
+	//--------------------------------------------------------------------------
+	private void showConfigurationSaveAdminRequired() {
+		appendLog( format( "log.configurationSaveAdminRequired", configPath)) ;
+		showError( format( "error.configurationSaveAdminRequired", configPath), null) ;
 	}
 
 	//--------------------------------------------------------------------------

@@ -7,6 +7,7 @@
 - Improved NFSv2/NFSv3 `SYMLINK` error mapping for Windows symlink privilege failures and invalid link targets.
 - Added regression coverage for NFSv2/NFSv3 symlink creation, broken symlink `READLINK`, regular-file `READLINK`, and NFSv3 `MKNOD` `NOTSUPP`.
 - Fixed installer packaging so the bundled Java runtime keeps `runtime\conf\security\java.security` and no longer fails with `Failed to launch JVM`.
+- Improved installed manager shortcuts and configuration save handling so `Program Files` installs require Administrator launch with a clear message.
 - Documented link compatibility policy and Windows symlink limitations.
 
 ## 1.6.1 - 2026-06-27
