@@ -1,12 +1,14 @@
 package jp.co.enterogawa.nfs;
 
 import java.io.IOException;
+import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.LinkOption;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.List;
 
 import jp.co.enterogawa.nfs.config.NfsServerConfig;
@@ -80,6 +82,7 @@ public class AllTests {
 		runTest( "Mount MNT v2", this::testMountV2) ;
 		runTest( "Multiple exports", this::testMultipleExports) ;
 		runTest( "NFSv2 procedures", this::testNfsV2Procedures) ;
+		runTest( "NFSv2 filename charset", this::testNfsV2FilenameCharset) ;
 		runTest( "File handle persistence", this::testFileHandlePersistence) ;
 		System.out.println( "TEST PASSED: " + runCount + " tests") ;
 	}
@@ -298,6 +301,7 @@ public class AllTests {
 		assertWriteFile( program, fileHandle, context.getRoot()) ;
 		assertSetAttrFile( program, fileHandle, context.getRoot()) ;
 		assertSetAttrMode( program, fileHandle) ;
+		assertSetAttrTime( program, fileHandle) ;
 		assertBidirectionalEditFile( program, fileHandle, context.getRoot()) ;
 		assertTempRenameOverwriteFile( program, rootHandle, context.getRoot()) ;
 		assertCreateFile( program, rootHandle, context.getRoot()) ;
@@ -311,6 +315,50 @@ public class AllTests {
 		assertLongSymlinkTarget( program, rootHandle) ;
 		assertJapaneseCreate( program, rootHandle, context.getRoot()) ;
 		context.close() ;
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * NFSv2ファイル名文字コードテストを行います。<br><br>
+	 *
+	 * <p>メソッド名称： NFSv2ファイル名文字コードテスト</p>
+	 *
+	 * @throws Exception テスト異常
+	 */
+	//--------------------------------------------------------------------------
+	private void testNfsV2FilenameCharset() throws Exception {
+		TestContext context = createContext( "Shift_JIS") ;
+		NfsV2Program program = new NfsV2Program( context.getConfig(), context.getHandleTable()) ;
+		FileHandle rootHandle = context.getHandleTable().getRootHandle() ;
+		Charset charset = Charset.forName( "Shift_JIS") ;
+		String name = "日本語sjis.txt" ;
+
+		try {
+			XdrWriter createArguments = new XdrWriter() ;
+			writeDiropargs( createArguments, rootHandle, name, charset) ;
+			writeSattrUnset( createArguments) ;
+			XdrWriter createResponse = handle( program, RpcConstants.PROGRAM_NFS, 2, 9, createArguments) ;
+			XdrReader createReader = new XdrReader( createResponse.toByteArray()) ;
+
+			assertEquals( "shift_jis create status", NfsStatus.OK, createReader.readInt()) ;
+			createReader.readFixedOpaque( FileHandle.LENGTH) ;
+			skipAttributes( createReader) ;
+			assertTrue( "shift_jis file exists", Files.exists( context.getRoot().resolve( name), LinkOption.NOFOLLOW_LINKS)) ;
+
+			XdrWriter lookupArguments = new XdrWriter() ;
+			writeDiropargs( lookupArguments, rootHandle, name, charset) ;
+			XdrWriter lookupResponse = handle( program, RpcConstants.PROGRAM_NFS, 2, 4, lookupArguments) ;
+			XdrReader lookupReader = new XdrReader( lookupResponse.toByteArray()) ;
+
+			assertEquals( "shift_jis lookup status", NfsStatus.OK, lookupReader.readInt()) ;
+			lookupReader.readFixedOpaque( FileHandle.LENGTH) ;
+			skipAttributes( lookupReader) ;
+
+			ReadDirPage page = readDirPage( program, rootHandle, 0, 8192, charset) ;
+			assertTrue( "shift_jis readdir", page.getNames().contains( name)) ;
+		} finally {
+			context.close() ;
+		}
 	}
 
 	//--------------------------------------------------------------------------
@@ -572,6 +620,43 @@ public class AllTests {
 
 	//--------------------------------------------------------------------------
 	/**
+	 * ファイルSETATTR時刻を確認します。<br><br>
+	 *
+	 * <p>メソッド名称： ファイルSETATTR時刻確認</p>
+	 *
+	 * @param program	NFSプログラム
+	 * @param handle	ファイルハンドル
+	 * @throws IOException 処理異常
+	 */
+	//--------------------------------------------------------------------------
+	private void assertSetAttrTime(NfsV2Program program, FileHandle handle) throws IOException {
+		int atimeSeconds = 1700000000 ;
+		int mtimeSeconds = 1700000100 ;
+		XdrWriter arguments = new XdrWriter() ;
+		arguments.writeFixedOpaque( handle.getValue()) ;
+		writeSattrTimes( arguments, atimeSeconds, mtimeSeconds) ;
+		XdrWriter response = handle( program, RpcConstants.PROGRAM_NFS, 2, 2, arguments) ;
+		XdrReader reader = new XdrReader( response.toByteArray()) ;
+
+		assertEquals( "setattr time status", NfsStatus.OK, reader.readInt()) ;
+		reader.readInt() ;
+		reader.readInt() ;
+		reader.readInt() ;
+		reader.readInt() ;
+		reader.readInt() ;
+		reader.readInt() ;
+		reader.readInt() ;
+		reader.readInt() ;
+		reader.readInt() ;
+		reader.readInt() ;
+		reader.readInt() ;
+		assertEquals( "setattr atime seconds", atimeSeconds, (int)reader.readUnsignedInt()) ;
+		reader.readUnsignedInt() ;
+		assertEquals( "setattr mtime seconds", mtimeSeconds, (int)reader.readUnsignedInt()) ;
+	}
+
+	//--------------------------------------------------------------------------
+	/**
 	 * 双方向編集を確認します。<br><br>
 	 *
 	 * <p>メソッド名称： 双方向編集確認</p>
@@ -779,6 +864,12 @@ public class AllTests {
 		assertTrue( "readdir first page not eof", !firstPage.isEof()) ;
 		assertTrue( "readdir second page eof", secondPage.isEof()) ;
 		assertTrue( "readdir paged file", pagedNames.contains( "hello.txt")) ;
+		assertEquals( "readdir paged no duplicate", pagedNames.size(), new HashSet<String>( pagedNames).size()) ;
+
+		ReadDirPage invalidCookiePage = readDirPage( program, rootHandle, 0x7fffffff, 8192) ;
+
+		assertEquals( "readdir invalid cookie empty", 0, invalidCookiePage.getNames().size()) ;
+		assertTrue( "readdir invalid cookie eof", invalidCookiePage.isEof()) ;
 	}
 
 	//--------------------------------------------------------------------------
@@ -796,6 +887,25 @@ public class AllTests {
 	 */
 	//--------------------------------------------------------------------------
 	private ReadDirPage readDirPage(NfsV2Program program, FileHandle rootHandle, int cookie, int count) throws IOException {
+		return readDirPage( program, rootHandle, cookie, count, StandardCharsets.UTF_8) ;
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * READDIRページを取得します。<br><br>
+	 *
+	 * <p>メソッド名称： READDIRページ取得</p>
+	 *
+	 * @param program		NFSプログラム
+	 * @param rootHandle	ルートハンドル
+	 * @param cookie		cookie
+	 * @param count			読込サイズ
+	 * @param charset		ファイル名文字コード
+	 * @return READDIRページ
+	 * @throws IOException 処理異常
+	 */
+	//--------------------------------------------------------------------------
+	private ReadDirPage readDirPage(NfsV2Program program, FileHandle rootHandle, int cookie, int count, Charset charset) throws IOException {
 		XdrWriter arguments = new XdrWriter() ;
 		arguments.writeFixedOpaque( rootHandle.getValue()) ;
 		arguments.writeInt( cookie) ;
@@ -809,7 +919,7 @@ public class AllTests {
 
 		while( reader.readBoolean()) {
 			reader.readUnsignedInt() ;
-			names.add( reader.readString()) ;
+			names.add( reader.readString( charset)) ;
 			cookies.add( (int)reader.readUnsignedInt()) ;
 		}
 
@@ -868,6 +978,14 @@ public class AllTests {
 		XdrReader windowsReader = new XdrReader( windowsResponse.toByteArray()) ;
 
 		assertEquals( "invalid windows name status", NfsStatus.ACCES, windowsReader.readInt()) ;
+
+		XdrWriter longArguments = new XdrWriter() ;
+		longArguments.writeFixedOpaque( rootHandle.getValue()) ;
+		longArguments.writeString( "a".repeat( 256)) ;
+		XdrWriter longResponse = handle( program, RpcConstants.PROGRAM_NFS, 2, 4, longArguments) ;
+		XdrReader longReader = new XdrReader( longResponse.toByteArray()) ;
+
+		assertEquals( "long lookup name status", NfsStatus.ACCES, longReader.readInt()) ;
 	}
 
 	//--------------------------------------------------------------------------
@@ -912,6 +1030,19 @@ public class AllTests {
 
 		assertEquals( "hard link status", NfsStatus.OK, reader.readInt()) ;
 		assertEquals( "hard link content", Files.readString( root.resolve( "hello.txt"), StandardCharsets.UTF_8), Files.readString( root.resolve( "hard-link.txt"), StandardCharsets.UTF_8)) ;
+		assertTrue( "hard link same file", Files.isSameFile( root.resolve( "hello.txt"), root.resolve( "hard-link.txt"))) ;
+		Files.writeString( root.resolve( "hard-link.txt"), "hard link edit", StandardCharsets.UTF_8) ;
+		assertEquals( "hard link shared source", "hard link edit", Files.readString( root.resolve( "hello.txt"), StandardCharsets.UTF_8)) ;
+
+		XdrWriter getattrArguments = new XdrWriter() ;
+		getattrArguments.writeFixedOpaque( fileHandle.getValue()) ;
+		XdrWriter getattrResponse = handle( program, RpcConstants.PROGRAM_NFS, 2, 1, getattrArguments) ;
+		XdrReader getattrReader = new XdrReader( getattrResponse.toByteArray()) ;
+
+		assertEquals( "hard link getattr status", NfsStatus.OK, getattrReader.readInt()) ;
+		getattrReader.readInt() ;
+		getattrReader.readInt() ;
+		assertTrue( "hard link nlink", getattrReader.readUnsignedInt() >= 2) ;
 	}
 
 	//--------------------------------------------------------------------------
@@ -1026,6 +1157,21 @@ public class AllTests {
 	 */
 	//--------------------------------------------------------------------------
 	private TestContext createContext() throws IOException {
+		return createContext( "UTF-8") ;
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * テストコンテキストを作成します。<br><br>
+	 *
+	 * <p>メソッド名称： テストコンテキスト作成</p>
+	 *
+	 * @param filenameCharset	ファイル名文字コード
+	 * @return テストコンテキスト
+	 * @throws IOException 作成異常
+	 */
+	//--------------------------------------------------------------------------
+	private TestContext createContext(String filenameCharset) throws IOException {
 		Path root = Path.of( "work", "tmp", "test-export").toAbsolutePath().normalize() ;
 		Path data = Path.of( "work", "tmp", "test-data").toAbsolutePath().normalize() ;
 		deleteDirectory( root) ;
@@ -1046,7 +1192,8 @@ public class AllTests {
 				+ "file.mode=0644\n"
 				+ "directory.mode=0755\n"
 				+ "block.size=4096\n"
-				+ "read.size=8192\n" ;
+				+ "read.size=8192\n"
+				+ "filename.charset=" + filenameCharset + "\n" ;
 		Files.writeString( configPath, configText, StandardCharsets.UTF_8) ;
 		NfsServerConfig config = NfsServerConfig.load( configPath) ;
 		return new TestContext( root, config, new FileHandleTable( config.getExports())) ;
@@ -1112,6 +1259,23 @@ public class AllTests {
 
 	//--------------------------------------------------------------------------
 	/**
+	 * diropargsを書き込みます。<br><br>
+	 *
+	 * <p>メソッド名称： diropargs書込</p>
+	 *
+	 * @param writer		書込
+	 * @param directory		ディレクトリハンドル
+	 * @param name			名前
+	 * @param charset		ファイル名文字コード
+	 */
+	//--------------------------------------------------------------------------
+	private void writeDiropargs(XdrWriter writer, FileHandle directory, String name, Charset charset) {
+		writer.writeFixedOpaque( directory.getValue()) ;
+		writer.writeString( name, charset) ;
+	}
+
+	//--------------------------------------------------------------------------
+	/**
 	 * 未指定sattrを書き込みます。<br><br>
 	 *
 	 * <p>メソッド名称： 未指定sattr書込</p>
@@ -1170,6 +1334,28 @@ public class AllTests {
 		writer.writeInt( -1) ;
 		writer.writeInt( -1) ;
 		writer.writeInt( -1) ;
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * 時刻指定sattrを書き込みます。<br><br>
+	 *
+	 * <p>メソッド名称： 時刻指定sattr書込</p>
+	 *
+	 * @param writer		書込
+	 * @param atimeSeconds	アクセス時刻秒
+	 * @param mtimeSeconds	更新時刻秒
+	 */
+	//--------------------------------------------------------------------------
+	private void writeSattrTimes(XdrWriter writer, int atimeSeconds, int mtimeSeconds) {
+		writer.writeInt( -1) ;
+		writer.writeInt( -1) ;
+		writer.writeInt( -1) ;
+		writer.writeInt( -1) ;
+		writer.writeUnsignedInt( atimeSeconds) ;
+		writer.writeUnsignedInt( 0) ;
+		writer.writeUnsignedInt( mtimeSeconds) ;
+		writer.writeUnsignedInt( 0) ;
 	}
 
 	//--------------------------------------------------------------------------

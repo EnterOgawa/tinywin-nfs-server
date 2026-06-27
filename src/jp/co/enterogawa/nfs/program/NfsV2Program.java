@@ -1719,7 +1719,78 @@ public class NfsV2Program implements RpcProgram {
 			return Math.max( 2L, 2L + countChildDirectories( path)) ;
 		}
 
-		return 1L ;
+		return Math.max( 1L, countFileLinksInExport( path)) ;
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * 公開ルート内の同一ファイルリンク数を取得します。<br><br>
+	 *
+	 * <p>メソッド名称： 公開ルート内同一ファイルリンク数取得</p>
+	 *
+	 * @param path	対象パス
+	 * @return リンク数
+	 * @throws IOException 読込異常
+	 */
+	//--------------------------------------------------------------------------
+	private long countFileLinksInExport(Path path) throws IOException {
+		Path root = handleTable.getRootPath( path) ;
+		BasicFileAttributes sourceAttributes = Files.readAttributes( path, BasicFileAttributes.class, LinkOption.NOFOLLOW_LINKS) ;
+		Object sourceFileKey = sourceAttributes.fileKey() ;
+		long count = 0 ;
+
+		// 公開ルートが取得できない場合
+		if( root == null) {
+			return 1L ;
+		}
+
+		try( var stream = Files.walk( root)) {
+			List<Path> candidates = stream.toList() ;
+
+			// 公開ルート内の通常ファイルから同一実体を数える
+			for( Path candidate : candidates) {
+				// 通常ファイルではない場合
+				if( !Files.isRegularFile( candidate, LinkOption.NOFOLLOW_LINKS)) {
+					continue ;
+				}
+
+				// 同一ファイル実体の場合
+				if( isSameFileIdentity( path, sourceFileKey, candidate)) {
+					count++ ;
+				}
+			}
+		}
+
+		return count ;
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * 同一ファイル実体かを確認します。<br><br>
+	 *
+	 * <p>メソッド名称： 同一ファイル実体確認</p>
+	 *
+	 * @param source		基準パス
+	 * @param sourceFileKey	基準ファイルキー
+	 * @param candidate		候補パス
+	 * @return true:同一 false:別ファイル
+	 * @throws IOException 読込異常
+	 */
+	//--------------------------------------------------------------------------
+	private boolean isSameFileIdentity(Path source, Object sourceFileKey, Path candidate) throws IOException {
+		// 同じパスの場合
+		if( source.equals( candidate)) {
+			return true ;
+		}
+
+		BasicFileAttributes candidateAttributes = Files.readAttributes( candidate, BasicFileAttributes.class, LinkOption.NOFOLLOW_LINKS) ;
+
+		// ファイルキーで判定できる場合
+		if( sourceFileKey != null && sourceFileKey.equals( candidateAttributes.fileKey())) {
+			return true ;
+		}
+
+		return Files.isSameFile( source, candidate) ;
 	}
 
 	//--------------------------------------------------------------------------
