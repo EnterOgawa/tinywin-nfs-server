@@ -1,49 +1,49 @@
-# Manager app
+# 管理ツール
 
-`TinyWinNfsManager` is the SWT double-click entry point for installation and configuration.
+`TinyWinNfsManager` は、インストールと設定を行うための SWT 製ダブルクリック起動ツールです。
 
-## Build App Image
+## アプリイメージのビルド
 
 ```powershell
 .\scripts\package-manager.ps1
 ```
 
-Output:
+出力先:
 
 ```text
 dist\TinyWinNfsManager
 ```
 
-## Build Installer
+## インストーラーのビルド
 
 ```powershell
 .\scripts\package-installer.ps1
 ```
 
-Output:
+出力先:
 
 ```text
 dist\installer\TinyWinNfsSetup.exe
 ```
 
-## Run
+## 起動
 
-For normal status display and configuration editing:
+通常の状態表示と設定編集:
 
 ```text
 dist\TinyWinNfsManager\TinyWinNfsManager.exe
 ```
 
-For service install, uninstall, start, stop, firewall changes, and privileged smoke testing:
+サービスのインストール、アンインストール、開始、停止、ファイアウォール変更、権限が必要なスモークテスト:
 
 ```text
 dist\TinyWinNfsManager\TinyWinNfsManager-Admin.cmd
 ```
 
-The installed Start Menu and desktop shortcuts target `TinyWinNfsManager.exe` directly.
-The installer registers the installed manager executable with Windows `RUNASADMIN` compatibility so the GUI opens through UAC without a console window.
+インストール後のスタートメニューとデスクトップショートカットは、`TinyWinNfsManager.exe` を直接参照します。
+インストーラーは、インストール済み管理ツール実行ファイルを Windows の `RUNASADMIN` 互換設定へ登録します。これにより、GUI はコマンドプロンプトなしで UAC 経由により開きます。
 
-## Distribution Layout
+## 配布レイアウト
 
 ```text
 TinyWinNfsManager/
@@ -61,7 +61,7 @@ TinyWinNfsManager/
   docs/
 ```
 
-Installed mutable data is stored outside the application directory:
+インストール後の可変データは、アプリケーションディレクトリの外へ保存します。
 
 ```text
 C:\ProgramData\EnterOgawa\TinyWinNFS Server\
@@ -70,113 +70,113 @@ C:\ProgramData\EnterOgawa\TinyWinNFS Server\
   logs/nfs-server.log
 ```
 
-The service executable is still WinSW. The manager app hides the command-line operations from users.
+サービス実行ファイルは WinSW のままです。管理ツールは、ユーザーがコマンドライン操作を意識しなくてよいように隠蔽します。
 
-`runtime` is used by both the manager app and the WinSW service process.
-The SWT jar is used only by the manager app.
+`runtime` は管理ツールと WinSW サービスプロセスの両方で使用します。
+SWT jar は管理ツールのみで使用します。
 
-If `TinyWinNfsServer`, `OgawaNfsServer`, or the legacy `QnxNfsServer` is already installed, the manager app uses the installed service path as the application root and `ProgramData` as the data root.
-This prevents editing a copied app image while the Windows service is still reading another `nfs-server.properties`.
+`TinyWinNfsServer`、`OgawaNfsServer`、旧 `QnxNfsServer` のいずれかがすでにインストールされている場合、管理ツールはインストール済みサービスのパスをアプリケーションルートとして扱い、`ProgramData` をデータルートとして扱います。
+これにより、Windows サービスが別の `nfs-server.properties` を読んでいる状態で、コピーされたアプリイメージ側の設定を誤って編集することを防ぎます。
 
-## Share Tab
+## 共有タブ
 
-The Share tab manages server-side shared folders.
+共有タブでは、サーバー側の共有フォルダを管理します。
 
-Each shared folder has:
+各共有フォルダには以下を設定します。
 
-- Export name, for example `/export`
-- Windows folder path
-- Writable flag
-- Allowed clients, as a comma-separated exact IPv4 list
+- export 名。例: `/export`
+- Windows フォルダパス
+- 書込可否
+- 許可クライアント。完全一致の IPv4 アドレスをカンマ区切りで指定
 
-Use `Add`, `Apply`, and `Remove` to manage multiple shared folders.
-The selected shared folder is used to generate the client mount command:
+複数の共有フォルダは `追加`、`反映`、`削除` で管理します。
+選択中の共有フォルダを使って、クライアント側の mount コマンドを生成します。
 
 ```text
 mount_nfs <server-host>:<server-mount-name> <client-mount-point>
 ```
 
-The server mount name is the NFS export name, for example `/export` or `/work`.
-The client mount point is the local directory on the NFS client, for example `/mnt`.
+サーバー側 mount 名は NFS export 名です。例: `/export`、`/work`
+クライアント側 mount point は NFS クライアント上のローカルディレクトリです。例: `/mnt`
 
-## Options Tab
+## オプションタブ
 
-The Options tab manages advanced values:
+オプションタブでは、詳細設定を管理します。
 
-- Display language
-- Server host and client mount point for command generation
-- Portmap, NFS, and MOUNT ports used by both UDP and TCP transports
-- UID/GID, file mode, directory mode, block size, read size, sync writes, write cache, and filename charset
+- 表示言語
+- コマンド生成に使うサーバーホストとクライアント側 mount point
+- UDP/TCP の両方で使う Portmap、NFS、MOUNT ポート
+- UID/GID、ファイル mode、ディレクトリ mode、ブロックサイズ、read size、同期書込、書込キャッシュ、ファイル名文字コード
 
-`permission.identity=auto` is the default even though the manager keeps UID/GID as advanced fallback values.
-In auto mode, the server returns the AUTH_SYS UID/GID sent by the current NFS client in file attributes.
-Use `permission.identity=fixed` only when the server must always return the configured UID/GID regardless of the client.
+`permission.identity=auto` が既定です。管理ツールには詳細設定の予備値として UID/GID を残しています。
+自動モードでは、サーバーは現在の NFS クライアントが送信した AUTH_SYS UID/GID をファイル属性に返します。
+クライアントに関係なく設定済み UID/GID を必ず返したい場合のみ、`permission.identity=fixed` を使用します。
 
-`filename.charset` controls how NFSv2 filename and symlink path strings are decoded and encoded.
-The default is `UTF-8`. Use a Java Charset name such as `windows-31j` only when a legacy client requires it.
+`filename.charset` は、NFSv2 のファイル名と symlink パス文字列のデコード/エンコード方法を制御します。
+既定値は `UTF-8` です。古いクライアントが必要とする場合のみ、`windows-31j` などの Java Charset 名を指定します。
 
-`write.sync=false` is the default for copy performance. Set `write.sync=true` when every WRITE reply must wait for physical storage synchronization.
+コピー性能を優先するため、`write.sync=false` が既定です。すべての WRITE 応答で物理ストレージ同期を待つ必要がある場合は `write.sync=true` にします。
 
-`write.cache.enabled=true` is the default to reduce repeated file open/close overhead during large copies. Tune `write.cache.max.open` and `write.cache.idle.millis` only when the server needs to limit open file handles more aggressively.
+大量コピー時の繰り返し open/close 負荷を減らすため、`write.cache.enabled=true` が既定です。開いたファイルハンドル数をより厳しく制限する必要がある場合のみ、`write.cache.max.open` と `write.cache.idle.millis` を調整します。
 
-## Language
+## 言語
 
-The manager app supports English and Japanese UI resources.
+管理ツールは英語と日本語の UI リソースに対応しています。
 
-The language is stored in `C:\ProgramData\EnterOgawa\TinyWinNFS Server\conf\nfs-server.properties`:
+言語設定は `C:\ProgramData\EnterOgawa\TinyWinNFS Server\conf\nfs-server.properties` に保存されます。
 
 ```text
 ui.language=auto
 ```
 
-Supported values are:
+対応値:
 
-- `auto`: use the Windows/JVM locale
-- `en`: English
-- `ja`: Japanese
+- `auto`: Windows/JVM の locale を使用
+- `en`: 英語
+- `ja`: 日本語
 
-After changing the language, save the configuration and reopen the manager app.
+言語を変更した後は、設定を保存して管理ツールを開き直します。
 
-## Export Folder
+## export フォルダ
 
-The client mount command does not use the Windows folder path directly.
-It mounts the server export name:
+クライアント側の mount コマンドでは、Windows フォルダパスを直接指定しません。
+サーバー側 export 名を mount します。
 
 ```text
 mount_nfs <server-host>:/export /mnt
 ```
 
-After changing shared folders, use `Save + Restart` or restart the service from the `Service` tab.
-The service reads `C:\ProgramData\EnterOgawa\TinyWinNFS Server\conf\nfs-server.properties` only when it starts.
+共有フォルダを変更した後は、`保存して再起動` を使用するか、`サービス` タブからサービスを再起動します。
+サービスは起動時にのみ `C:\ProgramData\EnterOgawa\TinyWinNFS Server\conf\nfs-server.properties` を読み込みます。
 
-## Client Restrictions
+## クライアント制限
 
-Leave `Allowed clients` empty to allow all clients.
+すべてのクライアントを許可する場合は、`許可クライアント` を空欄にします。
 
-To restrict an export to specific hosts, enter exact IPv4 addresses separated by commas:
+特定ホストだけに export を制限する場合は、完全一致の IPv4 アドレスをカンマ区切りで入力します。
 
 ```text
 192.168.1.30,127.0.0.1
 ```
 
-The setting is saved per export:
+この設定は export ごとに保存されます。
 
 ```properties
 exports.1.allowed.clients=192.168.1.30,127.0.0.1
 ```
 
-Rejected MOUNT and NFS requests are logged with the client address, XID, status, and target path where available.
+拒否された MOUNT/NFS 要求は、可能な範囲でクライアントアドレス、XID、status、対象 path とともにログへ記録されます。
 
-## Service Feedback
+## サービス表示
 
-The Service tab shows:
+サービス タブには以下を表示します。
 
-- Service ID and legacy IDs
-- Application root
-- Data root
-- Active config file
-- Active log file
-- Registered service executable path
+- サービス ID と旧 ID
+- アプリケーションルート
+- データルート
+- 有効な設定ファイル
+- 有効なログファイル
+- 登録済みサービス実行ファイルパス
 
-`Save + Restart` logs save success separately from restart success.
-Service install, start, stop, restart, uninstall, and firewall operations require Administrator privileges.
+`保存して再起動` は、保存成功と再起動成功を分けてログ表示します。
+サービスのインストール、開始、停止、再起動、アンインストール、ファイアウォール操作には管理者権限が必要です。

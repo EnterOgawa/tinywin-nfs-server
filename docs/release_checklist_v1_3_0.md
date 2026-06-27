@@ -1,8 +1,8 @@
-# v1.3.0 release checklist
+# v1.3.0 リリースチェックリスト
 
-v1.3.0 is the operational hardening milestone.
+v1.3.0 は運用強化のマイルストーンです。
 
-## Source Checks
+## ソース確認
 
 ```powershell
 git status -sb
@@ -10,41 +10,41 @@ git status -sb
 .\scripts\test.ps1
 ```
 
-Expected unit test result:
+単体テストの期待結果:
 
 ```text
 TEST PASSED: 11 tests
 ```
 
-## Functional Checks
+## 機能確認
 
-- Invalid export names are rejected before save/start.
-- Missing, unreadable, or non-writable folders are rejected when applicable.
-- `allowed.clients` empty means all clients are allowed.
-- `allowed.clients=127.0.0.1` allows local tests and rejects another IPv4 address.
-- Save + Restart logs save and restart results separately.
-- The Service tab shows application root, config file, and service executable path.
-- Service operations show an Administrator privilege error when not elevated.
+- 不正な export 名が保存/起動前に拒否されること。
+- フォルダが存在しない、読み取れない、または必要時に書き込めない場合に拒否されること。
+- `allowed.clients` が空欄の場合、すべてのクライアントが許可されること。
+- `allowed.clients=127.0.0.1` ではローカルテストを許可し、別の IPv4 アドレスを拒否すること。
+- Save + Restart で保存結果と再起動結果が個別にログ表示されること。
+- サービス タブにアプリケーションルート、設定ファイル、サービス実行ファイルパスが表示されること。
+- 管理者権限がない場合、サービス操作で管理者権限エラーが表示されること。
 
-## Log Checks
+## ログ確認
 
-Confirm request diagnostics include:
+要求診断に以下が含まれることを確認します。
 
-- client address
+- クライアントアドレス
 - XID
 - RPC program/version/procedure
 - status
-- path for mutation or access-denied operations
+- 変更操作または access-denied 操作のパス
 
-Successful NFS READ request logs should be suppressed unless `-Dtinywin.nfs.debug=true` is set.
+成功した NFS READ 要求ログは、`-Dtinywin.nfs.debug=true` が設定されていない限り抑制されること。
 
-## Installer
+## インストーラー
 
 ```powershell
 .\scripts\package-installer.ps1
 ```
 
-Verify the generated installer:
+生成されたインストーラーを確認します。
 
 ```powershell
 (Get-Item .\dist\installer\TinyWinNfsSetup.exe).VersionInfo | Select-Object ProductVersion,ProductName,FileDescription
@@ -53,8 +53,8 @@ Get-FileHash .\dist\installer\TinyWinNfsSetup.exe -Algorithm SHA256
 
 ## GitHub
 
-- All v1.3.0 milestone issues are closed.
-- Release tag is `v1.3.0`.
-- Release title is `TinyWinNFS Server 1.3.0`.
-- Attach `dist\installer\TinyWinNfsSetup.exe`.
-- Confirm the release asset SHA256 matches the local file.
+- v1.3.0 milestone の issue がすべて close されていること。
+- release tag は `v1.3.0` であること。
+- release title は `TinyWinNFS Server 1.3.0` であること。
+- `dist\installer\TinyWinNfsSetup.exe` を添付すること。
+- release asset の SHA256 がローカルファイルと一致することを確認すること。

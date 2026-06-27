@@ -1,58 +1,58 @@
-# Windows Client for NFS mount test
+# Windows Client for NFS マウントテスト
 
-Windows Client for NFS is the primary local integration test for v1.2.0 and later. It verifies that TinyWinNFS can be mounted by a native Windows NFS client without WSL or Hyper-V.
+Windows Client for NFS は、v1.2.0 以降の主要なローカル結合テストです。WSL や Hyper-V を使わずに、Windows 標準 NFS クライアントから TinyWinNFS をマウントできることを確認します。
 
-For v1.4.0 and later, this test also verifies that the server observed MOUNT v3 and NFSv3 RPC requests in its log.
-For v1.6.0 and later, the same script can validate UDP or TCP transport.
+v1.4.0 以降では、サーバーログ上で MOUNT v3 と NFSv3 RPC 要求を観測できることも確認します。
+v1.6.0 以降では、同じスクリプトで UDP または TCP 通信方式を検証できます。
 
-QNX 4.25 on VMware remains the legacy-client compatibility reference. WSL checks are optional only.
+QNX 4.25 on VMware は、従来クライアント互換性の基準として扱います。WSL 確認は任意です。
 
-## Prerequisites
+## 前提条件
 
-- Windows Client for NFS is enabled.
-- The `NfsClnt` service is running.
-- PowerShell is running as Administrator.
-- UDP and TCP ports `111`, `2049`, and `20048` are free.
-- Drive `Z:` is free, or another free drive letter is passed to the script.
+- Windows Client for NFS が有効であること。
+- `NfsClnt` サービスが実行中であること。
+- PowerShell が管理者として実行されていること。
+- UDP/TCP `111`、`2049`、`20048` が空いていること。
+- ドライブ `Z:` が空いていること。別の空きドライブ文字をスクリプトに渡しても構いません。
 
-Check the client:
+クライアントを確認します。
 
 ```powershell
 Get-Command mount.exe
 Get-Service NfsClnt
 ```
 
-## Automated Test
+## 自動テスト
 
-Run:
+実行:
 
 ```powershell
 .\scripts\test-windows-nfs-client.ps1
 ```
 
-Run the TCP transport path:
+TCP 通信方式を実行:
 
 ```powershell
 .\scripts\test-windows-nfs-client.ps1 -Transport TCP
 ```
 
-Run UDP and TCP as separate test invocations. Windows Client for NFS can cache mount or portmap state after a transport switch; if the TCP log assertion does not observe `server=nfs-mount-tcp`, rerun the TCP command after the previous mount has fully disappeared.
+UDP と TCP は別々のテスト実行として扱います。Windows Client for NFS は通信方式の切り替え後にマウントや portmap の状態をキャッシュすることがあります。TCP ログ確認で `server=nfs-mount-tcp` を観測できない場合は、前回のマウントが完全に消えてから TCP コマンドを再実行します。
 
-The script:
+スクリプトは以下を行います。
 
-- creates a temporary export under `work\tmp`;
-- starts TinyWinNFS with a Windows-client test configuration;
-- configures Windows Client for NFS to use the selected transport and restores the previous protocol setting at the end;
-- mounts a unique default export name such as `\\127.0.0.1\export-udp-20260627153000` to `Z:`;
-- verifies that MOUNT v3 and NFSv3 requests reached the server;
-- verifies create, read, update, rename, delete;
-- verifies directory create/delete;
-- verifies a Japanese filename using `lang=shift-jis`;
-- unmounts the drive and stops the temporary server.
+- `work\tmp` 配下に一時 export を作成します。
+- Windows クライアントテスト設定で TinyWinNFS を起動します。
+- Windows Client for NFS が選択した通信方式を使うように設定し、終了時に以前のプロトコル設定を復元します。
+- `\\127.0.0.1\export-udp-20260627153000` のような一意の既定 export 名を `Z:` へ mount します。
+- MOUNT v3 と NFSv3 要求がサーバーへ到達したことを確認します。
+- create、read、update、rename、delete を確認します。
+- ディレクトリの create/delete を確認します。
+- `lang=shift-jis` を使って日本語ファイル名を確認します。
+- ドライブを unmount し、一時サーバーを停止します。
 
-v1.7.0 unit tests cover NFSv2/NFSv3 `READLINK`, `SYMLINK`, broken symlink `READLINK`, and NFSv3 `MKNOD` rejection. Windows Client for NFS integration checks remain focused on mount, regular files, directories, and filename encoding because Windows client behavior for POSIX symlink creation is environment dependent.
+v1.7.0 の単体テストでは、NFSv2/NFSv3 `READLINK`、`SYMLINK`、壊れた symlink の `READLINK`、NFSv3 `MKNOD` 拒否を確認します。Windows Client for NFS の結合確認は、Windows クライアントによる POSIX symlink 作成の挙動が環境依存であるため、マウント、通常ファイル、ディレクトリ、ファイル名エンコードに集中します。
 
-Expected result:
+期待結果:
 
 ```text
 PASS: Windows Client for NFS mount
@@ -64,59 +64,59 @@ PASS: Windows Client for NFS Japanese filename
 WINDOWS NFS CLIENT TEST PASSED
 ```
 
-Use another drive letter:
+別のドライブ文字を使う場合:
 
 ```powershell
 .\scripts\test-windows-nfs-client.ps1 -DriveLetter Y
 ```
 
-Use a fixed export name:
+固定 export 名を使う場合:
 
 ```powershell
 .\scripts\test-windows-nfs-client.ps1 -ExportName export
 ```
 
-Keep the temporary work folder after the test:
+テスト後に一時作業フォルダを残す場合:
 
 ```powershell
 .\scripts\test-windows-nfs-client.ps1 -KeepWork
 ```
 
-## Manual Mount
+## 手動 mount
 
-The equivalent mount command is:
+同等の mount コマンド:
 
 ```cmd
 mount -o anon,nolock,rsize=8,wsize=8,lang=shift-jis \\127.0.0.1\export Z:
 ```
 
-Windows `mount.exe` does not expose a portable NFS version option in its help output. Confirm v3 usage through the TinyWinNFS log. A successful v1.4.0 test includes entries containing:
+Windows の `mount.exe` は、help 出力上で portable な NFS version option を公開していません。v3 の利用は TinyWinNFS ログで確認します。v1.4.0 の成功テストでは、以下を含むログが出ます。
 
 ```text
 program=100005 version=3
 program=100003 version=3
 ```
 
-TCP validation also requires log entries containing:
+TCP 検証では、以下を含むログも必要です。
 
 ```text
 server=nfs-mount-tcp
 server=nfs-tcp
 ```
 
-Unmount:
+unmount:
 
 ```cmd
 umount Z:
 ```
 
-`nolock` is required because TinyWinNFS does not implement NLM.
+TinyWinNFS は NLM を実装していないため、`nolock` が必要です。
 
-## Windows Anonymous UID/GID
+## Windows 匿名 UID/GID
 
-Windows Client for NFS anonymous mounts commonly use `UID=-2` and `GID=-2`. If the server reports `uid=0`, `gid=0`, and `file.mode=0644`, Windows may allow file creation but deny later updates to the same file.
+Windows Client for NFS の匿名マウントは、多くの場合 `UID=-2`、`GID=-2` を使います。サーバーが `uid=0`、`gid=0`、`file.mode=0644` を返すと、Windows がファイル作成を許可しても、同じファイルへの後続更新を拒否することがあります。
 
-For Windows-client integration tests without registry changes, use:
+レジストリ変更なしで Windows クライアント結合テストを行う場合は、以下を使用します。
 
 ```properties
 uid=-2
@@ -126,19 +126,19 @@ directory.mode=0777
 filename.charset=Shift_JIS
 ```
 
-The sample profile is `conf\nfs-server-windows-client-test.properties`.
+サンプルプロファイルは `conf\nfs-server-windows-client-test.properties` です。
 
-## Troubleshooting
+## トラブルシュート
 
-If `mount.exe` is missing, enable Windows Client for NFS.
+`mount.exe` が見つからない場合は、Windows Client for NFS を有効にします。
 
-If `NfsClnt` is not running:
+`NfsClnt` が実行されていない場合:
 
 ```powershell
 Start-Service NfsClnt
 ```
 
-If `NfsClnt` fails to start after a test interrupted the client service, stop TinyWinNFS first and restart the NFS redirector:
+テスト中断後に `NfsClnt` が起動に失敗する場合は、先に TinyWinNFS を停止し、NFS redirector を再起動します。
 
 ```powershell
 sc.exe stop NfsRdr
@@ -146,9 +146,9 @@ sc.exe start NfsRdr
 Start-Service NfsClnt
 ```
 
-If `Access denied` occurs after file creation, verify that the test server is returning writable attributes for `UID=-2` / `GID=-2`.
+ファイル作成後に `Access denied` が発生する場合は、テストサーバーが `UID=-2` / `GID=-2` に対して書込可能属性を返しているか確認します。
 
-If the mount command succeeds but Japanese filenames are garbled, verify that both sides use the same encoding:
+mount コマンドが成功しても日本語ファイル名が文字化けする場合は、両側が同じエンコードを使っているか確認します。
 
 - Windows mount option: `lang=shift-jis`
 - TinyWinNFS config: `filename.charset=Shift_JIS`

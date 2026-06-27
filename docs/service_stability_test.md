@@ -1,38 +1,38 @@
-# Service stability test
+# サービス安定性テスト
 
-This check is for operational hardening after the NFSv3 and TCP transport milestones.
+この確認は、NFSv3 と TCP 通信方式のマイルストーン後の運用強化を目的にしています。
 
-Run it only on a machine where TinyWinNFS Server is installed as a Windows service and the configured export is safe for test file creation.
+TinyWinNFS Server が Windows サービスとしてインストール済みで、設定済み export にテストファイルを作成しても問題ない環境でのみ実行してください。
 
-## Short run
+## 短時間実行
 
 ```powershell
 .\scripts\test-service-stability.ps1 -DurationMinutes 10 -IntervalSeconds 10
 ```
 
-The script repeatedly runs:
+スクリプトは以下を繰り返し実行します。
 
 ```powershell
 .\scripts\smoke-service.ps1 -VerifyFileIntegrity
 ```
 
-The integrity smoke test verifies create, overwrite, truncate, append, rename overwrite, server-side disk content, and cleanup through the service RPC path.
+整合性スモークテストでは、サービス RPC 経路を通して create、overwrite、truncate、append、rename overwrite、サーバー側ディスク内容、後片付けを確認します。
 
-## Restart run
+## 再起動を含む実行
 
 ```powershell
 .\scripts\test-service-stability.ps1 -DurationMinutes 60 -IntervalSeconds 15 -RestartEveryIterations 10
 ```
 
-This adds regular service restarts between integrity passes. Use this before release when validating that UDP/TCP ports are released and rebound cleanly.
+この実行では、整合性確認の間に定期的なサービス再起動を追加します。UDP/TCP ポートが正しく解放され、再 bind されることをリリース前に確認する場合に使用します。
 
-## Pass criteria
+## 合格基準
 
-- Every iteration prints `PASS: service file integrity`.
-- The final line is `SERVICE STABILITY TEST PASSED`.
-- `scripts\status-service.ps1` reports `TinyWinNfsServer` running between iterations.
-- The configured export folder does not contain leftover `service-integrity-*.txt` files after the run.
+- すべての iteration で `PASS: service file integrity` が表示されます。
+- 最終行が `SERVICE STABILITY TEST PASSED` です。
+- iteration 間で `scripts\status-service.ps1` が `TinyWinNfsServer` running を報告します。
+- 実行後、設定済み export フォルダに `service-integrity-*.txt` ファイルが残りません。
 
-## Failure handling
+## 失敗時の扱い
 
-If the script fails, keep the service log and the export folder intact until the failed operation is identified. The relevant log entries should include the client address, RPC operation, status, and path context.
+スクリプトが失敗した場合は、失敗した操作を特定するまでサービスログと export フォルダを残します。関連ログには、クライアントアドレス、RPC 操作、status、path context が含まれているはずです。

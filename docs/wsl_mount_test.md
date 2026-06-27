@@ -1,19 +1,19 @@
-# WSL mount test
+# WSL mount テスト
 
-WSL mount test is an optional integration test. It does not replace the QNX 4.25 test, but it is useful for checking that NFSv2/MOUNT v1 packets are usable by a real NFS client.
+WSL mount テストは任意の結合テストです。QNX 4.25 テストの代替ではありませんが、NFSv2/MOUNT v1 packet が実際の NFS クライアントから利用できることを確認する用途には有効です。
 
-## Current Environment
+## 現在の環境
 
-This workspace currently has no WSL distribution installed, so this test cannot be executed here.
+このワークスペースには現在 WSL distribution がインストールされていないため、このテストはここでは実行できません。
 
-## Prerequisites
+## 前提条件
 
-- WSL2 with a Linux distribution installed.
-- Linux NFS client tools installed in WSL.
-- Linux kernel NFSv2 client support.
-- Windows Firewall allows UDP/TCP `11111`, `12049`, and `12048`.
+- Linux distribution が入った WSL2 がインストールされていること。
+- WSL 内に Linux NFS クライアントツールがインストールされていること。
+- Linux kernel が NFSv2 クライアントに対応していること。
+- Windows ファイアウォールが UDP/TCP `11111`、`12049`、`12048` を許可していること。
 
-Ubuntu example:
+Ubuntu の例:
 
 ```sh
 sudo apt update
@@ -21,36 +21,36 @@ sudo apt install -y nfs-common rpcbind
 cat /proc/filesystems | grep nfs
 ```
 
-## Start Server on Windows
+## Windows 側サーバー起動
 
-Use the high-port WSL test configuration:
+高番ポートを使う WSL テスト設定で起動します。
 
 ```powershell
 .\scripts\start-wsl-test-server.ps1
 ```
 
-This starts:
+起動内容:
 
 - portmap: UDP/TCP `11111`
 - nfsd: UDP/TCP `12049`
 - mountd: UDP/TCP `12048`
 
-## Mount from WSL
+## WSL からの mount
 
-In WSL, get the Windows host address:
+WSL 内で Windows ホストアドレスを取得します。
 
 ```sh
 WIN_HOST=$(awk '/nameserver/ {print $2; exit}' /etc/resolv.conf)
 echo "$WIN_HOST"
 ```
 
-Create a mount point:
+mount point を作成します。
 
 ```sh
 sudo mkdir -p /mnt/qnx-nfs-test
 ```
 
-Try an explicit NFSv2/UDP mount without lock manager:
+lock manager を使わず、NFSv2/UDP を明示して mount します。
 
 ```sh
 sudo mount -t nfs \
@@ -58,7 +58,7 @@ sudo mount -t nfs \
   "$WIN_HOST:/export" /mnt/qnx-nfs-test
 ```
 
-Check read-write access:
+読み書きアクセスを確認します。
 
 ```sh
 ls -la /mnt/qnx-nfs-test
@@ -67,14 +67,14 @@ echo "wsl write test" | sudo tee /mnt/qnx-nfs-test/wsl-write-test.txt
 cat /mnt/qnx-nfs-test/wsl-write-test.txt
 ```
 
-Unmount:
+unmount:
 
 ```sh
 sudo umount /mnt/qnx-nfs-test
 ```
 
-## Notes
+## 注意
 
-If `mount.nfs` still contacts rpcbind on UDP `111`, use administrator privileges and the default configuration instead, or use a Linux VM where packet capture and client behavior can be controlled more directly.
+`mount.nfs` が UDP `111` の rpcbind へ接続し続ける場合は、管理者権限と既定設定を使用するか、packet capture とクライアント挙動をより直接制御できる Linux VM を使用します。
 
-If WSL cannot reach the Windows host address from `/etc/resolv.conf`, check whether WSL is using mirrored networking and use the Windows host IP visible from WSL.
+WSL が `/etc/resolv.conf` の Windows ホストアドレスに到達できない場合は、WSL が mirrored networking を使用しているかを確認し、WSL から見える Windows ホスト IP を使用します。

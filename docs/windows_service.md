@@ -1,21 +1,21 @@
-# Windows service
+# Windows サービス
 
-The service uses WinSW v2.12.0.
+サービスには WinSW v2.12.0 を使用します。
 
-## Files
+## ファイル
 
-- WinSW executable: `service/winsw/nfs-server.exe`
-- WinSW configuration: `service/winsw/nfs-server.xml`
-- Service id: `TinyWinNfsServer`
-- Legacy service ids: `OgawaNfsServer`, `QnxNfsServer`
-- Packaged Java runtime: `runtime/bin/java.exe`
-- Data root: `C:\ProgramData\EnterOgawa\TinyWinNFS Server`
+- WinSW 実行ファイル: `service/winsw/nfs-server.exe`
+- WinSW 設定: `service/winsw/nfs-server.xml`
+- サービス ID: `TinyWinNfsServer`
+- 旧サービス ID: `OgawaNfsServer`, `QnxNfsServer`
+- パッケージ同梱 Java runtime: `runtime/bin/java.exe`
+- データルート: `C:\ProgramData\EnterOgawa\TinyWinNFS Server`
 
-The packaged manager and service share the same Java runtime.
+パッケージ同梱の管理ツールとサービスは同じ Java runtime を共有します。
 
-## Install
+## インストール
 
-Run PowerShell as Administrator.
+PowerShell を管理者として実行します。
 
 ```powershell
 .\scripts\download-winsw.ps1
@@ -23,50 +23,50 @@ Run PowerShell as Administrator.
 .\scripts\add-firewall-rules.ps1
 ```
 
-The Inno Setup installer can also run service installation and firewall setup as install tasks.
+Inno Setup インストーラーでも、インストールタスクとしてサービス登録とファイアウォール設定を実行できます。
 
-## Start
+## 開始
 
 ```powershell
 .\scripts\start-service.ps1
 .\scripts\status-service.ps1
 ```
 
-## Stop
+## 停止
 
 ```powershell
 .\scripts\stop-service.ps1
 ```
 
-## Uninstall
+## アンインストール
 
 ```powershell
 .\scripts\uninstall-service.ps1
 ```
 
-## Ports
+## ポート
 
-Default configuration uses:
+既定設定では以下を使用します。
 
-- UDP/TCP `111` for portmap
-- UDP/TCP `2049` for nfsd
-- UDP/TCP `20048` for mountd
+- portmap: UDP/TCP `111`
+- nfsd: UDP/TCP `2049`
+- mountd: UDP/TCP `20048`
 
-## Logs
+## ログ
 
-WinSW writes service logs under `service/winsw`.
+WinSW は `service/winsw` 配下にサービスログを書き込みます。
 
-TinyWinNFS writes request diagnostics to:
+TinyWinNFS は要求診断を以下に書き込みます。
 
 ```text
 C:\ProgramData\EnterOgawa\TinyWinNFS Server\logs\nfs-server.log
 ```
 
-By default, TinyWinNFS keeps operational logs useful for troubleshooting while suppressing high-volume success logs such as RPC request traces and successful mutation operations. This avoids excessive synchronous I/O during large file copies and bulk deletes.
+既定では、トラブルシュートに有用な運用ログを残しつつ、RPC 要求トレースや成功した変更操作など大量に出る成功ログは抑制します。これにより、大量コピーや一括削除時の同期 I/O を抑えます。
 
-Write responses use `write.sync=false` by default so large copies can use the Windows file cache. Set `write.sync=true` in `C:\ProgramData\EnterOgawa\TinyWinNFS Server\conf\nfs-server.properties` only when each WRITE must be physically synchronized before the server replies.
+大容量コピーで Windows ファイルキャッシュを利用できるように、WRITE 応答は既定で `write.sync=false` を使用します。各 WRITE の応答前に物理同期が必須の場合のみ、`C:\ProgramData\EnterOgawa\TinyWinNFS Server\conf\nfs-server.properties` で `write.sync=true` に変更します。
 
-Write file caching is also enabled by default. It keeps recently written files open for a short time to avoid repeated open/close overhead:
+書込ファイルキャッシュも既定で有効です。直近に書き込んだファイルを短時間開いたままにし、繰り返し open/close する負荷を避けます。
 
 ```text
 write.cache.enabled=true
@@ -74,66 +74,66 @@ write.cache.max.open=64
 write.cache.idle.millis=3000
 ```
 
-The server closes cached files before `SETATTR`, `REMOVE`, `RMDIR`, `RENAME`, and service shutdown so normal file operations are not left blocked by the cache.
+通常のファイル操作をキャッシュが妨げないように、サーバーは `SETATTR`、`REMOVE`、`RMDIR`、`RENAME`、サービス停止の前にキャッシュ中のファイルを閉じます。
 
-UDP RPC requests are processed by a worker pool so request handling is not tied to the receive loop. The default worker count is based on CPU count and capped at 8. Set the Java system property below to override it:
+UDP RPC 要求はワーカープールで処理し、受信ループと要求処理を分離します。既定のワーカー数は CPU 数に基づき、最大 8 です。変更する場合は以下の Java システムプロパティを指定します。
 
 ```text
 -Dtinywin.nfs.udp.workers=4
 ```
 
-On Windows, NFS attribute `nlink` uses the platform value when available. When Windows cannot expose a native link count, regular files report a lightweight count, with NFS-created hard links tracked in memory. This avoids scanning the entire export tree for every attribute response during large QNX copies.
+Windows では、NFS 属性 `nlink` にプラットフォーム値を利用できる場合はそれを使用します。Windows がネイティブのリンク数を公開できない場合、通常ファイルには軽量な数値を返し、NFS 経由で作成したハードリンクはメモリ上で追跡します。これにより、QNX の大量コピー時に属性応答ごとに export ツリー全体を走査することを避けます。
 
-Set the Java system property below to include RPC request-level logs:
+RPC 要求レベルのログを含める場合は、以下の Java システムプロパティを指定します。
 
 ```text
 -Dtinywin.nfs.requestLog=true
 ```
 
-Set the Java system property below to include all debug and high-volume operation logs:
+すべての debug ログと大量出力の操作ログを含める場合は、以下の Java システムプロパティを指定します。
 
 ```text
 -Dtinywin.nfs.debug=true
 ```
 
-File handle persistence is saved in 30-second batches by default during runtime and flushed when the service stops. Set the interval to `0` for immediate persistence after every handle change:
+ファイルハンドル永続化情報は、実行中は既定で 30 秒単位で保存し、サービス停止時に flush します。ハンドル変更ごとに即時保存したい場合は、間隔を `0` にします。
 
 ```text
 -Dtinywin.nfs.handleStoreSaveIntervalMillis=0
 ```
 
-## Permission Identity
+## 権限 ID
 
-The default permission identity mode is:
+既定の権限 ID mode は以下です。
 
 ```text
 permission.identity=auto
 ```
 
-In auto mode, TinyWinNFS returns the AUTH_SYS UID/GID sent by the current client in NFS file attributes.
-This avoids per-client IP profiles and lets QNX, Windows Client for NFS, and other AUTH_SYS clients use their own identity semantics.
+自動モードでは、TinyWinNFS は現在のクライアントが送信した AUTH_SYS UID/GID を NFS ファイル属性に返します。
+これにより、クライアント IP 別プロファイルを持たずに、QNX、Windows Client for NFS、その他 AUTH_SYS クライアントがそれぞれの ID 解釈を利用できます。
 
-Set the value below only when attributes must always use the configured `uid` and `gid`:
+属性に常に設定済みの `uid` と `gid` を返す必要がある場合のみ、以下の値を指定します。
 
 ```text
 permission.identity=fixed
 ```
 
-## Smoke Test
+## スモークテスト
 
-After the service starts, run:
+サービス起動後に以下を実行します。
 
 ```powershell
 .\scripts\smoke-service.ps1
 ```
 
-For TCP transport, run:
+TCP 通信方式を確認する場合は以下を実行します。
 
 ```powershell
 .\scripts\smoke-service.ps1 -Transport TCP
 ```
 
-Expected result:
+期待結果:
 
 ```text
 PASS: service portmap GETPORT
@@ -143,13 +143,13 @@ PASS: service nfs CREATE/WRITE/SETATTR/READ/RENAME/REMOVE
 SERVICE SMOKE TEST PASSED
 ```
 
-To verify that file handles remain usable across a service restart, run:
+サービス再起動後もファイルハンドルが利用できることを確認する場合は以下を実行します。
 
 ```powershell
 .\scripts\smoke-service.ps1 -RestartHandlePersistence
 ```
 
-To verify that NFS writes do not corrupt the exported Windows file content, run:
+NFS 書込で export された Windows ファイル内容が壊れないことを確認する場合は以下を実行します。
 
 ```powershell
 .\scripts\smoke-service.ps1 -VerifyFileIntegrity

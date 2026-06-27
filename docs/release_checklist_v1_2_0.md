@@ -1,8 +1,8 @@
-# v1.2.0 release checklist
+# v1.2.0 リリースチェックリスト
 
-v1.2.0 is the Windows Client for NFS integration milestone.
+v1.2.0 は Windows Client for NFS 結合テストのマイルストーンです。
 
-## Source Checks
+## ソース確認
 
 ```powershell
 git status -sb
@@ -10,50 +10,50 @@ git status -sb
 .\scripts\test.ps1
 ```
 
-Expected unit test result:
+単体テストの期待結果:
 
 ```text
 TEST PASSED: 9 tests
 ```
 
-## Windows Client for NFS Check
+## Windows Client for NFS 確認
 
-Verify prerequisites:
+前提条件を確認します。
 
 ```powershell
 Get-Command mount.exe
 Get-Service NfsClnt
 ```
 
-Run the mount smoke test:
+mount スモークテストを実行します。
 
 ```powershell
 .\scripts\test-windows-nfs-client.ps1
 ```
 
-Expected result:
+期待結果:
 
 ```text
 WINDOWS NFS CLIENT TEST PASSED
 ```
 
-The script must leave no mounted test drive and no temporary TinyWinNFS server process.
+スクリプト終了後、テスト用 mount drive と一時 TinyWinNFS サーバープロセスが残っていてはいけません。
 
-## Optional Client Checks
+## 任意のクライアント確認
 
-QNX 4.25 on VMware remains the legacy-client compatibility check.
+VMware 上の QNX 4.25 は、従来クライアント互換性の確認として扱います。
 
-Linux VM mount tests may be used as additional verification.
+Linux VM mount テストは追加検証として使用できます。
 
-WSL is optional and is not a v1.2.0 release gate.
+WSL は任意であり、v1.2.0 リリースの必須条件ではありません。
 
-## Installer
+## インストーラー
 
 ```powershell
 .\scripts\package-installer.ps1
 ```
 
-Verify the generated installer:
+生成されたインストーラーを確認します。
 
 ```powershell
 (Get-Item .\dist\installer\TinyWinNfsSetup.exe).VersionInfo | Select-Object ProductVersion,ProductName,FileDescription
@@ -62,8 +62,8 @@ Get-FileHash .\dist\installer\TinyWinNfsSetup.exe -Algorithm SHA256
 
 ## GitHub
 
-- All v1.2.0 milestone issues are closed.
-- Release tag is `v1.2.0`.
-- Release title is `TinyWinNFS Server 1.2.0`.
-- Attach `dist\installer\TinyWinNfsSetup.exe`.
-- Confirm the release asset SHA256 matches the local file.
+- v1.2.0 milestone の issue がすべて close されていること。
+- release tag は `v1.2.0` であること。
+- release title は `TinyWinNFS Server 1.2.0` であること。
+- `dist\installer\TinyWinNfsSetup.exe` を添付すること。
+- release asset の SHA256 がローカルファイルと一致することを確認すること。

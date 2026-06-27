@@ -1,16 +1,16 @@
-# v1.7.1 release checklist
+# v1.7.1 リリースチェックリスト
 
-v1.7.1 is an installation layout hardening release that separates application files from mutable runtime data.
+v1.7.1 は、アプリケーションファイルと可変の実行時データを分離するインストール配置の強化リリースです。
 
-## Scope
+## 範囲
 
-- Store installed configuration under `C:\ProgramData\EnterOgawa\TinyWinNFS Server\conf`.
-- Store the default export folder under `C:\ProgramData\EnterOgawa\TinyWinNFS Server\export`.
-- Store TinyWinNFS server logs under `C:\ProgramData\EnterOgawa\TinyWinNFS Server\logs`.
-- Migrate a legacy `Program Files` configuration only when the new `ProgramData` configuration does not exist.
-- Resolve relative `export.path` values against the data root when the configuration file is under `conf`.
+- インストール済み設定を `C:\ProgramData\EnterOgawa\TinyWinNFS Server\conf` 配下に保存します。
+- 既定 export フォルダを `C:\ProgramData\EnterOgawa\TinyWinNFS Server\export` 配下に保存します。
+- TinyWinNFS サーバーログを `C:\ProgramData\EnterOgawa\TinyWinNFS Server\logs` 配下に保存します。
+- 新しい `ProgramData` 設定が存在しない場合のみ、旧 `Program Files` 設定を移行します。
+- 設定ファイルが `conf` 配下にある場合、相対 `export.path` をデータルート基準で解決します。
 
-## Local verification
+## ローカル確認
 
 ```powershell
 git diff --check
@@ -19,26 +19,26 @@ git diff --check
 .\scripts\package-installer.ps1
 ```
 
-Expected unit-test result:
+単体テストの期待結果:
 
 ```text
 TEST PASSED: 14 tests
 ```
 
-## Installer verification
+## インストーラー確認
 
-Install or upgrade with the service task enabled, then confirm:
+サービスタスクを有効にしてインストールまたは更新し、以下を確認します。
 
-- `C:\ProgramData\EnterOgawa\TinyWinNFS Server\conf\nfs-server.properties` exists.
-- `C:\ProgramData\EnterOgawa\TinyWinNFS Server\export` exists.
-- `C:\ProgramData\EnterOgawa\TinyWinNFS Server\logs` exists.
-- Existing configured exports are preserved during upgrade.
-- The installed WinSW XML points the service to the `ProgramData` configuration file.
-- The installed manager Service tab shows separate application root, data root, config file, service executable, and log file paths.
+- `C:\ProgramData\EnterOgawa\TinyWinNFS Server\conf\nfs-server.properties` が存在すること。
+- `C:\ProgramData\EnterOgawa\TinyWinNFS Server\export` が存在すること。
+- `C:\ProgramData\EnterOgawa\TinyWinNFS Server\logs` が存在すること。
+- 更新時に既存の設定済み export が保持されること。
+- インストール済み WinSW XML が `ProgramData` 側の設定ファイルを参照していること。
+- インストール済み管理ツールのサービス タブに、アプリケーションルート、データルート、設定ファイル、サービス実行ファイル、ログファイルの各パスが個別に表示されること。
 
-## Service verification
+## サービス確認
 
-Run:
+実行:
 
 ```powershell
 .\scripts\smoke-service.ps1
@@ -47,7 +47,7 @@ Run:
 .\scripts\smoke-service.ps1 -RestartHandlePersistence
 ```
 
-Expected result:
+期待結果:
 
 ```text
 SERVICE SMOKE TEST PASSED
@@ -55,9 +55,9 @@ PASS: service file integrity
 PASS: service handle persistence after restart
 ```
 
-## Release metadata
+## リリースメタデータ
 
-- Release tag is `v1.7.1`.
-- Release title is `TinyWinNFS Server v1.7.1`.
-- Installer asset is `TinyWinNfsSetup.exe`.
-- Include the installer SHA256 in the GitHub release notes.
+- release tag は `v1.7.1` であること。
+- release title は `TinyWinNFS Server v1.7.1` であること。
+- installer asset は `TinyWinNfsSetup.exe` であること。
+- GitHub release note にインストーラー SHA256 を含めること。

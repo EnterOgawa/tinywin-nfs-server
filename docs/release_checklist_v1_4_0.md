@@ -1,8 +1,8 @@
-# v1.4.0 release checklist
+# v1.4.0 リリースチェックリスト
 
-v1.4.0 is the NFSv3 / MOUNT v3 over UDP milestone.
+v1.4.0 は UDP 上の NFSv3 / MOUNT v3 マイルストーンです。
 
-## Source Checks
+## ソース確認
 
 ```powershell
 git status -sb
@@ -10,30 +10,30 @@ git status -sb
 .\scripts\test.ps1
 ```
 
-Expected unit test result:
+単体テストの期待結果:
 
 ```text
 TEST PASSED: 12 tests
 ```
 
-## Protocol Checks
+## プロトコル確認
 
-- Portmap returns UDP ports for NFS v2 and v3.
-- Portmap returns UDP ports for MOUNT v1, v2, and v3.
-- MOUNT v1/v2 still returns the fixed 32-byte NFSv2 handle.
-- MOUNT v3 returns an opaque file handle and AUTH_NONE/AUTH_SYS flavors.
-- NFSv2 regression procedures still pass.
-- NFSv3 procedures pass for GETATTR, SETATTR, LOOKUP, ACCESS, READ, WRITE, CREATE, MKDIR, REMOVE, RMDIR, RENAME, READDIRPLUS, FSSTAT, FSINFO, PATHCONF, and COMMIT.
+- Portmap が NFS v2/v3 の UDP ポートを返すこと。
+- Portmap が MOUNT v1/v2/v3 の UDP ポートを返すこと。
+- MOUNT v1/v2 が従来どおり固定 32 byte の NFSv2 handle を返すこと。
+- MOUNT v3 が opaque file handle と AUTH_NONE/AUTH_SYS flavor を返すこと。
+- NFSv2 回帰 procedure が引き続き成功すること。
+- NFSv3 procedure が GETATTR、SETATTR、LOOKUP、ACCESS、READ、WRITE、CREATE、MKDIR、REMOVE、RMDIR、RENAME、READDIRPLUS、FSSTAT、FSINFO、PATHCONF、COMMIT で成功すること。
 
 ## Windows Client for NFS
 
-Run from an elevated PowerShell session:
+管理者 PowerShell で実行します。
 
 ```powershell
 .\scripts\test-windows-nfs-client.ps1
 ```
 
-Expected result:
+期待結果:
 
 ```text
 PASS: Windows Client for NFS mount
@@ -44,25 +44,25 @@ PASS: Windows Client for NFS Japanese filename
 WINDOWS NFS CLIENT TEST PASSED
 ```
 
-The script validates that the server log contains both:
+スクリプトは、サーバーログに以下の両方が含まれることを確認します。
 
 ```text
 program=100005 version=3
 program=100003 version=3
 ```
 
-## Out of Scope
+## 対象外
 
-- TCP transport
+- TCP 通信方式
 - NLM/file locking
 
-## Installer
+## インストーラー
 
 ```powershell
 .\scripts\package-installer.ps1
 ```
 
-Verify the generated installer:
+生成されたインストーラーを確認します。
 
 ```powershell
 (Get-Item .\dist\installer\TinyWinNfsSetup.exe).VersionInfo | Select-Object ProductVersion,ProductName,FileDescription
@@ -71,8 +71,8 @@ Get-FileHash .\dist\installer\TinyWinNfsSetup.exe -Algorithm SHA256
 
 ## GitHub
 
-- All v1.4.0 milestone issues are closed.
-- Release tag is `v1.4.0`.
-- Release title is `TinyWinNFS Server v1.4.0`.
-- Attach `dist\installer\TinyWinNfsSetup.exe`.
-- Confirm the release asset SHA256 matches the local file.
+- v1.4.0 milestone の issue がすべて close されていること。
+- release tag は `v1.4.0` であること。
+- release title は `TinyWinNFS Server v1.4.0` であること。
+- `dist\installer\TinyWinNfsSetup.exe` を添付すること。
+- release asset の SHA256 がローカルファイルと一致することを確認すること。

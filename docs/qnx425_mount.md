@@ -1,60 +1,60 @@
-# QNX 4.25 mount notes
+# QNX 4.25 mount メモ
 
-## Server
+## サーバー
 
-Default server mount name is `/export`.
-Additional server mount names can be added in the manager app Share tab.
+既定のサーバー側 mount 名は `/export` です。
+追加のサーバー側 mount 名は、管理ツールの共有タブから登録できます。
 
-Default QNX mount point shown by the manager app is `/mnt`.
+管理ツールに表示する QNX 側の既定 mount point は `/mnt` です。
 
-The Windows folder exposed through `/export` is configured by the manager app shared folder setting.
-After changing it, save the configuration and restart the Windows service.
+`/export` として公開する Windows フォルダは、管理ツールの共有フォルダ設定で指定します。
+変更後は設定を保存し、Windows サービスを再起動してください。
 
-Default UDP/TCP ports:
+既定の UDP/TCP ポート:
 
 - portmap: `111`
 - nfsd: `2049`
 - mountd: `20048`
 
-Windows Firewall must allow these UDP/TCP ports.
+Windows ファイアウォールで、これらの UDP/TCP ポートを許可する必要があります。
 
 ## QNX 4.25
 
-Before mounting, confirm that the QNX NFS filesystem manager is running:
+mount 前に、QNX の NFS filesystem manager が起動していることを確認します。
 
 ```sh
 ps -ef
 ```
 
-If `NFSfsys` is not listed, start it:
+`NFSfsys` が表示されない場合は起動します。
 
 ```sh
 NFSfsys &
 ```
 
-Example mount command:
+mount コマンド例:
 
 ```sh
 mount_nfs windows-host:/export /mnt
 ```
 
-For another configured export name, mount that name:
+別の export 名を設定している場合は、その名前を mount します。
 
 ```sh
 mount_nfs windows-host:/work /mnt/work
 ```
 
-If the mount command reports `No such process` after the Windows server has accepted the MOUNT request, the likely QNX-side cause is that `NFSfsys` is not running.
+Windows サーバーが MOUNT 要求を受け付けているにもかかわらず mount コマンドが `No such process` を返す場合、QNX 側で `NFSfsys` が起動していない可能性が高いです。
 
-The manager app can edit these values and copy the generated `mount_nfs` command.
+管理ツールでは、これらの値を編集し、生成された `mount_nfs` コマンドをコピーできます。
 
-If the client supports mount options, prefer NFSv2 and UDP.
+クライアント側で mount option を指定できる場合は、NFSv2 と UDP を優先します。
 
-## Current Scope
+## 現在の範囲
 
-QNX 4.25 validation uses NFSv2 read-write operations over UDP and multiple configured exports.
+QNX 4.25 検証では、UDP 上の NFSv2 読み書き操作と複数 export 設定を確認します。
 
-Implemented NFSv2 procedures:
+実装済み NFSv2 procedure:
 
 - `NULL`
 - `ROOT`
@@ -74,18 +74,18 @@ Implemented NFSv2 procedures:
 - `READDIR`
 - `STATFS`
 
-NFS lock manager support is intentionally out of the current scope.
-Filename encoding defaults to UTF-8 and can be changed with `filename.charset` if a legacy client requires another Java Charset.
+NFS lock manager は、意図的に現在の範囲外としています。
+ファイル名エンコードの既定値は UTF-8 です。古いクライアントで別の Java Charset が必要な場合は、`filename.charset` で変更できます。
 
-TCP transport is implemented for newer clients. NFS lock manager support remains out of scope, while QNX 4.25 remains validated through the NFSv2/UDP path.
+新しいクライアント向けに TCP 通信方式も実装済みです。NFS lock manager は引き続き範囲外であり、QNX 4.25 は NFSv2/UDP 経路で検証します。
 
-## Link Compatibility
+## リンク互換性
 
-TinyWinNFS exposes real Windows filesystem links through NFS:
+TinyWinNFS は、実際の Windows ファイルシステム上のリンクを NFS 経由で公開します。
 
-- `READLINK` returns the stored target for an actual symlink, including broken symlinks.
-- `SYMLINK` creates a Windows symlink only when the service account and filesystem allow it.
-- If Windows denies symlink creation, TinyWinNFS returns an NFS failure status and does not create a placeholder regular file.
-- `LINK` creates a hard link when Windows supports it for the target.
+- `READLINK` は、壊れた symlink を含め、実際の symlink に保存されたリンク先を返します。
+- `SYMLINK` は、サービスアカウントとファイルシステムが許可する場合のみ Windows symlink を作成します。
+- Windows が symlink 作成を拒否した場合、TinyWinNFS は NFS 失敗ステータスを返し、代替の通常ファイルは作成しません。
+- `LINK` は、Windows が対象に対して対応している場合に hard link を作成します。
 
-QNX directory copies that contain symlinks should therefore either create real symlinks on the Windows export or fail that entry without corrupting the server-side file tree. Device nodes and other special files are not emulated as regular files.
+そのため、symlink を含む QNX ディレクトリコピーでは、Windows export 上に実際の symlink が作成されるか、その項目だけが失敗します。サーバー側ファイルツリーを壊すような代替通常ファイルは作成しません。device node などの特殊ファイルも通常ファイルとして代替しません。

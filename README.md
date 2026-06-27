@@ -11,8 +11,8 @@ QNX 4.25 を重要な検証対象にしていますが、製品自体は QNX 専
 | NFS | NFSv2 / NFSv3 |
 | MOUNT | MOUNT v1-v3 |
 | 認証 | AUTH_SYS |
-| Transport | UDP / TCP |
-| 共有 | 複数 export、read-write |
+| 通信方式 | UDP / TCP |
+| 共有 | 複数 export、読み書き |
 | ファイル操作 | 通常ファイル、ディレクトリ、rename、remove、mkdir、rmdir、link |
 | symlink | `READLINK` / `SYMLINK` 対応。ただし Windows の symlink 作成権限とファイルシステム機能に依存 |
 | 検証対象 | QNX 4.25: NFSv2/UDP、Windows Client for NFS: NFSv3/UDP と NFSv3/TCP |
@@ -99,7 +99,7 @@ dist\installer\TinyWinNfsSetup.exe
 | NFS | UDP/TCP `2049` |
 | MOUNT | UDP/TCP `20048` |
 
-UDP/TCP `111` と `2049` を利用するため、実行時は管理者権限と Windows Firewall の許可が必要です。
+UDP/TCP `111` と `2049` を利用するため、実行時は管理者権限と Windows ファイアウォールの許可が必要です。
 
 ## 管理ツール
 
@@ -131,7 +131,7 @@ C:\ProgramData\EnterOgawa\TinyWinNFS Server\conf\nfs-server.properties
 |---|---|---|
 | `exports.count` | `1` | 共有定義数 |
 | `exports.N.name` | `/export` | NFS クライアントから見える export 名。`/` で始める |
-| `exports.N.path` | `export` | Windows 側共有フォルダ。相対パスは data root 基準 |
+| `exports.N.path` | `export` | Windows 側共有フォルダ。相対パスはデータルート基準 |
 | `exports.N.writable` | `true` | `true`: 書込可、`false`: 読込専用 |
 | `exports.N.allowed.clients` | 空欄 | 許可する IPv4 アドレスのカンマ区切り。空欄なら全クライアント許可 |
 
@@ -208,8 +208,8 @@ mount -o anon \\127.0.0.1\export Z:
 | 目的 | コマンド |
 |---|---|
 | 単体テスト | `.\scripts\test.ps1` |
-| サービス UDP smoke test | `.\scripts\smoke-service.ps1` |
-| サービス TCP smoke test | `.\scripts\smoke-service.ps1 -Transport TCP` |
+| サービス UDP スモークテスト | `.\scripts\smoke-service.ps1` |
+| サービス TCP スモークテスト | `.\scripts\smoke-service.ps1 -Transport TCP` |
 | ファイル整合性確認 | `.\scripts\smoke-service.ps1 -VerifyFileIntegrity` |
 | 再起動後ハンドル確認 | `.\scripts\smoke-service.ps1 -RestartHandlePersistence` |
 | Windows Client for NFS 結合テスト | `.\scripts\test-windows-nfs-client.ps1` |

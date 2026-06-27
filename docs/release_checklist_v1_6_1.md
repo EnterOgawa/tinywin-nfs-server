@@ -1,17 +1,17 @@
-# v1.6.1 release checklist
+# v1.6.1 リリースチェックリスト
 
-v1.6.1 is a compatibility and performance stabilization release after the TCP transport milestone.
+v1.6.1 は、TCP 通信方式マイルストーン後の互換性と性能の安定化リリースです。
 
-## Scope
+## 範囲
 
-- AUTH_SYS UID/GID based automatic permission identity with `permission.identity=auto`.
-- Windows Client for NFS direct mount compatibility without client-IP-specific profiles.
-- QNX 4.25 bulk copy throughput improvements.
-- QNX `.nfsX*` directory cleanup compatibility.
-- Write file cache and async write default behavior.
-- Reduced high-volume success logging during large copy and delete workloads.
+- AUTH_SYS UID/GID に基づく `permission.identity=auto` の自動権限 ID。
+- クライアント IP 個別プロファイルなしでの Windows Client for NFS 直接マウント互換性。
+- QNX 4.25 の大量コピー性能改善。
+- QNX `.nfsX*` ディレクトリ削除互換性。
+- 書込ファイルキャッシュと非同期書込の既定動作。
+- 大量コピー/削除時の高頻度成功ログの削減。
 
-## Local verification
+## ローカル確認
 
 ```powershell
 git diff --check
@@ -20,15 +20,15 @@ git diff --check
 .\scripts\package-installer.ps1
 ```
 
-Expected unit-test result:
+単体テストの期待結果:
 
 ```text
 TEST PASSED: 13 tests
 ```
 
-## Service verification
+## サービス確認
 
-Install or upgrade the service, then run:
+サービスをインストールまたは更新してから実行します。
 
 ```powershell
 .\scripts\smoke-service.ps1
@@ -37,7 +37,7 @@ Install or upgrade the service, then run:
 .\scripts\smoke-service.ps1 -RestartHandlePersistence
 ```
 
-Expected result:
+期待結果:
 
 ```text
 SERVICE SMOKE TEST PASSED
@@ -45,67 +45,67 @@ PASS: service file integrity
 PASS: service handle persistence after restart
 ```
 
-## Windows Client for NFS verification
+## Windows Client for NFS 確認
 
-Run the Windows Client for NFS integration checks:
+Windows Client for NFS 結合確認を実行します。
 
 ```powershell
 .\scripts\test-windows-nfs-client.ps1
 .\scripts\test-windows-nfs-client.ps1 -Transport TCP
 ```
 
-Run the two commands as independent checks. Windows Client for NFS can cache mount or portmap state when switching transports in quick succession.
+2 つのコマンドは独立した確認として実行します。Windows Client for NFS は、通信方式を短時間で切り替えるとマウントや portmap の状態をキャッシュする場合があります。
 
-Expected result for each transport:
+各通信方式の期待結果:
 
 ```text
 WINDOWS NFS CLIENT TEST PASSED
 ```
 
-Also verify the installed service export directly when `permission.identity=auto` is enabled:
+`permission.identity=auto` が有効な状態で、インストール済みサービスの export も直接確認します。
 
-- Mount `\\127.0.0.1\export` with Windows Client for NFS.
-- Create a file.
-- Append to the same file.
-- Rename the file.
-- Delete the file and its parent test directory.
-- Confirm no temporary mount drive remains.
+- Windows Client for NFS で `\\127.0.0.1\export` をマウントします。
+- ファイルを作成します。
+- 同じファイルに追記します。
+- ファイルを rename します。
+- ファイルと親テストディレクトリを削除します。
+- 一時マウントドライブが残っていないことを確認します。
 
-## QNX verification
+## QNX 確認
 
-On QNX 4.25:
+QNX 4.25 上で以下を確認します。
 
-- Mount the export with NFSv2/UDP.
-- Copy a large directory tree from QNX to the Windows export.
-- Confirm the copy completes without `.nfsX*` leftovers.
-- Delete the copied tree from QNX.
-- Confirm the Windows export no longer contains the copied tree.
-- Confirm `logs/nfs-server.log` has no current `status=13`, parse-error, or unexpected mutation failures.
+- NFSv2/UDP で export をマウントします。
+- QNX から Windows export へ大きなディレクトリツリーをコピーします。
+- `.nfsX*` の残骸なしでコピーが完了することを確認します。
+- QNX からコピー済みツリーを削除します。
+- Windows export にコピー済みツリーが残っていないことを確認します。
+- `logs/nfs-server.log` に現在の `status=13`、parse-error、予期しない変更操作失敗がないことを確認します。
 
-## Installer upgrade verification
+## インストーラー更新確認
 
-1. Install the latest released package.
-2. Configure at least one writable export.
-3. Confirm the service is running and the UDP smoke test passes.
-4. Install the v1.6.1 package over the existing installation.
-5. Confirm the existing service is stopped, replaced, and started again.
-6. Confirm `conf\nfs-server.properties` still contains the configured exports.
-7. Confirm `permission.identity=auto` is present or add it through the manager.
-8. Run UDP smoke, TCP smoke, file-integrity smoke, and Windows Client for NFS checks.
+1. 最新リリース済みパッケージをインストールします。
+2. 少なくとも 1 つの書込可能 export を設定します。
+3. サービスが実行中で、UDP スモークテストが成功することを確認します。
+4. 既存インストールの上から v1.6.1 パッケージをインストールします。
+5. 既存サービスが停止、置換、再起動されたことを確認します。
+6. `conf\nfs-server.properties` に設定済み export が残っていることを確認します。
+7. `permission.identity=auto` が存在することを確認するか、管理ツールから追加します。
+8. UDP スモークテスト、TCP スモークテスト、ファイル整合性スモークテスト、Windows Client for NFS 確認を実行します。
 
-## README verification
+## README 確認
 
-Before creating the release tag:
+release tag を作成する前に以下を確認します。
 
-- Confirm README states v1.6.1 support scope.
-- Confirm `permission.identity=auto/fixed` is documented.
-- Confirm unsupported items remain explicit: NFSv3 `MKNOD`, NLM/file locking, and NFSv4.
-- Confirm QNX 4.25 remains documented as NFSv2/UDP validation.
-- Confirm Windows Client for NFS remains documented as NFSv3 UDP/TCP validation.
+- README が v1.6.1 の対応範囲を記載していること。
+- `permission.identity=auto/fixed` が文書化されていること。
+- 未対応項目が明示されていること: NFSv3 `MKNOD`、NLM/file locking、NFSv4。
+- QNX 4.25 が NFSv2/UDP 検証対象として記載されていること。
+- Windows Client for NFS が NFSv3 UDP/TCP 検証対象として記載されていること。
 
-## Release metadata
+## リリースメタデータ
 
-- Release tag is `v1.6.1`.
-- Release title is `TinyWinNFS Server v1.6.1`.
-- Installer asset is `TinyWinNfsSetup.exe`.
-- Include the installer SHA256 in the GitHub release notes.
+- release tag は `v1.6.1` であること。
+- release title は `TinyWinNFS Server v1.6.1` であること。
+- installer asset は `TinyWinNfsSetup.exe` であること。
+- GitHub release note にインストーラー SHA256 を含めること。

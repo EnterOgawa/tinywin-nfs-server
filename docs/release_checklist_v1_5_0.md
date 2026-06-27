@@ -1,18 +1,18 @@
-# v1.5.0 release checklist
+# v1.5.0 リリースチェックリスト
 
-v1.5.0 is the operational stability milestone after the NFSv3 release.
+v1.5.0 は NFSv3 リリース後の運用安定性マイルストーンです。
 
-## Scope
+## 範囲
 
-- Write-path consistency for overwrite, truncate, rename, and COMMIT.
-- Attribute and cache consistency after cross-client edits.
-- Long-running service stability verification.
-- RPC error handling and operational log readability.
-- Multi-export configuration validation and safe persistence.
-- Installer upgrade, service replacement, and settings preservation.
-- README review before tagging.
+- overwrite、truncate、rename、COMMIT の書込経路整合性。
+- 複数クライアント編集後の属性とキャッシュの整合性。
+- 長時間稼働時のサービス安定性確認。
+- RPC エラー処理と運用ログの読みやすさ。
+- 複数 export 設定の検証と安全な永続化。
+- インストーラー更新、サービス置換、設定保持。
+- tag 作成前の README 確認。
 
-## Local verification
+## ローカル確認
 
 ```powershell
 git diff --check
@@ -21,23 +21,23 @@ git diff --check
 .\scripts\package-installer.ps1
 ```
 
-## Windows Client for NFS verification
+## Windows Client for NFS 確認
 
-Run this on a machine where Windows Client for NFS is installed and UDP 111/2049/20048 are free:
+Windows Client for NFS がインストール済みで、UDP `111`、`2049`、`20048` が空いている環境で実行します。
 
 ```powershell
 .\scripts\test-windows-nfs-client.ps1
 ```
 
-Expected result:
+期待結果:
 
 ```text
 WINDOWS NFS CLIENT TEST PASSED
 ```
 
-## Service verification
+## サービス確認
 
-Install or upgrade the service, then run:
+サービスをインストールまたは更新してから実行します。
 
 ```powershell
 .\scripts\smoke-service.ps1
@@ -45,35 +45,35 @@ Install or upgrade the service, then run:
 .\scripts\smoke-service.ps1 -RestartHandlePersistence
 ```
 
-For an extended run:
+長時間確認:
 
 ```powershell
 .\scripts\test-service-stability.ps1 -DurationMinutes 60 -IntervalSeconds 15 -RestartEveryIterations 10
 ```
 
-## Installer upgrade verification
+## インストーラー更新確認
 
-1. Install the latest released package.
-2. Configure at least one writable export.
-3. Confirm the service is running and the smoke test passes.
-4. Install the v1.5.0 package over the existing installation.
-5. Confirm the existing service is stopped, replaced, and started again.
-6. Confirm `conf\nfs-server.properties` still contains the configured exports.
-7. Run the service and Windows Client for NFS checks again.
+1. 最新リリース済みパッケージをインストールします。
+2. 少なくとも 1 つの書込可能 export を設定します。
+3. サービスが実行中で、スモークテストが成功することを確認します。
+4. 既存インストールの上から v1.5.0 パッケージをインストールします。
+5. 既存サービスが停止、置換、再起動されたことを確認します。
+6. `conf\nfs-server.properties` に設定済み export が残っていることを確認します。
+7. サービス確認と Windows Client for NFS 確認を再実行します。
 
-## README verification
+## README 確認
 
-Before creating the release tag:
+release tag を作成する前に以下を確認します。
 
-- Confirm README lists the current supported protocols and tested clients.
-- Confirm unsupported items remain explicit: NLM/file locking, TCP transport, and NFSv4.
-- Confirm install, upgrade, and verification commands match the package.
-- Confirm multi-export and writable-share guidance matches the manager UI.
+- README に現在対応しているプロトコルと検証済みクライアントが記載されていること。
+- 未対応項目が明示されていること: NLM/file locking、TCP 通信方式、NFSv4。
+- インストール、更新、検証コマンドがパッケージと一致していること。
+- 複数 export と書込可能共有の説明が管理ツール UI と一致していること。
 
-## Release metadata
+## リリースメタデータ
 
-- All v1.5.0 milestone issues are closed.
-- Release tag is `v1.5.0`.
-- Release title is `TinyWinNFS Server v1.5.0`.
-- Installer asset is `TinyWinNfsSetup.exe`.
-- Include the installer SHA256 in the GitHub release notes.
+- v1.5.0 milestone の issue がすべて close されていること。
+- release tag は `v1.5.0` であること。
+- release title は `TinyWinNFS Server v1.5.0` であること。
+- installer asset は `TinyWinNfsSetup.exe` であること。
+- GitHub release note にインストーラー SHA256 を含めること。

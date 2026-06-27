@@ -1,97 +1,97 @@
-# Changelog
+# 変更履歴
 
-## 1.7.1 - Unreleased
+## 1.7.1 - 未リリース
 
-- Moved installed runtime configuration, default export data, and server log paths to `ProgramData\EnterOgawa\TinyWinNFS Server`.
-- Added one-time migration from legacy `Program Files` configuration into the new `ProgramData` data root.
-- Resolved relative `export.path` values against the data root when the configuration file lives under `conf`.
-- Updated the SWT manager service diagnostics to show application root, data root, config file, service executable, and log file separately.
-- Updated installer, WinSW service configuration, service scripts, smoke tests, and documentation for the separated app/data layout.
-- Reorganized the README with table-based configuration, installation layout, service, mount, and verification references.
+- インストール後の実行時設定、既定 export、サーバーログの配置先を `ProgramData\EnterOgawa\TinyWinNFS Server` に移動しました。
+- 旧 `Program Files` 配下の設定を、新しい `ProgramData` のデータルートへ一度だけ移行する処理を追加しました。
+- 設定ファイルが `conf` 配下にある場合、相対 `export.path` をデータルート基準で解決するようにしました。
+- SWT 管理ツールのサービス診断表示で、アプリケーションルート、データルート、設定ファイル、サービス実行ファイル、ログファイルを個別に表示するようにしました。
+- アプリ本体と可変データを分離する配置に合わせて、インストーラー、WinSW サービス設定、サービススクリプト、スモークテスト、ドキュメントを更新しました。
+- README を表形式中心に整理し、設定、インストール後の配置、サービス、マウント、検証手順を参照しやすくしました。
 
 ## 1.7.0 - 2026-06-27
 
-- Hardened NFSv2/NFSv3 `READLINK` so broken or unreadable symlinks return stable NFS statuses instead of escaping as transport-level handler errors.
-- Added NFSv3 `READLINK` client allow-list enforcement to match other handle-based operations.
-- Improved NFSv2/NFSv3 `SYMLINK` error mapping for Windows symlink privilege failures and invalid link targets.
-- Added regression coverage for NFSv2/NFSv3 symlink creation, broken symlink `READLINK`, regular-file `READLINK`, and NFSv3 `MKNOD` `NOTSUPP`.
-- Fixed installer packaging so the bundled Java runtime keeps `runtime\conf\security\java.security` and no longer fails with `Failed to launch JVM`.
-- Improved installed manager shortcuts and configuration save handling so `Program Files` installs require Administrator launch with a clear message.
-- Changed installed manager shortcuts back to the GUI executable and use Windows `RUNASADMIN` compatibility to avoid opening a command prompt.
-- Documented link compatibility policy and Windows symlink limitations.
+- NFSv2/NFSv3 `READLINK` を強化し、壊れた symlink や読み取れない symlink でもハンドラ例外ではなく安定した NFS ステータスを返すようにしました。
+- NFSv3 `READLINK` にも、他のハンドルベース操作と同じクライアント許可リスト確認を追加しました。
+- Windows の symlink 作成権限不足や不正なリンク先に対する NFSv2/NFSv3 `SYMLINK` のエラーマッピングを改善しました。
+- NFSv2/NFSv3 の symlink 作成、壊れた symlink の `READLINK`、通常ファイルの `READLINK`、NFSv3 `MKNOD` の `NOTSUPP` 応答を回帰テストに追加しました。
+- 同梱 Java ランタイムに `runtime\conf\security\java.security` が含まれるようにインストーラー包装を修正し、`Failed to launch JVM` が発生しないようにしました。
+- `Program Files` インストールで管理者起動が必要なことを明確に示せるように、インストール後の管理ツールショートカットと設定保存時の扱いを改善しました。
+- インストール後の管理ツールショートカットを GUI 実行ファイルへ戻し、Windows の `RUNASADMIN` 互換設定でコマンドプロンプトを表示せずに管理者起動するようにしました。
+- link 互換方針と Windows symlink の制限事項を文書化しました。
 
 ## 1.6.1 - 2026-06-27
 
-- Added AUTH_SYS UID/GID based automatic permission identity responses with `permission.identity=auto`.
-- Fixed Windows Client for NFS direct mounts so files created through NFS can be updated by the same anonymous client without per-IP profiles.
-- Improved QNX 4.25 bulk copy throughput by avoiding export-wide link-count scans during NFS attribute responses.
-- Added write file caching, asynchronous write defaults, UDP request worker dispatch, and lower-volume operational logging for large copy/delete workloads.
-- Improved QNX `.nfsX*` delete compatibility for directory-style silly rename cleanup.
-- Added regression coverage for AUTH_SYS attribute identity, QNX WRITE compatibility, recursive delete cleanup, and Windows Client for NFS UDP/TCP checks.
+- AUTH_SYS の UID/GID に基づいて属性応答を自動調整する `permission.identity=auto` を追加しました。
+- クライアント IP 別プロファイルなしで、Windows Client for NFS の直接マウントから作成したファイルを同じ匿名クライアントで更新できるように修正しました。
+- NFS 属性応答時に export 全体の link 数を走査しないようにし、QNX 4.25 の大量コピー性能を改善しました。
+- 大量コピー/削除時の負荷を下げるため、書込ファイルキャッシュ、非同期書込既定値、UDP 要求ワーカー分散、低頻度の運用ログ出力を追加しました。
+- QNX のディレクトリ形式 `.nfsX*` silly rename クリーンアップ互換性を改善しました。
+- AUTH_SYS 属性 identity、QNX WRITE 互換、再帰削除クリーンアップ、Windows Client for NFS の UDP/TCP 確認を回帰テストに追加しました。
 
 ## 1.6.0 - 2026-06-27
 
-- Added ONC RPC over TCP record marking support.
-- Added TCP listeners for Portmap, MOUNT, and NFS using the configured service ports.
-- Added Portmap TCP mappings for NFS v2/v3 and MOUNT v1-v3.
-- Verified NFSv2/NFSv3 file operations over TCP using the same implementation as UDP.
-- Extended Windows Client for NFS validation to cover both UDP and TCP transports.
-- Updated firewall, service, installer, and documentation for TCP support.
+- ONC RPC over TCP の record marking に対応しました。
+- 設定済みサービスポートを使う Portmap、MOUNT、NFS の TCP listener を追加しました。
+- NFS v2/v3 と MOUNT v1-v3 の Portmap TCP mapping を追加しました。
+- UDP と同じ実装で NFSv2/NFSv3 ファイル操作を TCP 経由でも確認しました。
+- Windows Client for NFS の検証を UDP/TCP の両方へ拡張しました。
+- TCP 対応に合わせて、ファイアウォール、サービス、インストーラー、ドキュメントを更新しました。
 
 ## 1.5.0 - 2026-06-27
 
-- Hardened NFSv3 weak cache consistency data so mutation replies return pre-operation attributes captured before file changes.
-- Added NFSv3 COMMIT file sync handling and operation logging.
-- Strengthened server-side export validation for missing, non-directory, unreadable, and unwritable paths.
-- Made the SWT manager write configuration through a validated temporary file before replacing the existing configuration.
-- Added regression coverage for missing export paths and NFSv3 WCC pre-operation sizes.
-- Added a service stability script and v1.5.0 release checklist.
-- Updated README and installer upgrade documentation for operational hardening.
+- NFSv3 の weak cache consistency データを強化し、変更系応答で変更前に取得した属性を返すようにしました。
+- NFSv3 `COMMIT` のファイル同期処理と操作ログを追加しました。
+- export パスが存在しない、ディレクトリでない、読み取れない、書き込めない場合のサーバー側検証を強化しました。
+- SWT 管理ツールで、検証済み一時ファイルへ設定を書き出してから既存設定を置き換えるようにしました。
+- 存在しない export パスと NFSv3 WCC の変更前サイズを回帰テストに追加しました。
+- サービス安定性テストスクリプトと v1.5.0 リリースチェックリストを追加しました。
+- 運用安定化に合わせて README とインストーラー更新手順を更新しました。
 
 ## 1.4.0 - 2026-06-27
 
-- Added NFSv3 over UDP alongside the existing NFSv2 implementation.
-- Added MOUNT v3 responses with opaque file handles and AUTH_NONE/AUTH_SYS flavors.
-- Added portmap registrations for NFSv3 and MOUNT v3 over UDP.
-- Added NFSv3 read-write, metadata, directory, filesystem info, and commit procedure coverage.
-- Extended Windows Client for NFS verification to assert observed MOUNT v3 and NFSv3 RPCs.
+- 既存の NFSv2 実装に加えて、UDP 上の NFSv3 に対応しました。
+- opaque file handle と AUTH_NONE/AUTH_SYS flavor を返す MOUNT v3 応答を追加しました。
+- UDP 上の NFSv3 と MOUNT v3 の portmap 登録を追加しました。
+- NFSv3 の read-write、メタデータ、ディレクトリ、ファイルシステム情報、commit 手続きを追加しました。
+- Windows Client for NFS 検証で MOUNT v3 と NFSv3 RPC の到達を確認するようにしました。
 
 ## 1.3.0 - 2026-06-27
 
-- Added per-export IPv4 client allow-lists for MOUNT and NFS requests.
-- Hardened export validation for invalid names, unreadable folders, and writable exports pointing at non-writable folders.
-- Improved manager service feedback with explicit Save + Restart results, administrator checks, service executable path, and config path display.
-- Improved request diagnostics with client address, XID, program, version, procedure, status, and path where available.
-- Suppressed successful NFS READ request-level logs unless debug logging is enabled.
+- MOUNT/NFS 要求に対する export ごとの IPv4 クライアント許可リストを追加しました。
+- 不正な export 名、読み取れないフォルダ、書込可能 export に対する書込不可フォルダ指定の検証を強化しました。
+- Save + Restart の結果、管理者権限確認、サービス実行ファイルパス、設定ファイルパスを明示するように管理ツールのサービス表示を改善しました。
+- クライアントアドレス、XID、program、version、procedure、status、可能な場合は path を含む要求診断を改善しました。
+- debug logging が有効でない限り、成功した NFS READ の要求レベルログを抑制するようにしました。
 
 ## 1.2.0 - 2026-06-27
 
-- Added a Windows Client for NFS integration test that mounts TinyWinNFS through the native Windows NFS client.
-- Added a Windows-client test configuration profile for anonymous writable mounts.
-- Documented Windows Client for NFS verification and release checklist steps.
-- Included the Windows Client for NFS smoke test script in the packaged manager image.
+- Windows 標準 NFS クライアントから TinyWinNFS をマウントする Windows Client for NFS 結合テストを追加しました。
+- 匿名の書込可能 mount に使う Windows クライアント向けテスト設定プロファイルを追加しました。
+- Windows Client for NFS の検証手順とリリースチェックリスト手順を文書化しました。
+- パッケージ化した管理ツールイメージに Windows Client for NFS スモークテストスクリプトを含めました。
 
 ## 1.1.0 - 2026-06-27
 
-- Added NFSv2 `WRITECACHE` compatibility no-op.
-- Improved `SETATTR` mode handling with Windows read-only mapping.
-- Improved NFSv2 file attributes and `STATFS` value handling.
-- Stabilized `READDIR` cookies across paged directory reads.
-- Hardened Windows `LINK` and `SYMLINK` validation and error mapping.
-- Added configurable filename charset support.
+- NFSv2 `WRITECACHE` を互換用 no-op として追加しました。
+- Windows の read-only 属性へ対応する `SETATTR` mode 処理を改善しました。
+- NFSv2 のファイル属性と `STATFS` 値の扱いを改善しました。
+- ページ分割されたディレクトリ読取で `READDIR` cookie を安定化しました。
+- Windows の `LINK` と `SYMLINK` の検証およびエラーマッピングを強化しました。
+- ファイル名文字コードを設定可能にしました。
 
 ## 1.0.1 - 2026-06-27
 
-- Added Apache License 2.0 for the project source.
-- Added third-party license notices for packaged components.
-- Included license files in the app image and installer.
+- プロジェクトソースへ Apache License 2.0 を追加しました。
+- パッケージ同梱コンポーネント向けの第三者ライセンス通知を追加しました。
+- アプリイメージとインストーラーにライセンスファイルを含めました。
 
 ## 1.0.0 - 2026-06-27
 
-- Added Windows user-space NFSv2 server over UDP.
-- Added MOUNT v1/v2 and AUTH_SYS support.
-- Added read-write file operations for QNX 4.25 compatibility.
-- Added multiple export configuration.
-- Added SWT manager app with English/Japanese UI.
-- Added WinSW Windows service integration.
-- Added Inno Setup installer packaging.
+- Windows ユーザー空間 NFSv2 サーバーを UDP 上に追加しました。
+- MOUNT v1/v2 と AUTH_SYS に対応しました。
+- QNX 4.25 互換向けの read-write ファイル操作を追加しました。
+- 複数 export 設定を追加しました。
+- 英語/日本語 UI に対応した SWT 管理ツールを追加しました。
+- WinSW による Windows サービス連携を追加しました。
+- Inno Setup インストーラー包装を追加しました。

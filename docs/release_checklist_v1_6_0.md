@@ -1,17 +1,17 @@
-# v1.6.0 release checklist
+# v1.6.0 リリースチェックリスト
 
-v1.6.0 is the TCP transport milestone for NFSv2/NFSv3 and MOUNT over ONC RPC.
+v1.6.0 は、ONC RPC 上の NFSv2/NFSv3 と MOUNT に対する TCP 通信方式マイルストーンです。
 
-## Scope
+## 範囲
 
-- ONC RPC over TCP record marking.
-- TCP listeners for Portmap, MOUNT, and NFS using the configured service ports.
-- Portmap TCP mappings for NFS v2/v3 and MOUNT v1-v3.
-- NFSv2/NFSv3 file operations over TCP using the same implementation as UDP.
-- Windows Client for NFS TCP validation.
-- Firewall, service, installer, and documentation updates for TCP.
+- ONC RPC over TCP の record marking。
+- 設定済みサービスポートを使用する Portmap、MOUNT、NFS の TCP 待受。
+- NFS v2/v3 と MOUNT v1-v3 の Portmap TCP 割り当て。
+- UDP と同じ実装を使用した TCP 上の NFSv2/NFSv3 ファイル操作。
+- Windows Client for NFS の TCP 確認。
+- TCP 対応に伴うファイアウォール、サービス、インストーラー、ドキュメント更新。
 
-## Local verification
+## ローカル確認
 
 ```powershell
 git diff --check
@@ -20,15 +20,15 @@ git diff --check
 .\scripts\package-installer.ps1
 ```
 
-Expected unit-test result:
+単体テストの期待結果:
 
 ```text
 TEST PASSED: 13 tests
 ```
 
-## Service verification
+## サービス確認
 
-Install or upgrade the service, then run:
+サービスをインストールまたは更新してから実行します。
 
 ```powershell
 .\scripts\smoke-service.ps1
@@ -37,55 +37,55 @@ Install or upgrade the service, then run:
 .\scripts\smoke-service.ps1 -RestartHandlePersistence
 ```
 
-For an extended run:
+長時間確認:
 
 ```powershell
 .\scripts\test-service-stability.ps1 -DurationMinutes 60 -IntervalSeconds 15 -RestartEveryIterations 10
 ```
 
-## Windows Client for NFS verification
+## Windows Client for NFS 確認
 
-Run this on a machine where Windows Client for NFS is installed and UDP/TCP 111/2049/20048 are free:
+Windows Client for NFS がインストール済みで、UDP/TCP `111`、`2049`、`20048` が空いている環境で実行します。
 
 ```powershell
 .\scripts\test-windows-nfs-client.ps1
 .\scripts\test-windows-nfs-client.ps1 -Transport TCP
 ```
 
-Run the two commands as independent checks. Windows Client for NFS can cache mount or portmap state when switching transports in quick succession.
+2 つのコマンドは独立した確認として実行します。Windows Client for NFS は、通信方式を短時間で切り替えるとマウントや portmap の状態をキャッシュする場合があります。
 
-Expected result for each transport:
+各通信方式の期待結果:
 
 ```text
 WINDOWS NFS CLIENT TEST PASSED
 ```
 
-The TCP run must also confirm log entries from `server=nfs-mount-tcp` and `server=nfs-tcp`.
-The default export name is unique per run to avoid Windows Client for NFS mount-handle cache reuse between UDP and TCP checks.
+TCP 実行では、`server=nfs-mount-tcp` と `server=nfs-tcp` のログも確認すること。
+既定 export 名は実行ごとに一意にし、UDP/TCP 確認間で Windows Client for NFS の mount handle cache が再利用されることを避けます。
 
-## Installer upgrade verification
+## インストーラー更新確認
 
-1. Install the latest released package.
-2. Configure at least one writable export.
-3. Confirm the service is running and the UDP smoke test passes.
-4. Install the v1.6.0 package over the existing installation.
-5. Confirm the existing service is stopped, replaced, and started again.
-6. Confirm `conf\nfs-server.properties` still contains the configured exports.
-7. Run UDP smoke, TCP smoke, file-integrity smoke, and Windows Client for NFS checks.
+1. 最新リリース済みパッケージをインストールします。
+2. 少なくとも 1 つの書込可能 export を設定します。
+3. サービスが実行中で、UDP スモークテストが成功することを確認します。
+4. 既存インストールの上から v1.6.0 パッケージをインストールします。
+5. 既存サービスが停止、置換、再起動されたことを確認します。
+6. `conf\nfs-server.properties` に設定済み export が残っていることを確認します。
+7. UDP スモークテスト、TCP スモークテスト、ファイル整合性スモークテスト、Windows Client for NFS 確認を実行します。
 
-## README verification
+## README 確認
 
-Before creating the release tag:
+release tag を作成する前に以下を確認します。
 
-- Confirm README lists UDP/TCP as supported transports.
-- Confirm unsupported items remain explicit: NLM/file locking, NFSv4, and NFSv3 `MKNOD`.
-- Confirm install, upgrade, and verification commands match the package.
-- Confirm QNX 4.25 remains documented as NFSv2/UDP validation.
+- README が UDP/TCP を対応通信方式として記載していること。
+- 未対応項目が明示されていること: NLM/file locking、NFSv4、NFSv3 `MKNOD`。
+- インストール、更新、検証コマンドがパッケージと一致していること。
+- QNX 4.25 が NFSv2/UDP 検証対象として記載されていること。
 
-## Release metadata
+## リリースメタデータ
 
-- All v1.6.0 milestone issues are closed.
-- Release tag is `v1.6.0`.
-- Release title is `TinyWinNFS Server v1.6.0`.
-- Installer asset is `TinyWinNfsSetup.exe`.
-- Include the installer SHA256 in the GitHub release notes.
+- v1.6.0 milestone の issue がすべて close されていること。
+- release tag は `v1.6.0` であること。
+- release title は `TinyWinNFS Server v1.6.0` であること。
+- installer asset は `TinyWinNfsSetup.exe` であること。
+- GitHub release note にインストーラー SHA256 を含めること。

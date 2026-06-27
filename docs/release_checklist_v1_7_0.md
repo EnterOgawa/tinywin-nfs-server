@@ -1,16 +1,16 @@
-# v1.7.0 release checklist
+# v1.7.0 リリースチェックリスト
 
-v1.7.0 is a link compatibility release for QNX 4.25 and Windows Client for NFS scenarios.
+v1.7.0 は、QNX 4.25 と Windows Client for NFS 向けのリンク互換性リリースです。
 
-## Scope
+## 範囲
 
-- NFSv2/NFSv3 `READLINK` stable status handling.
-- NFSv3 `READLINK` client allow-list enforcement.
-- NFSv2/NFSv3 `SYMLINK` Windows privilege and invalid-target error handling.
-- Broken symlink `READLINK` regression coverage.
-- NFSv3 `MKNOD` remains explicitly unsupported with `NOTSUPP`.
+- NFSv2/NFSv3 `READLINK` の安定したステータス処理。
+- NFSv3 `READLINK` のクライアント許可リスト確認。
+- NFSv2/NFSv3 `SYMLINK` における Windows 権限不足と不正なリンク先のエラー処理。
+- 壊れた symlink に対する `READLINK` 回帰テスト。
+- NFSv3 `MKNOD` は `NOTSUPP` として明示的に未対応のままにします。
 
-## Local verification
+## ローカル確認
 
 ```powershell
 git diff --check
@@ -19,15 +19,15 @@ git diff --check
 .\scripts\package-installer.ps1
 ```
 
-Expected unit-test result:
+単体テストの期待結果:
 
 ```text
 TEST PASSED: 13 tests
 ```
 
-## Service verification
+## サービス確認
 
-Install or upgrade the service, then run:
+サービスをインストールまたは更新してから実行します。
 
 ```powershell
 .\scripts\smoke-service.ps1
@@ -36,7 +36,7 @@ Install or upgrade the service, then run:
 .\scripts\smoke-service.ps1 -RestartHandlePersistence
 ```
 
-Expected result:
+期待結果:
 
 ```text
 SERVICE SMOKE TEST PASSED
@@ -44,51 +44,51 @@ PASS: service file integrity
 PASS: service handle persistence after restart
 ```
 
-## Windows Client for NFS verification
+## Windows Client for NFS 確認
 
-Run the Windows Client for NFS integration checks:
+Windows Client for NFS 結合確認を実行します。
 
 ```powershell
 .\scripts\test-windows-nfs-client.ps1
 .\scripts\test-windows-nfs-client.ps1 -Transport TCP
 ```
 
-Expected result for each transport:
+各通信方式の期待結果:
 
 ```text
 WINDOWS NFS CLIENT TEST PASSED
 ```
 
-## QNX verification
+## QNX 確認
 
-On QNX 4.25:
+QNX 4.25 上で以下を確認します。
 
-- Mount the export with NFSv2/UDP.
-- Copy a directory tree that contains regular files, directories, and symlink entries.
-- Confirm regular files and directories are copied correctly.
-- Confirm symlink entries either become real Windows symlinks or fail without creating corrupt placeholder files.
-- Delete the copied tree from QNX.
-- Confirm the Windows export no longer contains copied content or `.nfsX*` leftovers.
-- Confirm `logs/nfs-server.log` has no current parse-error or unexpected mutation failures.
+- NFSv2/UDP で export をマウントします。
+- 通常ファイル、ディレクトリ、symlink 項目を含むディレクトリツリーをコピーします。
+- 通常ファイルとディレクトリが正しくコピーされることを確認します。
+- symlink 項目が実際の Windows symlink になるか、壊れた代替ファイルを作らずにその項目だけ失敗することを確認します。
+- QNX からコピー済みツリーを削除します。
+- Windows export にコピー済み内容や `.nfsX*` の残骸が残らないことを確認します。
+- `logs/nfs-server.log` に現在の parse-error や予期しない変更操作失敗がないことを確認します。
 
-## README verification
+## README 確認
 
-Before creating the release tag:
+release tag を作成する前に以下を確認します。
 
-- Confirm README states v1.7.0 support scope.
-- Confirm link compatibility limitations are explicit.
-- Confirm unsupported items remain explicit: NFSv3 `MKNOD`, NLM/file locking, and NFSv4.
-- Confirm QNX 4.25 remains documented as NFSv2/UDP validation.
-- Confirm Windows Client for NFS remains documented as NFSv3 UDP/TCP validation.
-- Confirm the installed runtime contains `runtime\conf\security\java.security`.
-- Confirm `TinyWinNfsManager.exe` starts from the installed folder without `Failed to launch JVM`.
-- Confirm the installed Start Menu/Desktop manager shortcuts target `TinyWinNfsManager.exe`.
-- Confirm the installed manager executable has the `RUNASADMIN` compatibility registry value.
-- Confirm saving configuration from a non-Administrator direct launch shows the Administrator-required message instead of a temporary file path.
+- README が v1.7.0 の対応範囲を記載していること。
+- リンク互換性の制限が明示されていること。
+- 未対応項目が明示されていること: NFSv3 `MKNOD`、NLM/file locking、NFSv4。
+- QNX 4.25 が NFSv2/UDP 検証対象として記載されていること。
+- Windows Client for NFS が NFSv3 UDP/TCP 検証対象として記載されていること。
+- インストール済み runtime に `runtime\conf\security\java.security` が含まれること。
+- インストール済みフォルダから `TinyWinNfsManager.exe` が `Failed to launch JVM` なしで起動すること。
+- インストール済み Start Menu/Desktop の管理ツールショートカットが `TinyWinNfsManager.exe` を参照すること。
+- インストール済み管理ツール実行ファイルに `RUNASADMIN` 互換レジストリ値が設定されていること。
+- 非管理者の直接起動で設定保存した場合、一時ファイルパスではなく管理者権限が必要である旨のメッセージが表示されること。
 
-## Release metadata
+## リリースメタデータ
 
-- Release tag is `v1.7.0`.
-- Release title is `TinyWinNFS Server v1.7.0`.
-- Installer asset is `TinyWinNfsSetup.exe`.
-- Include the installer SHA256 in the GitHub release notes.
+- release tag は `v1.7.0` であること。
+- release title は `TinyWinNFS Server v1.7.0` であること。
+- installer asset は `TinyWinNfsSetup.exe` であること。
+- GitHub release note にインストーラー SHA256 を含めること。
