@@ -1,6 +1,6 @@
 # Changelog
 
-## 1.7.0 - Unreleased
+## 1.7.0 - 2026-06-27
 
 - Hardened NFSv2/NFSv3 `READLINK` so broken or unreadable symlinks return stable NFS statuses instead of escaping as transport-level handler errors.
 - Added NFSv3 `READLINK` client allow-list enforcement to match other handle-based operations.
