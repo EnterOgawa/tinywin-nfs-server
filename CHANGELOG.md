@@ -1,6 +1,6 @@
 # Changelog
 
-## 1.4.0 - Unreleased
+## 1.4.0 - 2026-06-27
 
 - Added NFSv3 over UDP alongside the existing NFSv2 implementation.
 - Added MOUNT v3 responses with opaque file handles and AUTH_NONE/AUTH_SYS flavors.
