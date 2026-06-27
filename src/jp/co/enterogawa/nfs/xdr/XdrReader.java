@@ -151,6 +151,26 @@ public class XdrReader {
 
 	//--------------------------------------------------------------------------
 	/**
+	 * パディングなし固定長バイト列を読み込みます。<br><br>
+	 *
+	 * <p>メソッド名称： パディングなし固定長バイト列読込</p>
+	 *
+	 * @param length	長さ
+	 * @return バイト列
+	 */
+	//--------------------------------------------------------------------------
+	public byte[] readFixedOpaqueWithoutPadding(int length) {
+		if( length < 0) {
+			throw new IllegalArgumentException( "XDR opaque length is invalid.") ;
+		}
+		require( length) ;
+		byte[] value = Arrays.copyOfRange( data, position, position + length) ;
+		position += length ;
+		return value ;
+	}
+
+	//--------------------------------------------------------------------------
+	/**
 	 * 文字列を読み込みます。<br><br>
 	 *
 	 * <p>メソッド名称： 文字列読込</p>

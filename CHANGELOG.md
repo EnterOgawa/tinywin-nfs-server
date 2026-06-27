@@ -1,5 +1,23 @@
 # Changelog
 
+## 1.6.1 - 2026-06-27
+
+- Added AUTH_SYS UID/GID based automatic permission identity responses with `permission.identity=auto`.
+- Fixed Windows Client for NFS direct mounts so files created through NFS can be updated by the same anonymous client without per-IP profiles.
+- Improved QNX 4.25 bulk copy throughput by avoiding export-wide link-count scans during NFS attribute responses.
+- Added write file caching, asynchronous write defaults, UDP request worker dispatch, and lower-volume operational logging for large copy/delete workloads.
+- Improved QNX `.nfsX*` delete compatibility for directory-style silly rename cleanup.
+- Added regression coverage for AUTH_SYS attribute identity, QNX WRITE compatibility, recursive delete cleanup, and Windows Client for NFS UDP/TCP checks.
+
+## 1.6.0 - 2026-06-27
+
+- Added ONC RPC over TCP record marking support.
+- Added TCP listeners for Portmap, MOUNT, and NFS using the configured service ports.
+- Added Portmap TCP mappings for NFS v2/v3 and MOUNT v1-v3.
+- Verified NFSv2/NFSv3 file operations over TCP using the same implementation as UDP.
+- Extended Windows Client for NFS validation to cover both UDP and TCP transports.
+- Updated firewall, service, installer, and documentation for TCP support.
+
 ## 1.5.0 - 2026-06-27
 
 - Hardened NFSv3 weak cache consistency data so mutation replies return pre-operation attributes captured before file changes.

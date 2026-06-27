@@ -35,6 +35,9 @@ public class RpcCall {
 	/** 引数 */
 	private final XdrReader				arguments ;
 
+	/** 引数バイト列 */
+	private final byte[]					argumentBytes ;
+
 	//--------------------------------------------------------------------------
 	/**
 	 * インスタンスを生成します。<br><br>
@@ -48,9 +51,10 @@ public class RpcCall {
 	 * @param credential	Credential
 	 * @param verifier		Verifier
 	 * @param arguments		引数
+	 * @param argumentBytes	引数バイト列
 	 */
 	//--------------------------------------------------------------------------
-	private RpcCall(int xid, int program, int version, int procedure, RpcCredential credential, RpcCredential verifier, XdrReader arguments) {
+	private RpcCall(int xid, int program, int version, int procedure, RpcCredential credential, RpcCredential verifier, XdrReader arguments, byte[] argumentBytes) {
 		this.xid = xid ;
 		this.program = program ;
 		this.version = version ;
@@ -58,6 +62,7 @@ public class RpcCall {
 		this.credential = credential ;
 		this.verifier = verifier ;
 		this.arguments = arguments ;
+		this.argumentBytes = argumentBytes ;
 	}
 
 	//--------------------------------------------------------------------------
@@ -93,9 +98,10 @@ public class RpcCall {
 		int procedure = reader.readInt() ;
 		RpcCredential credential = readCredential( reader) ;
 		RpcCredential verifier = readCredential( reader) ;
-		XdrReader arguments = new XdrReader( reader.readRemaining()) ;
+		byte[] argumentBytes = reader.readRemaining() ;
+		XdrReader arguments = new XdrReader( argumentBytes) ;
 
-		return new RpcCall( xid, program, version, procedure, credential, verifier, arguments) ;
+		return new RpcCall( xid, program, version, procedure, credential, verifier, arguments, argumentBytes) ;
 	}
 
 	//--------------------------------------------------------------------------
@@ -226,5 +232,18 @@ public class RpcCall {
 	//--------------------------------------------------------------------------
 	public XdrReader getArguments() {
 		return arguments ;
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * 引数バイト列を取得します。<br><br>
+	 *
+	 * <p>メソッド名称： 引数バイト列取得</p>
+	 *
+	 * @return 引数バイト列
+	 */
+	//--------------------------------------------------------------------------
+	public byte[] getArgumentBytes() {
+		return argumentBytes.clone() ;
 	}
 }

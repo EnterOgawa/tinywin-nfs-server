@@ -20,7 +20,8 @@ public class RpcRequestContext {
 			0,
 			0,
 			0,
-			0) ;
+			0,
+			null) ;
 
 	/** 現在のコンテキスト */
 	private static final ThreadLocal<RpcRequestContext> CURRENT = new ThreadLocal<RpcRequestContext>() ;
@@ -47,6 +48,15 @@ public class RpcRequestContext {
 	/** Procedure */
 	private final int					procedure ;
 
+	/** AUTH_SYSホスト名 */
+	private final String					authSysMachineName ;
+
+	/** AUTH_SYS UID */
+	private final Integer				authSysUid ;
+
+	/** AUTH_SYS GID */
+	private final Integer				authSysGid ;
+
 	//--------------------------------------------------------------------------
 	/**
 	 * インスタンスを生成します。<br><br>
@@ -63,6 +73,26 @@ public class RpcRequestContext {
 	 */
 	//--------------------------------------------------------------------------
 	public RpcRequestContext(String clientAddress, int clientPort, String serverName, int xid, int program, int version, int procedure) {
+		this( clientAddress, clientPort, serverName, xid, program, version, procedure, null) ;
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * インスタンスを生成します。<br><br>
+	 *
+	 * <p>メソッド名称： コンストラクタ</p>
+	 *
+	 * @param clientAddress	クライアントアドレス
+	 * @param clientPort		クライアントポート
+	 * @param serverName		サーバー名
+	 * @param xid			XID
+	 * @param program		Program
+	 * @param version		Version
+	 * @param procedure		Procedure
+	 * @param credential	認証情報
+	 */
+	//--------------------------------------------------------------------------
+	public RpcRequestContext(String clientAddress, int clientPort, String serverName, int xid, int program, int version, int procedure, RpcCredential credential) {
 		this.clientAddress = clientAddress == null || clientAddress.isBlank() ? "unknown" : clientAddress.trim() ;
 		this.clientPort = clientPort ;
 		this.serverName = serverName == null || serverName.isBlank() ? "unknown" : serverName.trim() ;
@@ -70,6 +100,9 @@ public class RpcRequestContext {
 		this.program = program ;
 		this.version = version ;
 		this.procedure = procedure ;
+		authSysMachineName = credential == null ? null : credential.getAuthSysMachineName() ;
+		authSysUid = credential == null ? null : credential.getAuthSysUid() ;
+		authSysGid = credential == null ? null : credential.getAuthSysGid() ;
 	}
 
 	//--------------------------------------------------------------------------
@@ -216,6 +249,60 @@ public class RpcRequestContext {
 	//--------------------------------------------------------------------------
 	public int getProcedure() {
 		return procedure ;
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * AUTH_SYS資格情報があるかどうかを取得します。<br><br>
+	 *
+	 * <p>メソッド名称： AUTH_SYS資格情報有無取得</p>
+	 *
+	 * @return true:あり false:なし
+	 */
+	//--------------------------------------------------------------------------
+	public boolean hasAuthSysIdentity() {
+		return authSysUid != null && authSysGid != null ;
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * AUTH_SYSホスト名を取得します。<br><br>
+	 *
+	 * <p>メソッド名称： AUTH_SYSホスト名取得</p>
+	 *
+	 * @return ホスト名
+	 */
+	//--------------------------------------------------------------------------
+	public String getAuthSysMachineName() {
+		return authSysMachineName ;
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * UIDを解決します。<br><br>
+	 *
+	 * <p>メソッド名称： UID解決</p>
+	 *
+	 * @param fallbackUid	代替UID
+	 * @return UID
+	 */
+	//--------------------------------------------------------------------------
+	public int resolveUid(int fallbackUid) {
+		return authSysUid == null ? fallbackUid : authSysUid.intValue() ;
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * GIDを解決します。<br><br>
+	 *
+	 * <p>メソッド名称： GID解決</p>
+	 *
+	 * @param fallbackGid	代替GID
+	 * @return GID
+	 */
+	//--------------------------------------------------------------------------
+	public int resolveGid(int fallbackGid) {
+		return authSysGid == null ? fallbackGid : authSysGid.intValue() ;
 	}
 
 	//--------------------------------------------------------------------------

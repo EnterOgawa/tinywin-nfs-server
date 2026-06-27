@@ -167,6 +167,18 @@ public class TinyWinNfsSwtManager {
 	/** 読込サイズ */
 	private Text						readSizeText ;
 
+	/** 同期書込 */
+	private Button						writeSyncButton ;
+
+	/** 書込キャッシュ */
+	private Button						writeCacheEnabledButton ;
+
+	/** 書込キャッシュ最大オープン数 */
+	private Text						writeCacheMaxOpenText ;
+
+	/** 書込キャッシュアイドル保持時間 */
+	private Text						writeCacheIdleMillisText ;
+
 	/** ファイル名文字コード */
 	private Text						filenameCharsetText ;
 
@@ -443,6 +455,18 @@ public class TinyWinNfsSwtManager {
 		blockSizeText = addField( permissionGroup, text( "label.blockSize")) ;
 		readSizeText = addField( permissionGroup, text( "label.readSize")) ;
 		filenameCharsetText = addField( permissionGroup, text( "label.filenameCharset")) ;
+
+		Group performanceGroup = createGroup( panel, text( "group.performance"), 3) ;
+		createLabel( performanceGroup, text( "label.writeSync")) ;
+		writeSyncButton = new Button( performanceGroup, SWT.CHECK) ;
+		writeSyncButton.setLayoutData( new GridData( SWT.FILL, SWT.CENTER, true, false)) ;
+		new Label( performanceGroup, SWT.NONE) ;
+		createLabel( performanceGroup, text( "label.writeCacheEnabled")) ;
+		writeCacheEnabledButton = new Button( performanceGroup, SWT.CHECK) ;
+		writeCacheEnabledButton.setLayoutData( new GridData( SWT.FILL, SWT.CENTER, true, false)) ;
+		new Label( performanceGroup, SWT.NONE) ;
+		writeCacheMaxOpenText = addField( performanceGroup, text( "label.writeCacheMaxOpen")) ;
+		writeCacheIdleMillisText = addField( performanceGroup, text( "label.writeCacheIdleMillis")) ;
 
 		Composite buttons = createButtonRow( panel) ;
 		createButton( buttons, text( "button.reload"), event -> loadConfig()) ;
@@ -1248,6 +1272,10 @@ public class TinyWinNfsSwtManager {
 			blockSizeText.setText( properties.getProperty( "block.size", "4096")) ;
 			readSizeText.setText( properties.getProperty( "read.size", "8192")) ;
 			filenameCharsetText.setText( properties.getProperty( "filename.charset", "UTF-8")) ;
+			writeSyncButton.setSelection( Boolean.parseBoolean( properties.getProperty( "write.sync", "false"))) ;
+			writeCacheEnabledButton.setSelection( Boolean.parseBoolean( properties.getProperty( "write.cache.enabled", "true"))) ;
+			writeCacheMaxOpenText.setText( properties.getProperty( "write.cache.max.open", "64")) ;
+			writeCacheIdleMillisText.setText( properties.getProperty( "write.cache.idle.millis", "3000")) ;
 			updateMountCommand() ;
 			appendLog( text( "log.configurationLoaded")) ;
 		} catch( IOException ioex) {
@@ -1306,6 +1334,10 @@ public class TinyWinNfsSwtManager {
 			lines.add( "directory.mode=" + directoryModeText.getText().trim()) ;
 			lines.add( "block.size=" + blockSizeText.getText().trim()) ;
 			lines.add( "read.size=" + readSizeText.getText().trim()) ;
+			lines.add( "write.sync=" + writeSyncButton.getSelection()) ;
+			lines.add( "write.cache.enabled=" + writeCacheEnabledButton.getSelection()) ;
+			lines.add( "write.cache.max.open=" + writeCacheMaxOpenText.getText().trim()) ;
+			lines.add( "write.cache.idle.millis=" + writeCacheIdleMillisText.getText().trim()) ;
 			lines.add( "filename.charset=" + filenameCharsetText.getText().trim()) ;
 			writeValidatedConfig( configDirectory, lines) ;
 			updateMountCommand() ;
@@ -1404,6 +1436,8 @@ public class TinyWinNfsSwtManager {
 		validatePort( text( "label.mountUdpPort"), mountPortText.getText()) ;
 		validatePositiveInt( text( "label.blockSize"), blockSizeText.getText()) ;
 		validatePositiveInt( text( "label.readSize"), readSizeText.getText()) ;
+		validatePositiveInt( text( "label.writeCacheMaxOpen"), writeCacheMaxOpenText.getText()) ;
+		validatePositiveInt( text( "label.writeCacheIdleMillis"), writeCacheIdleMillisText.getText()) ;
 		validateInt( text( "label.uid"), uidText.getText()) ;
 		validateInt( text( "label.gid"), gidText.getText()) ;
 		validateCharset( text( "label.filenameCharset"), filenameCharsetText.getText()) ;

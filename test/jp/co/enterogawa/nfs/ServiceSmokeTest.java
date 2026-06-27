@@ -316,12 +316,16 @@ public class ServiceSmokeTest {
 		writeFileQnxFixed( fileHandle, "service qnx write" ) ;
 		assertReadFile( fileHandle, "service qnx write" ) ;
 		setFileSize( fileHandle, 0) ;
+		writeFileQnxUnpadded( fileHandle, "service qnx unpadded" ) ;
+		assertReadFile( fileHandle, "service qnx unpadded" ) ;
+		setFileSize( fileHandle, 0) ;
 		writeFile( fileHandle, "service rewrite" ) ;
 		assertReadFile( fileHandle, "service rewrite" ) ;
 		assertRenameOverwrite( rootHandle, fileName) ;
 		fileHandle = lookupFile( rootHandle, fileName) ;
 		assertReadFile( fileHandle, "service rename overwrite" ) ;
 		removeFile( rootHandle, fileName) ;
+		assertRemoveDirectoryCompatibility( rootHandle) ;
 		System.out.println( "PASS: service nfs CREATE/WRITE/SETATTR/READ/RENAME/REMOVE") ;
 	}
 
@@ -356,6 +360,71 @@ public class ServiceSmokeTest {
 
 	//--------------------------------------------------------------------------
 	/**
+	 * ディレクトリを作成します。<br><br>
+	 *
+	 * <p>メソッド名称： ディレクトリ作成</p>
+	 *
+	 * @param rootHandle	ルートファイルハンドル
+	 * @param directoryName	ディレクトリ名
+	 * @throws Exception 作成異常
+	 */
+	//--------------------------------------------------------------------------
+	private void createDirectory(byte[] rootHandle, String directoryName) throws Exception {
+		XdrWriter arguments = new XdrWriter() ;
+		writeDiropargs( arguments, rootHandle, directoryName) ;
+		writeSattrUnset( arguments) ;
+		XdrReader reader = call( NFS_PORT, RpcConstants.PROGRAM_NFS, 2, 14, arguments) ;
+		int status = reader.readInt() ;
+
+		// MKDIRが失敗した場合
+		if( status != NfsStatus.OK) {
+			throw new AssertionError( "MKDIR failed: " + status) ;
+		}
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * ディレクトリREMOVE互換処理を確認します。<br><br>
+	 *
+	 * <p>メソッド名称： ディレクトリREMOVE互換処理確認</p>
+	 *
+	 * @param rootHandle	ルートファイルハンドル
+	 * @throws Exception 確認異常
+	 */
+	//--------------------------------------------------------------------------
+	private void assertRemoveDirectoryCompatibility(byte[] rootHandle) throws Exception {
+		String directoryName = "service-remove-dir-" + Long.toHexString( System.currentTimeMillis()) ;
+		createDirectory( rootHandle, directoryName) ;
+		int status = removeFileStatus( rootHandle, directoryName) ;
+
+		// ディレクトリREMOVEが失敗した場合
+		if( status != NfsStatus.OK) {
+			throw new AssertionError( "REMOVE directory failed: " + status) ;
+		}
+
+		String qnxDirectoryName = ".nfsX" + Long.toHexString( System.currentTimeMillis()) ;
+		createDirectory( rootHandle, qnxDirectoryName) ;
+		byte[] qnxDirectoryHandle = lookupFile( rootHandle, qnxDirectoryName) ;
+		byte[] childHandle = createFile( qnxDirectoryHandle, "child.txt") ;
+		writeFile( childHandle, "qnx temporary child" ) ;
+		setFileMode( childHandle, 0444) ;
+		status = removeFileStatus( rootHandle, qnxDirectoryName) ;
+
+		// QNX一時リネームディレクトリREMOVEが失敗した場合
+		if( status != NfsStatus.OK) {
+			throw new AssertionError( "REMOVE QNX temporary directory failed: " + status) ;
+		}
+
+		status = lookupStatus( rootHandle, qnxDirectoryName) ;
+
+		// ディレクトリが残っている場合
+		if( status != NfsStatus.NOENT) {
+			throw new AssertionError( "QNX temporary directory remains: " + status) ;
+		}
+	}
+
+	//--------------------------------------------------------------------------
+	/**
 	 * ファイルを検索します。<br><br>
 	 *
 	 * <p>メソッド名称： ファイル検索</p>
@@ -380,6 +449,25 @@ public class ServiceSmokeTest {
 		byte[] handle = reader.readFixedOpaque( FileHandle.LENGTH) ;
 		skipAttributes( reader) ;
 		return handle ;
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * ファイル検索ステータスを取得します。<br><br>
+	 *
+	 * <p>メソッド名称： ファイル検索ステータス取得</p>
+	 *
+	 * @param rootHandle	ルートファイルハンドル
+	 * @param fileName	ファイル名
+	 * @return ステータス
+	 * @throws Exception 検索異常
+	 */
+	//--------------------------------------------------------------------------
+	private int lookupStatus(byte[] rootHandle, String fileName) throws Exception {
+		XdrWriter arguments = new XdrWriter() ;
+		writeDiropargs( arguments, rootHandle, fileName) ;
+		XdrReader reader = call( NFS_PORT, RpcConstants.PROGRAM_NFS, 2, 4, arguments) ;
+		return reader.readInt() ;
 	}
 
 	//--------------------------------------------------------------------------
@@ -451,6 +539,35 @@ public class ServiceSmokeTest {
 		// WRITEが失敗した場合
 		if( status != 0) {
 			throw new AssertionError( "QNX fixed WRITE failed: " + status) ;
+		}
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * QNXパディングなし形式でファイルを書き込みます。<br><br>
+	 *
+	 * <p>メソッド名称： QNXパディングなし形式ファイル書込</p>
+	 *
+	 * @param fileHandle	ファイルハンドル
+	 * @param value		値
+	 * @throws Exception 書込異常
+	 */
+	//--------------------------------------------------------------------------
+	private void writeFileQnxUnpadded(byte[] fileHandle, String value) throws Exception {
+		XdrWriter arguments = new XdrWriter() ;
+		byte[] data = value.getBytes( StandardCharsets.UTF_8) ;
+		arguments.writeFixedOpaque( fileHandle) ;
+		arguments.writeUnsignedInt( 0) ;
+		arguments.writeUnsignedInt( 0) ;
+		arguments.writeUnsignedInt( 0) ;
+		arguments.writeUnsignedInt( data.length) ;
+		arguments.writeFixedOpaqueWithoutPadding( data) ;
+		XdrReader reader = call( NFS_PORT, RpcConstants.PROGRAM_NFS, 2, 8, arguments) ;
+		int status = reader.readInt() ;
+
+		// WRITEが失敗した場合
+		if( status != 0) {
+			throw new AssertionError( "QNX unpadded WRITE failed: " + status) ;
 		}
 	}
 
@@ -570,6 +687,37 @@ public class ServiceSmokeTest {
 		// SETATTRが失敗した場合
 		if( status != 0) {
 			throw new AssertionError( "SETATTR failed: " + status) ;
+		}
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * ファイルモードを設定します。<br><br>
+	 *
+	 * <p>メソッド名称： ファイルモード設定</p>
+	 *
+	 * @param fileHandle	ファイルハンドル
+	 * @param mode		モード
+	 * @throws Exception 設定異常
+	 */
+	//--------------------------------------------------------------------------
+	private void setFileMode(byte[] fileHandle, int mode) throws Exception {
+		XdrWriter arguments = new XdrWriter() ;
+		arguments.writeFixedOpaque( fileHandle) ;
+		arguments.writeInt( mode) ;
+		arguments.writeInt( -1) ;
+		arguments.writeInt( -1) ;
+		arguments.writeInt( -1) ;
+		arguments.writeInt( -1) ;
+		arguments.writeInt( -1) ;
+		arguments.writeInt( -1) ;
+		arguments.writeInt( -1) ;
+		XdrReader reader = call( NFS_PORT, RpcConstants.PROGRAM_NFS, 2, 2, arguments) ;
+		int status = reader.readInt() ;
+
+		// SETATTRが失敗した場合
+		if( status != 0) {
+			throw new AssertionError( "SETATTR mode failed: " + status) ;
 		}
 	}
 

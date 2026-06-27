@@ -9,6 +9,7 @@ import java.util.List;
 import jp.co.enterogawa.nfs.config.NfsExport;
 import jp.co.enterogawa.nfs.config.NfsServerConfig;
 import jp.co.enterogawa.nfs.export.FileHandleTable;
+import jp.co.enterogawa.nfs.io.WriteFileCache;
 import jp.co.enterogawa.nfs.program.MountV1Program;
 import jp.co.enterogawa.nfs.program.NfsV2Program;
 import jp.co.enterogawa.nfs.program.NfsV3Program;
@@ -37,6 +38,12 @@ public class NfsServer {
 	/** RPCサーバーリスト */
 	private final List<RpcServer>		servers = new ArrayList<RpcServer>() ;
 
+	/** ファイルハンドル管理 */
+	private final FileHandleTable		handleTable ;
+
+	/** 書込ファイルキャッシュ */
+	private final WriteFileCache			writeFileCache ;
+
 	/** 実行状態 */
 	private boolean						started ;
 
@@ -51,12 +58,13 @@ public class NfsServer {
 	//--------------------------------------------------------------------------
 	public NfsServer(NfsServerConfig config) {
 		this.config = config ;
-		FileHandleTable handleTable = new FileHandleTable( config.getExports()) ;
+		handleTable = new FileHandleTable( config.getExports()) ;
+		writeFileCache = new WriteFileCache( config) ;
 		PortmapV2Program portmapProgram = new PortmapV2Program( config.getPortmapPort(), config.getNfsPort(), config.getMountPort()) ;
 		MountV1Program mountProgram = new MountV1Program( config, handleTable) ;
 		RpcProgramRouter nfsProgram = new RpcProgramRouter( RpcConstants.PROGRAM_NFS)
-				.add( new NfsV2Program( config, handleTable))
-				.add( new NfsV3Program( config, handleTable)) ;
+				.add( new NfsV2Program( config, handleTable, writeFileCache))
+				.add( new NfsV3Program( config, handleTable, writeFileCache)) ;
 		servers.add( new UdpRpcServer(
 				"nfs-portmap-udp",
 				config.getPortmapPort(),
@@ -127,6 +135,12 @@ public class NfsServer {
 		}
 
 		stopServers() ;
+		try {
+			writeFileCache.close() ;
+		} catch( IOException ioex) {
+			ioex.printStackTrace() ;
+		}
+		handleTable.flush() ;
 
 		started = false ;
 	}

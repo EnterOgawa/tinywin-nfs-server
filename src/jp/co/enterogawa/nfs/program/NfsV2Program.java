@@ -6,12 +6,14 @@ import java.nio.charset.Charset;
 import java.nio.file.AccessDeniedException;
 import java.nio.file.DirectoryNotEmptyException;
 import java.nio.file.FileAlreadyExistsException;
+import java.nio.file.FileVisitResult;
 import java.nio.file.FileStore;
 import java.nio.file.Files;
 import java.nio.file.InvalidPathException;
 import java.nio.file.LinkOption;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
+import java.nio.file.SimpleFileVisitor;
 import java.nio.file.StandardCopyOption;
 import java.nio.file.attribute.BasicFileAttributeView;
 import java.nio.file.attribute.BasicFileAttributes;
@@ -20,14 +22,19 @@ import java.nio.file.attribute.DosFileAttributes;
 import java.nio.file.attribute.FileTime;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 import jp.co.enterogawa.nfs.config.NfsExport;
 import jp.co.enterogawa.nfs.config.NfsServerConfig;
 import jp.co.enterogawa.nfs.export.FileHandle;
 import jp.co.enterogawa.nfs.export.FileHandleTable;
+import jp.co.enterogawa.nfs.io.WriteFileCache;
 import jp.co.enterogawa.nfs.rpc.RpcCall;
 import jp.co.enterogawa.nfs.rpc.RpcConstants;
 import jp.co.enterogawa.nfs.rpc.RpcProgram;
@@ -139,6 +146,12 @@ public class NfsV2Program implements RpcProgram {
 	/** ファイル名文字コード */
 	private final Charset				filenameCharset ;
 
+	/** 書込ファイルキャッシュ */
+	private final WriteFileCache			writeFileCache ;
+
+	/** NFS経由hard linkグループ */
+	private final Map<Path, HardLinkGroup> hardLinkGroups = new HashMap<Path, HardLinkGroup>() ;
+
 	//--------------------------------------------------------------------------
 	/**
 	 * インスタンスを生成します。<br><br>
@@ -150,9 +163,38 @@ public class NfsV2Program implements RpcProgram {
 	 */
 	//--------------------------------------------------------------------------
 	public NfsV2Program(NfsServerConfig config, FileHandleTable handleTable) {
+		this( config, handleTable, new WriteFileCache( config)) ;
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * インスタンスを生成します。<br><br>
+	 *
+	 * <p>メソッド名称： コンストラクタ</p>
+	 *
+	 * @param config			設定
+	 * @param handleTable		ファイルハンドル管理
+	 * @param writeFileCache	書込ファイルキャッシュ
+	 */
+	//--------------------------------------------------------------------------
+	public NfsV2Program(NfsServerConfig config, FileHandleTable handleTable, WriteFileCache writeFileCache) {
 		this.config = config ;
 		this.handleTable = handleTable ;
+		this.writeFileCache = writeFileCache ;
 		filenameCharset = config.getFilenameCharset() ;
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * リソースを閉じます。<br><br>
+	 *
+	 * <p>メソッド名称： リソースクローズ</p>
+	 *
+	 * @throws IOException クローズ異常
+	 */
+	//--------------------------------------------------------------------------
+	public void close() throws IOException {
+		writeFileCache.close() ;
 	}
 
 	//--------------------------------------------------------------------------
@@ -270,6 +312,9 @@ public class NfsV2Program implements RpcProgram {
 				return RpcConstants.ACCEPT_PROC_UNAVAIL ;
 			}
 		} catch( IllegalArgumentException iaex) {
+			if( call.getProcedure() == PROC_WRITE) {
+				logWriteParseError( call, iaex) ;
+			}
 			response.writeInt( NfsStatus.INVAL) ;
 			return RpcConstants.ACCEPT_SUCCESS ;
 		} catch( IOException ioex) {
@@ -512,6 +557,7 @@ public class NfsV2Program implements RpcProgram {
 		}
 
 		try {
+			writeFileCache.close( path) ;
 			int status = applySetAttributes( path, attributes, true) ;
 
 			// 属性反映が失敗した場合
@@ -578,10 +624,8 @@ public class NfsV2Program implements RpcProgram {
 			return ;
 		}
 
-		try( RandomAccessFile file = new RandomAccessFile( path.toFile(), "rw")) {
-			file.seek( offset) ;
-			file.write( data) ;
-			file.getFD().sync() ;
+		try {
+			writeFileCache.write( path, offset, data, data.length, config.isWriteSync()) ;
 		} catch( IOException ioex) {
 			int status = mapIoStatus( ioex) ;
 			logMutation( "WRITE", path, status, ioex.getClass().getSimpleName() + " offset=" + offset + " bytes=" + data.length) ;
@@ -620,6 +664,13 @@ public class NfsV2Program implements RpcProgram {
 		} catch( IllegalArgumentException iaex) {
 			arguments.setPosition( position) ;
 
+			byte[] unpaddedData = readUnpaddedOpaqueData( arguments) ;
+
+			// QNX 4.25はNFSv2 WRITEのdataを長さ付きだがpaddingなしで送る場合がある。
+			if( unpaddedData != null) {
+				return unpaddedData ;
+			}
+
 			// data lengthが付かない古いクライアント向けの限定的な互換処理
 			if( isValidWriteCount( totalCount) && arguments.remainingLength() == getPaddedLength( (int)totalCount)) {
 				return arguments.readFixedOpaque( (int)totalCount) ;
@@ -627,6 +678,169 @@ public class NfsV2Program implements RpcProgram {
 
 			throw iaex ;
 		}
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * パディングなしopaqueデータを読み込みます。<br><br>
+	 *
+	 * <p>メソッド名称： パディングなしopaqueデータ読込</p>
+	 *
+	 * @param arguments	引数
+	 * @return データ。対象外の場合はnull
+	 */
+	//--------------------------------------------------------------------------
+	private byte[] readUnpaddedOpaqueData(XdrReader arguments) {
+		int position = arguments.getPosition() ;
+
+		// lengthフィールドが存在しない場合
+		if( arguments.remainingLength() < Integer.BYTES) {
+			arguments.setPosition( position) ;
+			return null ;
+		}
+
+		long dataLength = arguments.readUnsignedInt() ;
+
+		// lengthが不正な場合
+		if( !isValidWriteCount( dataLength)) {
+			arguments.setPosition( position) ;
+			return null ;
+		}
+
+		// paddingなしのデータ長と一致する場合
+		if( arguments.remainingLength() == (int)dataLength) {
+			return arguments.readFixedOpaqueWithoutPadding( (int)dataLength) ;
+		}
+
+		arguments.setPosition( position) ;
+		return null ;
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * WRITE解析エラーを出力します。<br><br>
+	 *
+	 * <p>メソッド名称： WRITE解析エラー出力</p>
+	 *
+	 * @param call		RPC呼出
+	 * @param cause		原因
+	 */
+	//--------------------------------------------------------------------------
+	private void logWriteParseError(RpcCall call, IllegalArgumentException cause) {
+		RpcRequestContext context = RpcRequestContext.current() ;
+		byte[] arguments = call.getArgumentBytes() ;
+		StringBuilder message = new StringBuilder() ;
+		message.append( "NFS WRITE parse-error" )
+				.append( " client=" ).append( context.getClientAddress())
+				.append( " xid=" ).append( context.formatXid())
+				.append( " program=" ).append( call.getProgram())
+				.append( " version=" ).append( call.getVersion())
+				.append( " procedure=" ).append( call.getProcedure())
+				.append( " status=" ).append( NfsStatus.INVAL)
+				.append( " reason=" ).append( cause.getMessage())
+				.append( " argsLength=" ).append( arguments.length)
+				.append( " fields=" ).append( formatWriteArgumentFields( arguments)) ;
+
+		// デバッグログの場合のみファイル内容を含み得るHEXを出力する
+		if( ServerLog.isDebugEnabled()) {
+			message.append( " argsHex=" ).append( formatHex( arguments, 128)) ;
+		}
+
+		ServerLog.info( message.toString()) ;
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * WRITE引数フィールドを整形します。<br><br>
+	 *
+	 * <p>メソッド名称： WRITE引数フィールド整形</p>
+	 *
+	 * @param arguments	引数
+	 * @return フィールド文字列
+	 */
+	//--------------------------------------------------------------------------
+	private String formatWriteArgumentFields(byte[] arguments) {
+		StringBuilder fields = new StringBuilder() ;
+		appendUnsignedField( fields, "begin", arguments, FileHandle.LENGTH) ;
+		appendUnsignedField( fields, "offset", arguments, FileHandle.LENGTH + Integer.BYTES) ;
+		appendUnsignedField( fields, "total", arguments, FileHandle.LENGTH + Integer.BYTES * 2) ;
+		appendUnsignedField( fields, "dataLength", arguments, FileHandle.LENGTH + Integer.BYTES * 3) ;
+		return fields.toString() ;
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * 符号なしフィールドを追加します。<br><br>
+	 *
+	 * <p>メソッド名称： 符号なしフィールド追加</p>
+	 *
+	 * @param builder	文字列
+	 * @param name		名前
+	 * @param data		データ
+	 * @param offset	オフセット
+	 */
+	//--------------------------------------------------------------------------
+	private void appendUnsignedField(StringBuilder builder, String name, byte[] data, int offset) {
+		if( builder.length() > 0) {
+			builder.append( "," ) ;
+		}
+
+		builder.append( name ).append( "=" ) ;
+
+		if( data.length < offset + Integer.BYTES) {
+			builder.append( "missing" ) ;
+			return ;
+		}
+
+		builder.append( Integer.toUnsignedLong( readInt( data, offset))) ;
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * 32bit整数を読み込みます。<br><br>
+	 *
+	 * <p>メソッド名称： 32bit整数読込</p>
+	 *
+	 * @param data		データ
+	 * @param offset	オフセット
+	 * @return 32bit整数
+	 */
+	//--------------------------------------------------------------------------
+	private int readInt(byte[] data, int offset) {
+		return ((data[offset] & 0xff) << 24)
+				| ((data[offset + 1] & 0xff) << 16)
+				| ((data[offset + 2] & 0xff) << 8)
+				| (data[offset + 3] & 0xff) ;
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * HEX文字列を整形します。<br><br>
+	 *
+	 * <p>メソッド名称： HEX文字列整形</p>
+	 *
+	 * @param data		データ
+	 * @param maxBytes	最大バイト数
+	 * @return HEX文字列
+	 */
+	//--------------------------------------------------------------------------
+	private String formatHex(byte[] data, int maxBytes) {
+		StringBuilder hex = new StringBuilder() ;
+		int length = Math.min( data.length, maxBytes) ;
+
+		for( int i = 0; i < length; i++) {
+			if( i > 0) {
+				hex.append( ' ' ) ;
+			}
+
+			hex.append( String.format( "%02x", data[i] & 0xff)) ;
+		}
+
+		if( data.length > maxBytes) {
+			hex.append( " ..." ) ;
+		}
+
+		return hex.toString() ;
 	}
 
 	//--------------------------------------------------------------------------
@@ -764,19 +978,33 @@ public class NfsV2Program implements RpcProgram {
 			return ;
 		}
 
-		// 対象がディレクトリの場合
-		if( Files.isDirectory( target.getPath(), LinkOption.NOFOLLOW_LINKS)) {
-			logMutation( "REMOVE", target.getPath(), NfsStatus.ISDIR, "directory" ) ;
-			response.writeInt( NfsStatus.ISDIR) ;
-			return ;
-		}
+		boolean directoryTarget = Files.isDirectory( target.getPath(), LinkOption.NOFOLLOW_LINKS) ;
 
 		try {
+			closeCachedPath( target.getPath()) ;
 			Files.delete( target.getPath()) ;
+			forgetHardLink( target.getPath()) ;
 			handleTable.forget( target.getPath()) ;
-			logMutation( "REMOVE", target.getPath(), NfsStatus.OK, "" ) ;
+			logMutation( "REMOVE", target.getPath(), NfsStatus.OK, directoryTarget ? "directory-compatible" : "" ) ;
 			response.writeInt( NfsStatus.OK) ;
 		} catch( IOException ioex) {
+			// QNX 4.xはディレクトリ削除時に .nfsX* へリネームしてからREMOVEする場合がある
+			if( directoryTarget && ioex instanceof DirectoryNotEmptyException && isQnxSillyRenamePath( target.getPath())) {
+				try {
+					writeFileCache.closeTree( target.getPath()) ;
+					deleteDirectoryTree( target.getPath()) ;
+					handleTable.forgetTree( target.getPath()) ;
+					logMutation( "REMOVE", target.getPath(), NfsStatus.OK, "qnx-silly-rename-recursive" ) ;
+					response.writeInt( NfsStatus.OK) ;
+				} catch( IOException deleteEx) {
+					int deleteStatus = mapIoStatus( deleteEx) ;
+					logMutation( "REMOVE", target.getPath(), deleteStatus, "qnx-silly-rename-recursive " + deleteEx.getClass().getSimpleName()) ;
+					response.writeInt( deleteStatus) ;
+				}
+
+				return ;
+			}
+
 			int status = mapIoStatus( ioex) ;
 			logMutation( "REMOVE", target.getPath(), status, ioex.getClass().getSimpleName()) ;
 			response.writeInt( status) ;
@@ -841,7 +1069,10 @@ public class NfsV2Program implements RpcProgram {
 		}
 
 		try {
+			closeCachedPath( source.getPath()) ;
+			closeCachedPath( target.getPath()) ;
 			Files.move( source.getPath(), target.getPath(), StandardCopyOption.REPLACE_EXISTING) ;
+			moveHardLink( source.getPath(), target.getPath()) ;
 			handleTable.move( source.getPath(), target.getPath()) ;
 			logMutation( "RENAME", source.getPath(), NfsStatus.OK, "target=" + target.getPath()) ;
 			response.writeInt( NfsStatus.OK) ;
@@ -926,6 +1157,7 @@ public class NfsV2Program implements RpcProgram {
 
 		try {
 			Files.createLink( target.getPath(), source) ;
+			trackHardLink( source, target.getPath()) ;
 			handleTable.getOrCreate( target.getPath()) ;
 			logMutation( "LINK", source, NfsStatus.OK, "target=" + target.getPath()) ;
 			response.writeInt( NfsStatus.OK) ;
@@ -1622,6 +1854,122 @@ public class NfsV2Program implements RpcProgram {
 
 	//--------------------------------------------------------------------------
 	/**
+	 * QNXの削除用一時リネームパスかを確認します。<br><br>
+	 *
+	 * <p>メソッド名称： QNX一時リネームパス確認</p>
+	 *
+	 * @param path	パス
+	 * @return true:QNX一時リネームパス false:通常パス
+	 */
+	//--------------------------------------------------------------------------
+	private boolean isQnxSillyRenamePath(Path path) {
+		Path fileName = path.getFileName() ;
+
+		// ファイル名が取得できない場合
+		if( fileName == null) {
+			return false ;
+		}
+
+		String name = fileName.toString() ;
+		return name.length() > 5 && name.startsWith( ".nfsX") ;
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * ディレクトリツリーを削除します。<br><br>
+	 *
+	 * <p>メソッド名称： ディレクトリツリー削除</p>
+	 *
+	 * @param path	対象パス
+	 * @throws IOException 削除異常
+	 */
+	//--------------------------------------------------------------------------
+	private void deleteDirectoryTree(Path path) throws IOException {
+		Files.walkFileTree( path, new SimpleFileVisitor<Path>() {
+			@Override
+			public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
+				deleteFileSystemEntry( file) ;
+				return FileVisitResult.CONTINUE ;
+			}
+
+			@Override
+			public FileVisitResult postVisitDirectory(Path directory, IOException exception) throws IOException {
+				// 子要素の処理で異常が発生した場合
+				if( exception != null) {
+					throw exception ;
+				}
+
+				deleteFileSystemEntry( directory) ;
+				return FileVisitResult.CONTINUE ;
+			}
+		}) ;
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * ファイルシステム要素を削除します。<br><br>
+	 *
+	 * <p>メソッド名称： ファイルシステム要素削除</p>
+	 *
+	 * @param path	対象パス
+	 * @throws IOException 削除異常
+	 */
+	//--------------------------------------------------------------------------
+	private void deleteFileSystemEntry(Path path) throws IOException {
+		try {
+			prepareDelete( path) ;
+			Files.delete( path) ;
+		} catch( AccessDeniedException adex) {
+			prepareDelete( path) ;
+			Files.delete( path) ;
+		}
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * 対象パスの書込キャッシュを閉じます。<br><br>
+	 *
+	 * <p>メソッド名称： 書込キャッシュクローズ</p>
+	 *
+	 * @param path	対象パス
+	 * @throws IOException クローズ異常
+	 */
+	//--------------------------------------------------------------------------
+	private void closeCachedPath(Path path) throws IOException {
+		// ディレクトリの場合
+		if( Files.isDirectory( path, LinkOption.NOFOLLOW_LINKS)) {
+			writeFileCache.closeTree( path) ;
+			return ;
+		}
+
+		writeFileCache.close( path) ;
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * 削除前にWindows属性を解除します。<br><br>
+	 *
+	 * <p>メソッド名称： 削除前属性解除</p>
+	 *
+	 * @param path	対象パス
+	 * @throws IOException 属性更新異常
+	 */
+	//--------------------------------------------------------------------------
+	private void prepareDelete(Path path) throws IOException {
+		DosFileAttributeView view = Files.getFileAttributeView( path, DosFileAttributeView.class, LinkOption.NOFOLLOW_LINKS) ;
+
+		// DOS属性を扱えないファイルシステムの場合
+		if( view == null) {
+			return ;
+		}
+
+		view.setReadOnly( false) ;
+		view.setHidden( false) ;
+		view.setSystem( false) ;
+	}
+
+	//--------------------------------------------------------------------------
+	/**
 	 * 変更系操作をログ出力します。<br><br>
 	 *
 	 * <p>メソッド名称： 変更系操作ログ出力</p>
@@ -1633,6 +1981,11 @@ public class NfsV2Program implements RpcProgram {
 	 */
 	//--------------------------------------------------------------------------
 	private void logMutation(String operation, Path path, int status, String detail) {
+		// 高頻度の成功ログを抑制する場合
+		if( !ServerLog.shouldLogOperation( operation, status)) {
+			return ;
+		}
+
 		RpcRequestContext context = RpcRequestContext.current() ;
 		StringBuilder message = new StringBuilder() ;
 		message.append( "NFS " ).append( operation )
@@ -1908,8 +2261,8 @@ public class NfsV2Program implements RpcProgram {
 		response.writeInt( type) ;
 		response.writeUnsignedInt( mode) ;
 		response.writeUnsignedInt( readLinkCount( path, directory)) ;
-		response.writeUnsignedInt( config.getUid()) ;
-		response.writeUnsignedInt( config.getGid()) ;
+		response.writeUnsignedInt( resolveAttributeUid()) ;
+		response.writeUnsignedInt( resolveAttributeGid()) ;
 		response.writeUnsignedInt( clampUnsignedInt( size)) ;
 		response.writeUnsignedInt( config.getBlockSize()) ;
 		response.writeUnsignedInt( 0) ;
@@ -1919,6 +2272,42 @@ public class NfsV2Program implements RpcProgram {
 		writeTime( response, attributes.lastAccessTime()) ;
 		writeTime( response, attributes.lastModifiedTime()) ;
 		writeTime( response, attributes.lastModifiedTime()) ;
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * 応答属性UIDを解決します。<br><br>
+	 *
+	 * <p>メソッド名称： 応答属性UID解決</p>
+	 *
+	 * @return UID
+	 */
+	//--------------------------------------------------------------------------
+	private int resolveAttributeUid() {
+		// クライアント資格情報を反映しない場合
+		if( !config.isClientIdentityEnabled()) {
+			return config.getUid() ;
+		}
+
+		return RpcRequestContext.current().resolveUid( config.getUid()) ;
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * 応答属性GIDを解決します。<br><br>
+	 *
+	 * <p>メソッド名称： 応答属性GID解決</p>
+	 *
+	 * @return GID
+	 */
+	//--------------------------------------------------------------------------
+	private int resolveAttributeGid() {
+		// クライアント資格情報を反映しない場合
+		if( !config.isClientIdentityEnabled()) {
+			return config.getGid() ;
+		}
+
+		return RpcRequestContext.current().resolveGid( config.getGid()) ;
 	}
 
 	//--------------------------------------------------------------------------
@@ -1967,110 +2356,120 @@ public class NfsV2Program implements RpcProgram {
 
 		// ディレクトリの場合
 		if( directory) {
-			return Math.max( 2L, 2L + countChildDirectories( path)) ;
+			return 2L ;
 		}
 
-		return Math.max( 1L, countFileLinksInExport( path)) ;
+		return Math.max( 1L, getTrackedHardLinkCount( path)) ;
 	}
 
 	//--------------------------------------------------------------------------
 	/**
-	 * 公開ルート内の同一ファイルリンク数を取得します。<br><br>
+	 * hard linkを追跡します。<br><br>
 	 *
-	 * <p>メソッド名称： 公開ルート内同一ファイルリンク数取得</p>
+	 * <p>メソッド名称： hard link追跡</p>
 	 *
-	 * @param path	対象パス
-	 * @return リンク数
-	 * @throws IOException 読込異常
+	 * @param source	リンク元
+	 * @param target	リンク先
 	 */
 	//--------------------------------------------------------------------------
-	private long countFileLinksInExport(Path path) throws IOException {
-		Path root = handleTable.getRootPath( path) ;
-		BasicFileAttributes sourceAttributes = Files.readAttributes( path, BasicFileAttributes.class, LinkOption.NOFOLLOW_LINKS) ;
-		Object sourceFileKey = sourceAttributes.fileKey() ;
-		long count = 0 ;
+	private synchronized void trackHardLink(Path source, Path target) {
+		Path sourceKey = hardLinkKey( source) ;
+		Path targetKey = hardLinkKey( target) ;
+		HardLinkGroup group = hardLinkGroups.get( sourceKey) ;
 
-		// 公開ルートが取得できない場合
-		if( root == null) {
+		// 既存グループが存在しない場合
+		if( group == null) {
+			group = new HardLinkGroup() ;
+			group.add( sourceKey) ;
+			hardLinkGroups.put( sourceKey, group) ;
+		}
+
+		group.add( targetKey) ;
+		hardLinkGroups.put( targetKey, group) ;
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * hard link追跡を忘却します。<br><br>
+	 *
+	 * <p>メソッド名称： hard link追跡忘却</p>
+	 *
+	 * @param path	対象パス
+	 */
+	//--------------------------------------------------------------------------
+	private synchronized void forgetHardLink(Path path) {
+		Path key = hardLinkKey( path) ;
+		HardLinkGroup group = hardLinkGroups.remove( key) ;
+
+		// グループが存在しない場合
+		if( group == null) {
+			return ;
+		}
+
+		group.remove( key) ;
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * hard link追跡パスを移動します。<br><br>
+	 *
+	 * <p>メソッド名称： hard link追跡パス移動</p>
+	 *
+	 * @param source	移動元
+	 * @param target	移動先
+	 */
+	//--------------------------------------------------------------------------
+	private synchronized void moveHardLink(Path source, Path target) {
+		Path sourceKey = hardLinkKey( source) ;
+		Path targetKey = hardLinkKey( target) ;
+		HardLinkGroup group = hardLinkGroups.remove( sourceKey) ;
+
+		// 上書き先の既存追跡を削除する
+		forgetHardLink( target) ;
+
+		// グループが存在しない場合
+		if( group == null) {
+			return ;
+		}
+
+		group.remove( sourceKey) ;
+		group.add( targetKey) ;
+		hardLinkGroups.put( targetKey, group) ;
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * 追跡中のhard link数を取得します。<br><br>
+	 *
+	 * <p>メソッド名称： 追跡hard link数取得</p>
+	 *
+	 * @param path	対象パス
+	 * @return hard link数
+	 */
+	//--------------------------------------------------------------------------
+	private synchronized long getTrackedHardLinkCount(Path path) {
+		HardLinkGroup group = hardLinkGroups.get( hardLinkKey( path)) ;
+
+		// グループが存在しない場合
+		if( group == null) {
 			return 1L ;
 		}
 
-		try( var stream = Files.walk( root)) {
-			List<Path> candidates = stream.toList() ;
-
-			// 公開ルート内の通常ファイルから同一実体を数える
-			for( Path candidate : candidates) {
-				// 通常ファイルではない場合
-				if( !Files.isRegularFile( candidate, LinkOption.NOFOLLOW_LINKS)) {
-					continue ;
-				}
-
-				// 同一ファイル実体の場合
-				if( isSameFileIdentity( path, sourceFileKey, candidate)) {
-					count++ ;
-				}
-			}
-		}
-
-		return count ;
+		return group.size() ;
 	}
 
 	//--------------------------------------------------------------------------
 	/**
-	 * 同一ファイル実体かを確認します。<br><br>
+	 * hard link追跡キーを取得します。<br><br>
 	 *
-	 * <p>メソッド名称： 同一ファイル実体確認</p>
-	 *
-	 * @param source		基準パス
-	 * @param sourceFileKey	基準ファイルキー
-	 * @param candidate		候補パス
-	 * @return true:同一 false:別ファイル
-	 * @throws IOException 読込異常
-	 */
-	//--------------------------------------------------------------------------
-	private boolean isSameFileIdentity(Path source, Object sourceFileKey, Path candidate) throws IOException {
-		// 同じパスの場合
-		if( source.equals( candidate)) {
-			return true ;
-		}
-
-		BasicFileAttributes candidateAttributes = Files.readAttributes( candidate, BasicFileAttributes.class, LinkOption.NOFOLLOW_LINKS) ;
-
-		// ファイルキーで判定できる場合
-		if( sourceFileKey != null && sourceFileKey.equals( candidateAttributes.fileKey())) {
-			return true ;
-		}
-
-		return Files.isSameFile( source, candidate) ;
-	}
-
-	//--------------------------------------------------------------------------
-	/**
-	 * 子ディレクトリ数を取得します。<br><br>
-	 *
-	 * <p>メソッド名称： 子ディレクトリ数取得</p>
+	 * <p>メソッド名称： hard link追跡キー取得</p>
 	 *
 	 * @param path	対象パス
-	 * @return 子ディレクトリ数
-	 * @throws IOException 読込異常
+	 * @return 追跡キー
 	 */
 	//--------------------------------------------------------------------------
-	private long countChildDirectories(Path path) throws IOException {
-		long count = 0 ;
-
-		try( var stream = Files.list( path)) {
-			List<Path> children = stream.toList() ;
-
-			// 子ディレクトリを数える
-			for( Path child : children) {
-				// ディレクトリの場合
-				if( Files.isDirectory( child, LinkOption.NOFOLLOW_LINKS)) {
-					count++ ;
-				}
-			}
-		}
-
-		return count ;
+	private Path hardLinkKey(Path path) {
+		return path.toAbsolutePath().normalize() ;
 	}
 
 	//--------------------------------------------------------------------------
@@ -2458,6 +2857,57 @@ public class NfsV2Program implements RpcProgram {
 		//----------------------------------------------------------------------
 		int getCookie() {
 			return cookie ;
+		}
+	}
+
+	//------------------------------------------------------------------------------
+	/**
+	 * hard linkグループクラスです。<br><br>
+	 *
+	 * <p>クラス名称： hard linkグループ</p>
+	 */
+	//------------------------------------------------------------------------------
+	private static class HardLinkGroup {
+		/** パス */
+		private final Set<Path>			paths = new HashSet<Path>() ;
+
+		//----------------------------------------------------------------------
+		/**
+		 * パスを追加します。<br><br>
+		 *
+		 * <p>メソッド名称： パス追加</p>
+		 *
+		 * @param path	パス
+		 */
+		//----------------------------------------------------------------------
+		void add(Path path) {
+			paths.add( path) ;
+		}
+
+		//----------------------------------------------------------------------
+		/**
+		 * パスを削除します。<br><br>
+		 *
+		 * <p>メソッド名称： パス削除</p>
+		 *
+		 * @param path	パス
+		 */
+		//----------------------------------------------------------------------
+		void remove(Path path) {
+			paths.remove( path) ;
+		}
+
+		//----------------------------------------------------------------------
+		/**
+		 * パス数を取得します。<br><br>
+		 *
+		 * <p>メソッド名称： パス数取得</p>
+		 *
+		 * @return パス数
+		 */
+		//----------------------------------------------------------------------
+		long size() {
+			return paths.size() ;
 		}
 	}
 }

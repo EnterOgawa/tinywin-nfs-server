@@ -63,7 +63,8 @@ public class RpcCallHandler {
 					call.getXid(),
 					call.getProgram(),
 					call.getVersion(),
-					call.getProcedure()) ;
+					call.getProcedure(),
+					call.getCredential()) ;
 			XdrWriter body = new XdrWriter() ;
 			int acceptStatus = RpcConstants.ACCEPT_SUCCESS ;
 
@@ -132,6 +133,16 @@ public class RpcCallHandler {
 		// デバッグログが有効な場合
 		if( ServerLog.isDebugEnabled()) {
 			return true ;
+		}
+
+		// RPC層のエラーは常に出力する
+		if( acceptStatus != RpcConstants.ACCEPT_SUCCESS) {
+			return true ;
+		}
+
+		// 通常の要求ログが無効な場合
+		if( !ServerLog.isRequestLogEnabled()) {
+			return false ;
 		}
 
 		boolean successfulRead = call.getProgram() == RpcConstants.PROGRAM_NFS

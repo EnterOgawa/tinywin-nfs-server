@@ -65,6 +65,15 @@ public class FileHandleTable {
 	/** ルートファイルハンドル */
 	private final FileHandle				rootHandle ;
 
+	/** 永続ファイル保存間隔 */
+	private final long					storeSaveIntervalMillis ;
+
+	/** 永続ファイル変更有無 */
+	private boolean						storeDirty ;
+
+	/** 最終永続ファイル保存時刻 */
+	private long						lastStoreSaveMillis ;
+
 	//--------------------------------------------------------------------------
 	/**
 	 * インスタンスを生成します。<br><br>
@@ -116,6 +125,8 @@ public class FileHandleTable {
 		}
 
 		rootHandle = firstHandle ;
+		storeSaveIntervalMillis = getStoreSaveIntervalMillis() ;
+		lastStoreSaveMillis = System.currentTimeMillis() ;
 		loadStore() ;
 	}
 
@@ -283,7 +294,7 @@ public class FileHandleTable {
 		handle = createHandle( nextFileId()) ;
 		pathMap.put( normalized, handle) ;
 		handleMap.put( handle.key(), normalized) ;
-		saveStore() ;
+		markStoreDirty() ;
 		return handle ;
 	}
 
@@ -303,8 +314,55 @@ public class FileHandleTable {
 		// ハンドルが存在する場合
 		if( handle != null) {
 			handleMap.remove( handle.key()) ;
-			saveStore() ;
+			markStoreDirty() ;
 		}
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * 指定パス配下のファイルハンドルを忘却します。<br><br>
+	 *
+	 * <p>メソッド名称： サブツリーファイルハンドル忘却</p>
+	 *
+	 * @param path	対象パス
+	 */
+	//--------------------------------------------------------------------------
+	public synchronized void forgetTree(Path path) {
+		Path normalized = path.toAbsolutePath().normalize() ;
+		Set<Path> removePaths = new HashSet<Path>() ;
+
+		// 削除対象配下のファイルハンドルを集める
+		for( Map.Entry<Path, FileHandle> entry : pathMap.entrySet()) {
+			Path entryPath = entry.getKey() ;
+			FileHandle handle = entry.getValue() ;
+
+			// ルートハンドルの場合
+			if( rootIds.contains( getFileId( handle))) {
+				continue ;
+			}
+
+			// 対象配下の場合
+			if( entryPath.startsWith( normalized)) {
+				removePaths.add( entryPath) ;
+			}
+		}
+
+		// 対象が存在しない場合
+		if( removePaths.isEmpty()) {
+			return ;
+		}
+
+		// ファイルハンドルを削除する
+		for( Path removePath : removePaths) {
+			FileHandle handle = pathMap.remove( removePath) ;
+
+			// ハンドルが存在する場合
+			if( handle != null) {
+				handleMap.remove( handle.key()) ;
+			}
+		}
+
+		markStoreDirty() ;
 	}
 
 	//--------------------------------------------------------------------------
@@ -367,7 +425,21 @@ public class FileHandleTable {
 			handleMap.put( entry.getValue().key(), entry.getKey()) ;
 		}
 
-		saveStore() ;
+		markStoreDirty() ;
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * 永続ファイルをflushします。<br><br>
+	 *
+	 * <p>メソッド名称： 永続ファイルflush</p>
+	 */
+	//--------------------------------------------------------------------------
+	public synchronized void flush() {
+		// 未保存変更が存在する場合
+		if( storeDirty) {
+			saveStore() ;
+		}
 	}
 
 	//--------------------------------------------------------------------------
@@ -533,8 +605,59 @@ public class FileHandleTable {
 			try( OutputStream output = Files.newOutputStream( storePath)) {
 				properties.store( output, "TinyWinNFS file handles") ;
 			}
+
+			storeDirty = false ;
+			lastStoreSaveMillis = System.currentTimeMillis() ;
 		} catch( IOException ex) {
 			System.err.println( "Failed to save file handle store: " + ex.getMessage()) ;
+		}
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * 永続ファイルを変更済みにします。<br><br>
+	 *
+	 * <p>メソッド名称： 永続ファイル変更済設定</p>
+	 */
+	//--------------------------------------------------------------------------
+	private void markStoreDirty() {
+		storeDirty = true ;
+
+		// 保存間隔が無効の場合
+		if( storeSaveIntervalMillis <= 0) {
+			saveStore() ;
+			return ;
+		}
+
+		long now = System.currentTimeMillis() ;
+
+		// 保存間隔に達した場合
+		if( now - lastStoreSaveMillis >= storeSaveIntervalMillis) {
+			saveStore() ;
+		}
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * 永続ファイル保存間隔を取得します。<br><br>
+	 *
+	 * <p>メソッド名称： 永続ファイル保存間隔取得</p>
+	 *
+	 * @return 保存間隔ミリ秒
+	 */
+	//--------------------------------------------------------------------------
+	private long getStoreSaveIntervalMillis() {
+		String value = System.getProperty( "tinywin.nfs.handleStoreSaveIntervalMillis", "30000") ;
+
+		// 値がない場合
+		if( value == null || value.isBlank()) {
+			return 30000L ;
+		}
+
+		try {
+			return Math.max( 0L, Long.parseLong( value.trim())) ;
+		} catch( NumberFormatException nfex) {
+			return 30000L ;
 		}
 	}
 

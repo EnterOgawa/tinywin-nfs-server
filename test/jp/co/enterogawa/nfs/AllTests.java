@@ -8,6 +8,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.LinkOption;
 import java.nio.file.Path;
+import java.nio.file.attribute.DosFileAttributeView;
 import java.net.Socket;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -402,7 +403,8 @@ public class AllTests {
 				+ "file.mode=0644\n"
 				+ "directory.mode=0755\n"
 				+ "block.size=4096\n"
-				+ "read.size=8192\n" ;
+				+ "read.size=8192\n"
+				+ "write.sync=true\n" ;
 		Files.writeString( configPath, configText, StandardCharsets.UTF_8) ;
 		NfsServerConfig config = NfsServerConfig.load( configPath) ;
 		FileHandleTable handleTable = new FileHandleTable( config.getExports()) ;
@@ -417,6 +419,7 @@ public class AllTests {
 			assertWriteFile( nfsProgram, writableFile, root) ;
 			assertWriteReadOnlyFile( nfsProgram, readOnlyFile, readOnlyRoot) ;
 		} finally {
+			nfsProgram.close() ;
 			deleteDirectory( root) ;
 			deleteDirectory( readOnlyRoot) ;
 			deleteDirectory( data) ;
@@ -540,6 +543,7 @@ public class AllTests {
 
 			assertEquals( "allowed getattr status", NfsStatus.OK, new XdrReader( allowedGetAttrResponse.toByteArray()).readInt()) ;
 		} finally {
+			nfsProgram.close() ;
 			deleteDirectory( root) ;
 			deleteDirectory( data) ;
 		}
@@ -560,10 +564,12 @@ public class AllTests {
 		FileHandle rootHandle = context.getHandleTable().getRootHandle() ;
 		FileHandle fileHandle = assertLookupFile( program, rootHandle) ;
 		assertGetAttrRoot( program, rootHandle) ;
+		assertGetAttrRootAuthSys( program, rootHandle) ;
 		assertReadFile( program, fileHandle) ;
 		assertWriteCache( program) ;
 		assertWriteFile( program, fileHandle, context.getRoot()) ;
 		assertQnxFixedOpaqueWriteFile( program, fileHandle, context.getRoot()) ;
+		assertQnxUnpaddedOpaqueWriteFile( program, fileHandle, context.getRoot()) ;
 		assertSetAttrFile( program, fileHandle, context.getRoot()) ;
 		assertSetAttrMode( program, fileHandle) ;
 		assertSetAttrTime( program, fileHandle) ;
@@ -572,6 +578,7 @@ public class AllTests {
 		assertCreateFile( program, rootHandle, context.getRoot()) ;
 		assertRenameFile( program, rootHandle, context.getRoot()) ;
 		assertMkdirAndRmdir( program, rootHandle, context.getRoot()) ;
+		assertRemoveDirectoryCompatibility( program, rootHandle, context.getRoot()) ;
 		assertReadDir( program, rootHandle) ;
 		assertStatFs( program, rootHandle) ;
 		assertInvalidLookup( program, rootHandle) ;
@@ -579,6 +586,7 @@ public class AllTests {
 		assertHardLink( program, rootHandle, fileHandle, context.getRoot()) ;
 		assertLongSymlinkTarget( program, rootHandle) ;
 		assertJapaneseCreate( program, rootHandle, context.getRoot()) ;
+		program.close() ;
 		context.close() ;
 	}
 
@@ -601,6 +609,7 @@ public class AllTests {
 			FileHandle rootHandle = mountExportV3( mountProgram, portmap) ;
 			FileHandle fileHandle = assertLookupFileV3( program, rootHandle) ;
 			assertGetAttrV3( program, rootHandle) ;
+			assertGetAttrAuthSysV3( program, rootHandle) ;
 			assertAccessV3( program, rootHandle) ;
 			assertReadFileV3( program, fileHandle) ;
 			assertWriteAndCommitV3( program, fileHandle, context.getRoot()) ;
@@ -611,7 +620,21 @@ public class AllTests {
 			assertReadDirPlusV3( program, rootHandle) ;
 			assertFsInfoV3( program, rootHandle) ;
 		} finally {
+			program.close() ;
 			context.close() ;
+		}
+
+		TestContext asyncContext = createContext( "UTF-8", false) ;
+		MountV1Program asyncMountProgram = new MountV1Program( asyncContext.getConfig(), asyncContext.getHandleTable()) ;
+		NfsV3Program asyncProgram = new NfsV3Program( asyncContext.getConfig(), asyncContext.getHandleTable()) ;
+
+		try {
+			FileHandle rootHandle = mountExportV3( asyncMountProgram, portmap) ;
+			FileHandle fileHandle = assertLookupFileV3( asyncProgram, rootHandle) ;
+			assertAsyncWriteV3( asyncProgram, fileHandle, asyncContext.getRoot()) ;
+		} finally {
+			asyncProgram.close() ;
+			asyncContext.close() ;
 		}
 	}
 
@@ -705,6 +728,31 @@ public class AllTests {
 
 	//--------------------------------------------------------------------------
 	/**
+	 * NFSv3 GETATTRのAUTH_SYS属性反映を確認します。<br><br>
+	 *
+	 * <p>メソッド名称： NFSv3 GETATTR AUTH_SYS確認</p>
+	 *
+	 * @param program	NFSv3プログラム
+	 * @param handle	ファイルハンドル
+	 * @throws IOException 処理異常
+	 */
+	//--------------------------------------------------------------------------
+	private void assertGetAttrAuthSysV3(NfsV3Program program, FileHandle handle) throws IOException {
+		XdrWriter arguments = new XdrWriter() ;
+		arguments.writeOpaque( handle.getValue()) ;
+		XdrReader reader = new XdrReader( handleWithAuthSys( program, RpcConstants.PROGRAM_NFS, 3, 1, arguments, -2, -2).toByteArray()) ;
+
+		assertEquals( "v3 authsys getattr status", NfsStatus.OK, reader.readInt()) ;
+		reader.readInt() ;
+		reader.readInt() ;
+		reader.readInt() ;
+		assertEquals( "v3 authsys uid", -2, reader.readInt()) ;
+		assertEquals( "v3 authsys gid", -2, reader.readInt()) ;
+		skipAttributesV3Remainder( reader) ;
+	}
+
+	//--------------------------------------------------------------------------
+	/**
 	 * NFSv3 ACCESSを確認します。<br><br>
 	 *
 	 * <p>メソッド名称： NFSv3 ACCESS確認</p>
@@ -788,6 +836,36 @@ public class AllTests {
 		assertEquals( "v3 commit status", NfsStatus.OK, commitReader.readInt()) ;
 		assertWccPreSizeV3( commitReader, "v3 editnx".length()) ;
 		assertEquals( "v3 commit verifier", 8, commitReader.readFixedOpaque( 8).length) ;
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * NFSv3非同期WRITEを確認します。<br><br>
+	 *
+	 * <p>メソッド名称： NFSv3非同期WRITE確認</p>
+	 *
+	 * @param program	NFSv3プログラム
+	 * @param handle	ファイルハンドル
+	 * @param root		公開ルート
+	 * @throws IOException 処理異常
+	 */
+	//--------------------------------------------------------------------------
+	private void assertAsyncWriteV3(NfsV3Program program, FileHandle handle, Path root) throws IOException {
+		byte[] data = "v3 async".getBytes( StandardCharsets.UTF_8) ;
+		XdrWriter writeArguments = new XdrWriter() ;
+		writeArguments.writeOpaque( handle.getValue()) ;
+		writeArguments.writeLong( 0L) ;
+		writeArguments.writeInt( data.length) ;
+		writeArguments.writeInt( 2) ;
+		writeArguments.writeOpaque( data) ;
+		XdrReader writeReader = new XdrReader( handle( program, RpcConstants.PROGRAM_NFS, 3, 7, writeArguments).toByteArray()) ;
+
+		assertEquals( "v3 async write status", NfsStatus.OK, writeReader.readInt()) ;
+		assertWccPreSizeV3( writeReader, "hello qnx".length()) ;
+		assertEquals( "v3 async write count", data.length, writeReader.readInt()) ;
+		assertEquals( "v3 async write committed", 0, writeReader.readInt()) ;
+		assertEquals( "v3 async write verifier", 8, writeReader.readFixedOpaque( 8).length) ;
+		assertEquals( "v3 async write content", "v3 asyncx", Files.readString( root.resolve( "hello.txt"), StandardCharsets.UTF_8)) ;
 	}
 
 	//--------------------------------------------------------------------------
@@ -1024,6 +1102,7 @@ public class AllTests {
 			ReadDirPage page = readDirPage( program, rootHandle, 0, 8192, charset) ;
 			assertTrue( "shift_jis readdir", page.getNames().contains( name)) ;
 		} finally {
+			program.close() ;
 			context.close() ;
 		}
 	}
@@ -1041,6 +1120,7 @@ public class AllTests {
 		TestContext context = createContext() ;
 		Path file = context.getRoot().resolve( "hello.txt") ;
 		FileHandle firstHandle = context.getHandleTable().getOrCreate( file) ;
+		context.getHandleTable().flush() ;
 		FileHandleTable restartedTable = new FileHandleTable( context.getRoot()) ;
 		FileHandle secondHandle = restartedTable.getOrCreate( file) ;
 
@@ -1068,6 +1148,31 @@ public class AllTests {
 
 		assertEquals( "getattr status", NfsStatus.OK, reader.readInt()) ;
 		assertEquals( "root type", 2, reader.readInt()) ;
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * NFSv2 GETATTRのAUTH_SYS属性反映を確認します。<br><br>
+	 *
+	 * <p>メソッド名称： NFSv2 GETATTR AUTH_SYS確認</p>
+	 *
+	 * @param program		NFSプログラム
+	 * @param rootHandle	ルートハンドル
+	 * @throws IOException 処理異常
+	 */
+	//--------------------------------------------------------------------------
+	private void assertGetAttrRootAuthSys(NfsV2Program program, FileHandle rootHandle) throws IOException {
+		XdrWriter arguments = new XdrWriter() ;
+		arguments.writeFixedOpaque( rootHandle.getValue()) ;
+		XdrWriter response = handleWithAuthSys( program, RpcConstants.PROGRAM_NFS, 2, 1, arguments, -2, -2) ;
+		XdrReader reader = new XdrReader( response.toByteArray()) ;
+
+		assertEquals( "authsys getattr status", NfsStatus.OK, reader.readInt()) ;
+		assertEquals( "authsys root type", 2, reader.readInt()) ;
+		reader.readInt() ;
+		reader.readInt() ;
+		assertEquals( "authsys uid", -2, reader.readInt()) ;
+		assertEquals( "authsys gid", -2, reader.readInt()) ;
 	}
 
 	//--------------------------------------------------------------------------
@@ -1251,6 +1356,36 @@ public class AllTests {
 		assertEquals( "qnx fixed write status", NfsStatus.OK, reader.readInt()) ;
 		skipAttributes( reader) ;
 		assertEquals( "qnx fixed write content", "hello qnx", Files.readString( root.resolve( "hello.txt"), StandardCharsets.UTF_8)) ;
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * QNXパディングなし形式のファイルWRITEを確認します。<br><br>
+	 *
+	 * <p>メソッド名称： QNXパディングなし形式ファイルWRITE確認</p>
+	 *
+	 * @param program	NFSプログラム
+	 * @param handle	ファイルハンドル
+	 * @param root		公開ルート
+	 * @throws IOException 処理異常
+	 */
+	//--------------------------------------------------------------------------
+	private void assertQnxUnpaddedOpaqueWriteFile(NfsV2Program program, FileHandle handle, Path root) throws IOException {
+		XdrWriter arguments = new XdrWriter() ;
+		byte[] data = "qnx unpadded!".getBytes( StandardCharsets.UTF_8) ;
+		arguments.writeFixedOpaque( handle.getValue()) ;
+		arguments.writeUnsignedInt( 0) ;
+		arguments.writeUnsignedInt( 0) ;
+		arguments.writeUnsignedInt( 0) ;
+		arguments.writeUnsignedInt( data.length) ;
+		arguments.writeFixedOpaqueWithoutPadding( data) ;
+		XdrWriter response = handle( program, RpcConstants.PROGRAM_NFS, 2, 8, arguments) ;
+		XdrReader reader = new XdrReader( response.toByteArray()) ;
+
+		assertEquals( "qnx unpadded write status", NfsStatus.OK, reader.readInt()) ;
+		skipAttributes( reader) ;
+		assertEquals( "qnx unpadded write content", "qnx unpadded!", Files.readString( root.resolve( "hello.txt"), StandardCharsets.UTF_8)) ;
+		Files.writeString( root.resolve( "hello.txt"), "hello qnx", StandardCharsets.UTF_8) ;
 	}
 
 	//--------------------------------------------------------------------------
@@ -1555,6 +1690,63 @@ public class AllTests {
 
 	//--------------------------------------------------------------------------
 	/**
+	 * ディレクトリREMOVE互換処理を確認します。<br><br>
+	 *
+	 * <p>メソッド名称： ディレクトリREMOVE互換処理確認</p>
+	 *
+	 * @param program		NFSプログラム
+	 * @param rootHandle	ルートハンドル
+	 * @param root			公開ルート
+	 * @throws IOException 処理異常
+	 */
+	//--------------------------------------------------------------------------
+	private void assertRemoveDirectoryCompatibility(NfsV2Program program, FileHandle rootHandle, Path root) throws IOException {
+		Files.createDirectory( root.resolve( "remove-dir-compatible") ) ;
+		XdrWriter removeDirectoryArguments = new XdrWriter() ;
+		writeDiropargs( removeDirectoryArguments, rootHandle, "remove-dir-compatible") ;
+		XdrWriter removeDirectoryResponse = handle( program, RpcConstants.PROGRAM_NFS, 2, 10, removeDirectoryArguments) ;
+		XdrReader removeDirectoryReader = new XdrReader( removeDirectoryResponse.toByteArray()) ;
+
+		assertEquals( "remove directory status", NfsStatus.OK, removeDirectoryReader.readInt()) ;
+		assertTrue( "remove directory missing", !Files.exists( root.resolve( "remove-dir-compatible"), LinkOption.NOFOLLOW_LINKS)) ;
+
+		Files.createDirectory( root.resolve( "remove-nonempty-dir") ) ;
+		Files.writeString( root.resolve( "remove-nonempty-dir").resolve( "child.txt"), "child", StandardCharsets.UTF_8) ;
+		XdrWriter removeNonemptyArguments = new XdrWriter() ;
+		writeDiropargs( removeNonemptyArguments, rootHandle, "remove-nonempty-dir") ;
+		XdrWriter removeNonemptyResponse = handle( program, RpcConstants.PROGRAM_NFS, 2, 10, removeNonemptyArguments) ;
+		XdrReader removeNonemptyReader = new XdrReader( removeNonemptyResponse.toByteArray()) ;
+
+		assertEquals( "remove nonempty directory status", NfsStatus.NOTEMPTY, removeNonemptyReader.readInt()) ;
+		assertTrue( "remove nonempty directory remains", Files.isDirectory( root.resolve( "remove-nonempty-dir"), LinkOption.NOFOLLOW_LINKS)) ;
+		Files.delete( root.resolve( "remove-nonempty-dir").resolve( "child.txt")) ;
+		Files.delete( root.resolve( "remove-nonempty-dir")) ;
+
+		Path qnxTemporaryDirectory = root.resolve( ".nfsX8") ;
+		Files.createDirectory( qnxTemporaryDirectory) ;
+		Files.writeString( qnxTemporaryDirectory.resolve( "child.txt"), "child", StandardCharsets.UTF_8) ;
+		Files.createDirectory( qnxTemporaryDirectory.resolve( "nested")) ;
+		Files.writeString( qnxTemporaryDirectory.resolve( "nested").resolve( "nested.txt"), "nested", StandardCharsets.UTF_8) ;
+		Path readOnlyChild = qnxTemporaryDirectory.resolve( "nested").resolve( "readonly.txt") ;
+		Files.writeString( readOnlyChild, "readonly", StandardCharsets.UTF_8) ;
+		DosFileAttributeView dosView = Files.getFileAttributeView( readOnlyChild, DosFileAttributeView.class, LinkOption.NOFOLLOW_LINKS) ;
+
+		// Windowsの読み取り専用属性を含むQNX削除用一時ディレクトリを確認する
+		if( dosView != null) {
+			dosView.setReadOnly( true) ;
+		}
+
+		XdrWriter removeQnxTemporaryArguments = new XdrWriter() ;
+		writeDiropargs( removeQnxTemporaryArguments, rootHandle, ".nfsX8") ;
+		XdrWriter removeQnxTemporaryResponse = handle( program, RpcConstants.PROGRAM_NFS, 2, 10, removeQnxTemporaryArguments) ;
+		XdrReader removeQnxTemporaryReader = new XdrReader( removeQnxTemporaryResponse.toByteArray()) ;
+
+		assertEquals( "remove qnx temporary directory status", NfsStatus.OK, removeQnxTemporaryReader.readInt()) ;
+		assertTrue( "remove qnx temporary directory missing", !Files.exists( qnxTemporaryDirectory, LinkOption.NOFOLLOW_LINKS)) ;
+	}
+
+	//--------------------------------------------------------------------------
+	/**
 	 * READDIRを確認します。<br><br>
 	 *
 	 * <p>メソッド名称： READDIR確認</p>
@@ -1848,6 +2040,48 @@ public class AllTests {
 	//--------------------------------------------------------------------------
 	private XdrWriter handleWithClient(jp.co.enterogawa.nfs.rpc.RpcProgram program, int programNumber, int version, int procedure, XdrWriter arguments, String clientAddress) throws IOException {
 		RpcCall call = createCall( programNumber, version, procedure, arguments) ;
+		return handleCallWithClient( program, programNumber, version, procedure, clientAddress, call) ;
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * AUTH_SYS資格情報でRPC呼出を処理します。<br><br>
+	 *
+	 * <p>メソッド名称： AUTH_SYS RPC呼出処理</p>
+	 *
+	 * @param program		RPCプログラム
+	 * @param programNumber	Program番号
+	 * @param version		Version
+	 * @param procedure		Procedure
+	 * @param arguments		引数
+	 * @param uid			UID
+	 * @param gid			GID
+	 * @return 応答
+	 * @throws IOException 処理異常
+	 */
+	//--------------------------------------------------------------------------
+	private XdrWriter handleWithAuthSys(jp.co.enterogawa.nfs.rpc.RpcProgram program, int programNumber, int version, int procedure, XdrWriter arguments, int uid, int gid) throws IOException {
+		RpcCall call = createCallAuthSys( programNumber, version, procedure, arguments, uid, gid) ;
+		return handleCallWithClient( program, programNumber, version, procedure, "127.0.0.1", call) ;
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * RPC呼出を処理します。<br><br>
+	 *
+	 * <p>メソッド名称： RPC呼出処理</p>
+	 *
+	 * @param program		RPCプログラム
+	 * @param programNumber	Program番号
+	 * @param version		Version
+	 * @param procedure		Procedure
+	 * @param clientAddress	クライアントアドレス
+	 * @param call			RPC呼出
+	 * @return 応答
+	 * @throws IOException 処理異常
+	 */
+	//--------------------------------------------------------------------------
+	private XdrWriter handleCallWithClient(jp.co.enterogawa.nfs.rpc.RpcProgram program, int programNumber, int version, int procedure, String clientAddress, RpcCall call) throws IOException {
 		XdrWriter response = new XdrWriter() ;
 		RpcRequestContext context = new RpcRequestContext(
 				clientAddress,
@@ -1856,7 +2090,8 @@ public class AllTests {
 				XID,
 				programNumber,
 				version,
-				procedure) ;
+				procedure,
+				call.getCredential()) ;
 		int status = program.handle( call, context, response) ;
 
 		assertEquals( "accept status", RpcConstants.ACCEPT_SUCCESS, status) ;
@@ -1983,6 +2218,26 @@ public class AllTests {
 
 	//--------------------------------------------------------------------------
 	/**
+	 * AUTH_SYS付きRPC呼出を作成します。<br><br>
+	 *
+	 * <p>メソッド名称： AUTH_SYS付きRPC呼出作成</p>
+	 *
+	 * @param program	Program
+	 * @param version	Version
+	 * @param procedure	Procedure
+	 * @param arguments	引数
+	 * @param uid		UID
+	 * @param gid		GID
+	 * @return RPC呼出
+	 */
+	//--------------------------------------------------------------------------
+	private RpcCall createCallAuthSys(int program, int version, int procedure, XdrWriter arguments, int uid, int gid) {
+		byte[] request = createCallBytes( XID, program, version, procedure, arguments, RpcConstants.AUTH_SYS, createAuthSysCredential( uid, gid)) ;
+		return RpcCall.read( request, request.length) ;
+	}
+
+	//--------------------------------------------------------------------------
+	/**
 	 * RPC呼出バイト列を作成します。<br><br>
 	 *
 	 * <p>メソッド名称： RPC呼出バイト列作成</p>
@@ -1996,6 +2251,26 @@ public class AllTests {
 	 */
 	//--------------------------------------------------------------------------
 	private byte[] createCallBytes(int xid, int program, int version, int procedure, XdrWriter arguments) {
+		return createCallBytes( xid, program, version, procedure, arguments, RpcConstants.AUTH_NONE, new byte[0]) ;
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * RPC呼出バイト列を作成します。<br><br>
+	 *
+	 * <p>メソッド名称： RPC呼出バイト列作成</p>
+	 *
+	 * @param xid					XID
+	 * @param program				Program
+	 * @param version				Version
+	 * @param procedure				Procedure
+	 * @param arguments				引数
+	 * @param credentialFlavor		認証方式
+	 * @param credentialBody		認証データ
+	 * @return RPC呼出バイト列
+	 */
+	//--------------------------------------------------------------------------
+	private byte[] createCallBytes(int xid, int program, int version, int procedure, XdrWriter arguments, int credentialFlavor, byte[] credentialBody) {
 		XdrWriter writer = new XdrWriter() ;
 		writer.writeInt( xid) ;
 		writer.writeInt( RpcConstants.MSG_CALL) ;
@@ -2003,11 +2278,32 @@ public class AllTests {
 		writer.writeInt( program) ;
 		writer.writeInt( version) ;
 		writer.writeInt( procedure) ;
-		writer.writeInt( RpcConstants.AUTH_NONE) ;
-		writer.writeOpaque( new byte[0]) ;
+		writer.writeInt( credentialFlavor) ;
+		writer.writeOpaque( credentialBody) ;
 		writer.writeInt( RpcConstants.AUTH_NONE) ;
 		writer.writeOpaque( new byte[0]) ;
 		writer.writeFixedOpaque( arguments.toByteArray()) ;
+		return writer.toByteArray() ;
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * AUTH_SYS認証データを作成します。<br><br>
+	 *
+	 * <p>メソッド名称： AUTH_SYS認証データ作成</p>
+	 *
+	 * @param uid	UID
+	 * @param gid	GID
+	 * @return 認証データ
+	 */
+	//--------------------------------------------------------------------------
+	private byte[] createAuthSysCredential(int uid, int gid) {
+		XdrWriter writer = new XdrWriter() ;
+		writer.writeInt( 0) ;
+		writer.writeString( "test-client") ;
+		writer.writeInt( uid) ;
+		writer.writeInt( gid) ;
+		writer.writeInt( 0) ;
 		return writer.toByteArray() ;
 	}
 
@@ -2022,7 +2318,7 @@ public class AllTests {
 	 */
 	//--------------------------------------------------------------------------
 	private TestContext createContext() throws IOException {
-		return createContext( "UTF-8") ;
+		return createContext( "UTF-8", true) ;
 	}
 
 	//--------------------------------------------------------------------------
@@ -2037,6 +2333,22 @@ public class AllTests {
 	 */
 	//--------------------------------------------------------------------------
 	private TestContext createContext(String filenameCharset) throws IOException {
+		return createContext( filenameCharset, true) ;
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * テストコンテキストを作成します。<br><br>
+	 *
+	 * <p>メソッド名称： テストコンテキスト作成</p>
+	 *
+	 * @param filenameCharset	ファイル名文字コード
+	 * @param writeSync			同期書込有無
+	 * @return テストコンテキスト
+	 * @throws IOException 作成異常
+	 */
+	//--------------------------------------------------------------------------
+	private TestContext createContext(String filenameCharset, boolean writeSync) throws IOException {
 		Path root = Path.of( "work", "tmp", "test-export").toAbsolutePath().normalize() ;
 		Path data = Path.of( "work", "tmp", "test-data").toAbsolutePath().normalize() ;
 		deleteDirectory( root) ;
@@ -2058,6 +2370,7 @@ public class AllTests {
 				+ "directory.mode=0755\n"
 				+ "block.size=4096\n"
 				+ "read.size=8192\n"
+				+ "write.sync=" + writeSync + "\n"
 				+ "filename.charset=" + filenameCharset + "\n" ;
 		Files.writeString( configPath, configText, StandardCharsets.UTF_8) ;
 		NfsServerConfig config = NfsServerConfig.load( configPath) ;
@@ -2099,6 +2412,7 @@ public class AllTests {
 				+ "directory.mode=0755\n"
 				+ "block.size=4096\n"
 				+ "read.size=8192\n"
+				+ "write.sync=true\n"
 				+ "filename.charset=UTF-8\n" ;
 		Files.writeString( configPath, configText, StandardCharsets.UTF_8) ;
 		return configPath ;
@@ -2221,6 +2535,30 @@ public class AllTests {
 		reader.readInt() ;
 		reader.readInt() ;
 		reader.readInt() ;
+		reader.readLong() ;
+		reader.readLong() ;
+		reader.readInt() ;
+		reader.readInt() ;
+		reader.readLong() ;
+		reader.readLong() ;
+		reader.readUnsignedInt() ;
+		reader.readUnsignedInt() ;
+		reader.readUnsignedInt() ;
+		reader.readUnsignedInt() ;
+		reader.readUnsignedInt() ;
+		reader.readUnsignedInt() ;
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * NFSv3 fattr3のUID/GID以降を読み飛ばします。<br><br>
+	 *
+	 * <p>メソッド名称： NFSv3 fattr3残属性読飛</p>
+	 *
+	 * @param reader	XDR読込
+	 */
+	//--------------------------------------------------------------------------
+	private void skipAttributesV3Remainder(XdrReader reader) {
 		reader.readLong() ;
 		reader.readLong() ;
 		reader.readInt() ;

@@ -303,6 +303,7 @@ try {
 		"-Dfile.encoding=UTF-8",
 		"-Dtinywin.nfs.data=$dataRoot",
 		"-Dtinywin.nfs.log=$logPath",
+		"-Dtinywin.nfs.requestLog=true",
 		"-cp",
 		$bin,
 		"jp.co.enterogawa.nfs.NfsServerMain",

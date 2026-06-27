@@ -94,10 +94,18 @@ The Options tab manages advanced values:
 - Display language
 - Server host and client mount point for command generation
 - Portmap, NFS, and MOUNT ports used by both UDP and TCP transports
-- UID/GID, file mode, directory mode, block size, read size, and filename charset
+- UID/GID, file mode, directory mode, block size, read size, sync writes, write cache, and filename charset
+
+`permission.identity=auto` is the default even though the manager keeps UID/GID as advanced fallback values.
+In auto mode, the server returns the AUTH_SYS UID/GID sent by the current NFS client in file attributes.
+Use `permission.identity=fixed` only when the server must always return the configured UID/GID regardless of the client.
 
 `filename.charset` controls how NFSv2 filename and symlink path strings are decoded and encoded.
 The default is `UTF-8`. Use a Java Charset name such as `windows-31j` only when a legacy client requires it.
+
+`write.sync=false` is the default for copy performance. Set `write.sync=true` when every WRITE reply must wait for physical storage synchronization.
+
+`write.cache.enabled=true` is the default to reduce repeated file open/close overhead during large copies. Tune `write.cache.max.open` and `write.cache.idle.millis` only when the server needs to limit open file handles more aggressively.
 
 ## Language
 

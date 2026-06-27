@@ -2,7 +2,7 @@
 
 Java 21 で実装した、Windows 向けのユーザー空間 NFS サーバーです。
 
-v1.6.0 時点では、NFSv2 / NFSv3 の通常ファイル・ディレクトリ操作、MOUNT v1-v3、AUTH_SYS、UDP/TCP transport、複数 export の read-write 共有に対応しています。
+v1.6.1 時点では、NFSv2 / NFSv3 の通常ファイル・ディレクトリ操作、MOUNT v1-v3、AUTH_SYS、UDP/TCP transport、複数 export の read-write 共有に対応しています。
 
 QNX 4.25 は NFSv2/UDP、Windows Client for NFS は NFSv3/UDP と NFSv3/TCP で検証対象にしています。製品自体は QNX 専用ではありません。
 
@@ -98,6 +98,9 @@ v1.5.0以降は、サービス経由の上書き、truncate、rename上書き、
 共有フォルダは存在するディレクトリである必要があります。書込可にした共有は、Windows上でも書込可能なフォルダを指定してください。
 共有ごとの `allowed.clients` に IPv4 アドレスをカンマ区切りで指定すると、MOUNT/NFS 要求をその接続元だけに制限できます。空欄の場合は従来どおり全クライアントを許可します。
 ファイル名の文字コードは `filename.charset=UTF-8` が既定です。クライアント環境に合わせる必要がある場合は Java の Charset 名で指定できます。
+書込性能を優先するため、`write.sync=false` が既定です。各WRITE応答前に物理同期したい場合は `write.sync=true` に変更してください。
+大量コピー時のopen/close負荷を抑えるため、`write.cache.enabled=true` が既定です。保持数は `write.cache.max.open`、アイドル保持時間は `write.cache.idle.millis` で調整できます。
+`permission.identity=auto` が既定です。AUTH_SYSのUID/GIDを属性応答に反映するため、QNXやWindows Client for NFSなど複数クライアントの権限解釈に自動追従します。従来の固定UID/GID応答が必要な場合は `permission.identity=fixed` に変更してください。
 
 ## 対応範囲
 

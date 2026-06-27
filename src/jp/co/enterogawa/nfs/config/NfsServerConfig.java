@@ -52,6 +52,12 @@ public class NfsServerConfig {
 	/** GID */
 	private final int					gid ;
 
+	/** 権限ID反映設定 */
+	private final String					permissionIdentity ;
+
+	/** クライアント資格情報を属性に反映するか */
+	private final boolean				clientIdentityEnabled ;
+
 	/** ファイルモード */
 	private final int					fileMode ;
 
@@ -63,6 +69,18 @@ public class NfsServerConfig {
 
 	/** 読込サイズ */
 	private final int					readSize ;
+
+	/** 同期書込 */
+	private final boolean				writeSync ;
+
+	/** 書込ファイルキャッシュ有効有無 */
+	private final boolean				writeCacheEnabled ;
+
+	/** 書込ファイルキャッシュ最大オープン数 */
+	private final int					writeCacheMaxOpenFiles ;
+
+	/** 書込ファイルキャッシュアイドル保持時間 */
+	private final long					writeCacheIdleMillis ;
 
 	/** ファイル名文字コード */
 	private final Charset				filenameCharset ;
@@ -83,10 +101,16 @@ public class NfsServerConfig {
 		exports = loadExports( properties) ;
 		uid = getInt( properties, "uid", 0) ;
 		gid = getInt( properties, "gid", 0) ;
+		permissionIdentity = getString( properties, "permission.identity", "auto") ;
+		clientIdentityEnabled = "auto".equalsIgnoreCase( permissionIdentity) ;
 		fileMode = getOctalInt( properties, "file.mode", 0644) ;
 		directoryMode = getOctalInt( properties, "directory.mode", 0755) ;
 		blockSize = getInt( properties, "block.size", 4096) ;
 		readSize = getInt( properties, "read.size", 8192) ;
+		writeSync = getBoolean( properties, "write.sync", false) ;
+		writeCacheEnabled = getBoolean( properties, "write.cache.enabled", true) ;
+		writeCacheMaxOpenFiles = getInt( properties, "write.cache.max.open", 64) ;
+		writeCacheIdleMillis = getInt( properties, "write.cache.idle.millis", 3000) ;
 		filenameCharset = Charset.forName( getString( properties, "filename.charset", "UTF-8")) ;
 		validate() ;
 	}
@@ -228,6 +252,41 @@ public class NfsServerConfig {
 
 	//--------------------------------------------------------------------------
 	/**
+	 * 真偽値設定を取得します。<br><br>
+	 *
+	 * <p>メソッド名称： 真偽値設定取得</p>
+	 *
+	 * @param properties	設定値
+	 * @param key		キー
+	 * @param defaultValue	デフォルト値
+	 * @return 真偽値設定
+	 */
+	//--------------------------------------------------------------------------
+	private static boolean getBoolean(Properties properties, String key, boolean defaultValue) {
+		String value = properties.getProperty( key) ;
+
+		// 設定がない場合
+		if( value == null || value.isBlank()) {
+			return defaultValue ;
+		}
+
+		String normalized = value.trim() ;
+
+		// trueの場合
+		if( "true".equalsIgnoreCase( normalized)) {
+			return true ;
+		}
+
+		// falseの場合
+		if( "false".equalsIgnoreCase( normalized)) {
+			return false ;
+		}
+
+		throw new IllegalArgumentException( key + " must be true or false.") ;
+	}
+
+	//--------------------------------------------------------------------------
+	/**
 	 * 許可クライアントを取得します。<br><br>
 	 *
 	 * <p>メソッド名称： 許可クライアント取得</p>
@@ -327,6 +386,21 @@ public class NfsServerConfig {
 		// 読込サイズが不正な場合
 		if( readSize <= 0) {
 			throw new IllegalArgumentException( "read.size must be greater than zero.") ;
+		}
+
+		// 権限ID反映設定が不正な場合
+		if( !clientIdentityEnabled && !"fixed".equalsIgnoreCase( permissionIdentity)) {
+			throw new IllegalArgumentException( "permission.identity must be auto or fixed.") ;
+		}
+
+		// 書込ファイルキャッシュ最大オープン数が不正な場合
+		if( writeCacheMaxOpenFiles <= 0) {
+			throw new IllegalArgumentException( "write.cache.max.open must be greater than zero.") ;
+		}
+
+		// 書込ファイルキャッシュアイドル保持時間が不正な場合
+		if( writeCacheIdleMillis <= 0) {
+			throw new IllegalArgumentException( "write.cache.idle.millis must be greater than zero.") ;
 		}
 	}
 
@@ -633,6 +707,19 @@ public class NfsServerConfig {
 
 	//--------------------------------------------------------------------------
 	/**
+	 * クライアント資格情報を属性に反映するかどうかを取得します。<br><br>
+	 *
+	 * <p>メソッド名称： クライアント資格情報属性反映有無取得</p>
+	 *
+	 * @return true:反映 false:固定
+	 */
+	//--------------------------------------------------------------------------
+	public boolean isClientIdentityEnabled() {
+		return clientIdentityEnabled ;
+	}
+
+	//--------------------------------------------------------------------------
+	/**
 	 * ファイルモードを取得します。<br><br>
 	 *
 	 * <p>メソッド名称： ファイルモード取得</p>
@@ -681,6 +768,58 @@ public class NfsServerConfig {
 	//--------------------------------------------------------------------------
 	public int getReadSize() {
 		return readSize ;
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * 同期書込有無を取得します。<br><br>
+	 *
+	 * <p>メソッド名称： 同期書込有無取得</p>
+	 *
+	 * @return true:同期書込 false:非同期書込
+	 */
+	//--------------------------------------------------------------------------
+	public boolean isWriteSync() {
+		return writeSync ;
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * 書込ファイルキャッシュ有効有無を取得します。<br><br>
+	 *
+	 * <p>メソッド名称： 書込ファイルキャッシュ有効有無取得</p>
+	 *
+	 * @return true:有効 false:無効
+	 */
+	//--------------------------------------------------------------------------
+	public boolean isWriteCacheEnabled() {
+		return writeCacheEnabled ;
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * 書込ファイルキャッシュ最大オープン数を取得します。<br><br>
+	 *
+	 * <p>メソッド名称： 書込ファイルキャッシュ最大オープン数取得</p>
+	 *
+	 * @return 最大オープン数
+	 */
+	//--------------------------------------------------------------------------
+	public int getWriteCacheMaxOpenFiles() {
+		return writeCacheMaxOpenFiles ;
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * 書込ファイルキャッシュアイドル保持時間を取得します。<br><br>
+	 *
+	 * <p>メソッド名称： 書込ファイルキャッシュアイドル保持時間取得</p>
+	 *
+	 * @return アイドル保持時間
+	 */
+	//--------------------------------------------------------------------------
+	public long getWriteCacheIdleMillis() {
+		return writeCacheIdleMillis ;
 	}
 
 	//--------------------------------------------------------------------------

@@ -20,13 +20,18 @@ import java.nio.file.attribute.DosFileAttributes;
 import java.nio.file.attribute.FileTime;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 import jp.co.enterogawa.nfs.config.NfsExport;
 import jp.co.enterogawa.nfs.config.NfsServerConfig;
 import jp.co.enterogawa.nfs.export.FileHandle;
 import jp.co.enterogawa.nfs.export.FileHandleTable;
+import jp.co.enterogawa.nfs.io.WriteFileCache;
 import jp.co.enterogawa.nfs.rpc.RpcCall;
 import jp.co.enterogawa.nfs.rpc.RpcConstants;
 import jp.co.enterogawa.nfs.rpc.RpcProgram;
@@ -95,6 +100,9 @@ public class NfsV3Program implements RpcProgram {
 	/** FILE_SYNC */
 	private static final int				FILE_SYNC = 2 ;
 
+	/** UNSTABLE */
+	private static final int				UNSTABLE = 0 ;
+
 	/** UNCHECKED */
 	private static final int				CREATE_UNCHECKED = 0 ;
 
@@ -156,6 +164,12 @@ public class NfsV3Program implements RpcProgram {
 	/** ファイル名文字コード */
 	private final Charset				filenameCharset ;
 
+	/** 書込ファイルキャッシュ */
+	private final WriteFileCache			writeFileCache ;
+
+	/** NFS経由hard linkグループ */
+	private final Map<Path, HardLinkGroup> hardLinkGroups = new HashMap<Path, HardLinkGroup>() ;
+
 	//--------------------------------------------------------------------------
 	/**
 	 * インスタンスを生成します。<br><br>
@@ -167,9 +181,38 @@ public class NfsV3Program implements RpcProgram {
 	 */
 	//--------------------------------------------------------------------------
 	public NfsV3Program(NfsServerConfig config, FileHandleTable handleTable) {
+		this( config, handleTable, new WriteFileCache( config)) ;
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * インスタンスを生成します。<br><br>
+	 *
+	 * <p>メソッド名称： コンストラクタ</p>
+	 *
+	 * @param config			設定
+	 * @param handleTable		ファイルハンドル管理
+	 * @param writeFileCache	書込ファイルキャッシュ
+	 */
+	//--------------------------------------------------------------------------
+	public NfsV3Program(NfsServerConfig config, FileHandleTable handleTable, WriteFileCache writeFileCache) {
 		this.config = config ;
 		this.handleTable = handleTable ;
+		this.writeFileCache = writeFileCache ;
 		filenameCharset = config.getFilenameCharset() ;
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * リソースを閉じます。<br><br>
+	 *
+	 * <p>メソッド名称： リソースクローズ</p>
+	 *
+	 * @throws IOException クローズ異常
+	 */
+	//--------------------------------------------------------------------------
+	public void close() throws IOException {
+		writeFileCache.close() ;
 	}
 
 	//--------------------------------------------------------------------------
@@ -397,6 +440,7 @@ public class NfsV3Program implements RpcProgram {
 		}
 
 		try {
+			writeFileCache.close( path) ;
 			applySetAttributes( path, attributes, true) ;
 		} catch( IOException ioex) {
 			int status = mapIoStatus( ioex) ;
@@ -638,10 +682,8 @@ public class NfsV3Program implements RpcProgram {
 
 		int writeLength = Math.min( count, data.length) ;
 
-		try( RandomAccessFile file = new RandomAccessFile( path.toFile(), "rw")) {
-			file.seek( offset) ;
-			file.write( data, 0, writeLength) ;
-			file.getFD().sync() ;
+		try {
+			writeFileCache.write( path, offset, data, writeLength, config.isWriteSync()) ;
 		} catch( IOException ioex) {
 			int status = mapIoStatus( ioex) ;
 			logMutation( "WRITE", path, status, ioex.getClass().getSimpleName() + " offset=" + offset + " bytes=" + writeLength) ;
@@ -654,7 +696,7 @@ public class NfsV3Program implements RpcProgram {
 		response.writeInt( NfsStatus.OK) ;
 		writeWccData( response, beforeAttributes, path) ;
 		response.writeInt( writeLength) ;
-		response.writeInt( FILE_SYNC) ;
+		response.writeInt( config.isWriteSync() ? FILE_SYNC : UNSTABLE) ;
 		response.writeFixedOpaque( WRITE_VERIFIER) ;
 	}
 
@@ -716,6 +758,7 @@ public class NfsV3Program implements RpcProgram {
 
 			// 属性が指定されている場合
 			if( attributes != null) {
+				writeFileCache.close( path) ;
 				applySetAttributes( path, attributes, false) ;
 			}
 		} catch( IOException ioex) {
@@ -873,7 +916,9 @@ public class NfsV3Program implements RpcProgram {
 		}
 
 		try {
+			writeFileCache.close( path) ;
 			Files.delete( path) ;
+			forgetHardLink( path) ;
 			handleTable.forget( path) ;
 		} catch( IOException ioex) {
 			int status = mapIoStatus( ioex) ;
@@ -979,7 +1024,10 @@ public class NfsV3Program implements RpcProgram {
 		}
 
 		try {
+			closeCachedPath( source.getPath()) ;
+			closeCachedPath( target.getPath()) ;
 			Files.move( source.getPath(), target.getPath(), StandardCopyOption.REPLACE_EXISTING) ;
+			moveHardLink( source.getPath(), target.getPath()) ;
 			handleTable.move( source.getPath(), target.getPath()) ;
 		} catch( IOException ioex) {
 			int status = mapIoStatus( ioex) ;
@@ -1047,6 +1095,7 @@ public class NfsV3Program implements RpcProgram {
 
 		try {
 			Files.createLink( target.getPath(), source) ;
+			trackHardLink( source, target.getPath()) ;
 			handleTable.getOrCreate( target.getPath()) ;
 		} catch( IOException | UnsupportedOperationException | SecurityException ex) {
 			int status = ex instanceof IOException ioex ? mapIoStatus( ioex) : NfsStatus.PERM ;
@@ -1340,7 +1389,7 @@ public class NfsV3Program implements RpcProgram {
 		}
 
 		try {
-			syncExistingFile( path) ;
+			writeFileCache.sync( path) ;
 		} catch( IOException ioex) {
 			int status = mapIoStatus( ioex) ;
 			logMutation( "COMMIT", path, status, ioex.getClass().getSimpleName()) ;
@@ -1633,8 +1682,8 @@ public class NfsV3Program implements RpcProgram {
 		response.writeInt( type) ;
 		response.writeUnsignedInt( mode) ;
 		response.writeUnsignedInt( readLinkCount( path, directory)) ;
-		response.writeUnsignedInt( config.getUid()) ;
-		response.writeUnsignedInt( config.getGid()) ;
+		response.writeUnsignedInt( resolveAttributeUid()) ;
+		response.writeUnsignedInt( resolveAttributeGid()) ;
 		response.writeLong( size) ;
 		response.writeLong( used) ;
 		response.writeUnsignedInt( 0) ;
@@ -1644,6 +1693,42 @@ public class NfsV3Program implements RpcProgram {
 		writeTime( response, attributes.lastAccessTime()) ;
 		writeTime( response, attributes.lastModifiedTime()) ;
 		writeTime( response, attributes.lastModifiedTime()) ;
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * 応答属性UIDを解決します。<br><br>
+	 *
+	 * <p>メソッド名称： 応答属性UID解決</p>
+	 *
+	 * @return UID
+	 */
+	//--------------------------------------------------------------------------
+	private int resolveAttributeUid() {
+		// クライアント資格情報を反映しない場合
+		if( !config.isClientIdentityEnabled()) {
+			return config.getUid() ;
+		}
+
+		return RpcRequestContext.current().resolveUid( config.getUid()) ;
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * 応答属性GIDを解決します。<br><br>
+	 *
+	 * <p>メソッド名称： 応答属性GID解決</p>
+	 *
+	 * @return GID
+	 */
+	//--------------------------------------------------------------------------
+	private int resolveAttributeGid() {
+		// クライアント資格情報を反映しない場合
+		if( !config.isClientIdentityEnabled()) {
+			return config.getGid() ;
+		}
+
+		return RpcRequestContext.current().resolveGid( config.getGid()) ;
 	}
 
 	//--------------------------------------------------------------------------
@@ -1760,27 +1845,6 @@ public class NfsV3Program implements RpcProgram {
 		// 時刻指定がある場合
 		if( attributes.getAccessTime() != null || attributes.getModifiedTime() != null) {
 			view.setTimes( attributes.getModifiedTime(), attributes.getAccessTime(), null) ;
-		}
-	}
-
-	//--------------------------------------------------------------------------
-	/**
-	 * 既存ファイルを同期します。<br><br>
-	 *
-	 * <p>メソッド名称： 既存ファイル同期</p>
-	 *
-	 * @param path	対象パス
-	 * @throws IOException 同期異常
-	 */
-	//--------------------------------------------------------------------------
-	private void syncExistingFile(Path path) throws IOException {
-		// 通常ファイルではない場合
-		if( !Files.isRegularFile( path, LinkOption.NOFOLLOW_LINKS)) {
-			return ;
-		}
-
-		try( RandomAccessFile file = new RandomAccessFile( path.toFile(), "r")) {
-			file.getFD().sync() ;
 		}
 	}
 
@@ -1990,7 +2054,117 @@ public class NfsV3Program implements RpcProgram {
 			return 2L ;
 		}
 
-		return 1L ;
+		return Math.max( 1L, getTrackedHardLinkCount( path)) ;
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * hard linkを追跡します。<br><br>
+	 *
+	 * <p>メソッド名称： hard link追跡</p>
+	 *
+	 * @param source	リンク元
+	 * @param target	リンク先
+	 */
+	//--------------------------------------------------------------------------
+	private synchronized void trackHardLink(Path source, Path target) {
+		Path sourceKey = hardLinkKey( source) ;
+		Path targetKey = hardLinkKey( target) ;
+		HardLinkGroup group = hardLinkGroups.get( sourceKey) ;
+
+		// 既存グループが存在しない場合
+		if( group == null) {
+			group = new HardLinkGroup() ;
+			group.add( sourceKey) ;
+			hardLinkGroups.put( sourceKey, group) ;
+		}
+
+		group.add( targetKey) ;
+		hardLinkGroups.put( targetKey, group) ;
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * hard link追跡を忘却します。<br><br>
+	 *
+	 * <p>メソッド名称： hard link追跡忘却</p>
+	 *
+	 * @param path	対象パス
+	 */
+	//--------------------------------------------------------------------------
+	private synchronized void forgetHardLink(Path path) {
+		Path key = hardLinkKey( path) ;
+		HardLinkGroup group = hardLinkGroups.remove( key) ;
+
+		// グループが存在しない場合
+		if( group == null) {
+			return ;
+		}
+
+		group.remove( key) ;
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * hard link追跡パスを移動します。<br><br>
+	 *
+	 * <p>メソッド名称： hard link追跡パス移動</p>
+	 *
+	 * @param source	移動元
+	 * @param target	移動先
+	 */
+	//--------------------------------------------------------------------------
+	private synchronized void moveHardLink(Path source, Path target) {
+		Path sourceKey = hardLinkKey( source) ;
+		Path targetKey = hardLinkKey( target) ;
+		HardLinkGroup group = hardLinkGroups.remove( sourceKey) ;
+
+		// 上書き先の既存追跡を削除する
+		forgetHardLink( target) ;
+
+		// グループが存在しない場合
+		if( group == null) {
+			return ;
+		}
+
+		group.remove( sourceKey) ;
+		group.add( targetKey) ;
+		hardLinkGroups.put( targetKey, group) ;
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * 追跡中のhard link数を取得します。<br><br>
+	 *
+	 * <p>メソッド名称： 追跡hard link数取得</p>
+	 *
+	 * @param path	対象パス
+	 * @return hard link数
+	 */
+	//--------------------------------------------------------------------------
+	private synchronized long getTrackedHardLinkCount(Path path) {
+		HardLinkGroup group = hardLinkGroups.get( hardLinkKey( path)) ;
+
+		// グループが存在しない場合
+		if( group == null) {
+			return 1L ;
+		}
+
+		return group.size() ;
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * hard link追跡キーを取得します。<br><br>
+	 *
+	 * <p>メソッド名称： hard link追跡キー取得</p>
+	 *
+	 * @param path	対象パス
+	 * @return 追跡キー
+	 */
+	//--------------------------------------------------------------------------
+	private Path hardLinkKey(Path path) {
+		return path.toAbsolutePath().normalize() ;
 	}
 
 	//--------------------------------------------------------------------------
@@ -2078,6 +2252,26 @@ public class NfsV3Program implements RpcProgram {
 
 	//--------------------------------------------------------------------------
 	/**
+	 * 対象パスの書込キャッシュを閉じます。<br><br>
+	 *
+	 * <p>メソッド名称： 書込キャッシュクローズ</p>
+	 *
+	 * @param path	対象パス
+	 * @throws IOException クローズ異常
+	 */
+	//--------------------------------------------------------------------------
+	private void closeCachedPath(Path path) throws IOException {
+		// ディレクトリの場合
+		if( Files.isDirectory( path, LinkOption.NOFOLLOW_LINKS)) {
+			writeFileCache.closeTree( path) ;
+			return ;
+		}
+
+		writeFileCache.close( path) ;
+	}
+
+	//--------------------------------------------------------------------------
+	/**
 	 * アクセス拒否ログを出力します。<br><br>
 	 *
 	 * <p>メソッド名称： アクセス拒否ログ出力</p>
@@ -2104,6 +2298,11 @@ public class NfsV3Program implements RpcProgram {
 	 */
 	//--------------------------------------------------------------------------
 	private void logMutation(String operation, Path path, int status, String detail) {
+		// 高頻度の成功ログを抑制する場合
+		if( !ServerLog.shouldLogOperation( operation, status)) {
+			return ;
+		}
+
 		RpcRequestContext context = RpcRequestContext.current() ;
 		StringBuilder message = new StringBuilder() ;
 		message.append( "NFSv3 " ).append( operation)
@@ -2637,6 +2836,57 @@ public class NfsV3Program implements RpcProgram {
 		//----------------------------------------------------------------------
 		long getFileId() {
 			return fileId ;
+		}
+	}
+
+	//------------------------------------------------------------------------------
+	/**
+	 * hard linkグループクラスです。<br><br>
+	 *
+	 * <p>クラス名称： hard linkグループ</p>
+	 */
+	//------------------------------------------------------------------------------
+	private static class HardLinkGroup {
+		/** パス */
+		private final Set<Path>			paths = new HashSet<Path>() ;
+
+		//----------------------------------------------------------------------
+		/**
+		 * パスを追加します。<br><br>
+		 *
+		 * <p>メソッド名称： パス追加</p>
+		 *
+		 * @param path	パス
+		 */
+		//----------------------------------------------------------------------
+		void add(Path path) {
+			paths.add( path) ;
+		}
+
+		//----------------------------------------------------------------------
+		/**
+		 * パスを削除します。<br><br>
+		 *
+		 * <p>メソッド名称： パス削除</p>
+		 *
+		 * @param path	パス
+		 */
+		//----------------------------------------------------------------------
+		void remove(Path path) {
+			paths.remove( path) ;
+		}
+
+		//----------------------------------------------------------------------
+		/**
+		 * パス数を取得します。<br><br>
+		 *
+		 * <p>メソッド名称： パス数取得</p>
+		 *
+		 * @return パス数
+		 */
+		//----------------------------------------------------------------------
+		long size() {
+			return paths.size() ;
 		}
 	}
 }
