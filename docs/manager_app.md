@@ -40,6 +40,9 @@ For service install, uninstall, start, stop, firewall changes, and privileged sm
 dist\TinyWinNfsManager\TinyWinNfsManager-Admin.cmd
 ```
 
+The installed Start Menu and desktop shortcuts target `TinyWinNfsManager.exe` directly.
+The installer registers the installed manager executable with Windows `RUNASADMIN` compatibility so the GUI opens through UAC without a console window.
+
 ## Distribution Layout
 
 ```text

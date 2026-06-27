@@ -23,6 +23,7 @@ Install tasks:
 - Stop and remove legacy `OgawaNfsServer` or `QnxNfsServer` services before installing `TinyWinNfsServer`.
 - Add Windows Firewall rules for UDP/TCP `111`, `2049`, and `20048`.
 - Start `TinyWinNfsServer` after installation when the service task is selected.
+- Register `TinyWinNfsManager.exe` with Windows `RUNASADMIN` compatibility so installed shortcuts launch through UAC without a command prompt.
 
 The installer requires administrator privileges because service installation and firewall changes are privileged operations.
 

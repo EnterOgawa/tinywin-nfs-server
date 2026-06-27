@@ -34,6 +34,9 @@ Name: "desktopicon"; Description: "デスクトップにショートカットを
 Name: "installservice"; Description: "Windowsサービスをインストールする"; GroupDescription: "サービス:"
 Name: "firewallrules"; Description: "Windows Firewallルールを追加する"; GroupDescription: "サービス:"
 
+[InstallDelete]
+Type: files; Name: "{group}\TinyWinNFS Manager (Admin).lnk"
+
 [Files]
 Source: "{#SourceDir}\LICENSE"; DestDir: "{app}"; Flags: ignoreversion
 Source: "{#SourceDir}\THIRD_PARTY_NOTICES.md"; DestDir: "{app}"; Flags: ignoreversion
@@ -48,16 +51,18 @@ Source: "{#SourceDir}\scripts\*"; DestDir: "{app}\scripts"; Flags: ignoreversion
 Source: "{#SourceDir}\service\*"; DestDir: "{app}\service"; Flags: ignoreversion recursesubdirs createallsubdirs
 Source: "{#SourceDir}\conf\*"; DestDir: "{app}\conf"; Flags: ignoreversion recursesubdirs createallsubdirs onlyifdoesntexist
 
+[Registry]
+Root: HKLM; Subkey: "Software\Microsoft\Windows NT\CurrentVersion\AppCompatFlags\Layers"; ValueType: string; ValueName: "{app}\{#AppExeName}"; ValueData: "~ RUNASADMIN"; Flags: uninsdeletevalue
+
 [Icons]
-Name: "{group}\TinyWinNFS Manager"; Filename: "{app}\TinyWinNfsManager-Admin.cmd"; WorkingDir: "{app}"; IconFilename: "{app}\{#AppExeName}"
-Name: "{group}\TinyWinNFS Manager (Admin)"; Filename: "{app}\TinyWinNfsManager-Admin.cmd"; WorkingDir: "{app}"; IconFilename: "{app}\{#AppExeName}"
-Name: "{autodesktop}\TinyWinNFS Manager"; Filename: "{app}\TinyWinNfsManager-Admin.cmd"; WorkingDir: "{app}"; IconFilename: "{app}\{#AppExeName}"; Tasks: desktopicon
+Name: "{group}\TinyWinNFS Manager"; Filename: "{app}\{#AppExeName}"; WorkingDir: "{app}"
+Name: "{autodesktop}\TinyWinNFS Manager"; Filename: "{app}\{#AppExeName}"; WorkingDir: "{app}"; Tasks: desktopicon
 
 [Run]
 Filename: "powershell.exe"; Parameters: "-NoProfile -ExecutionPolicy Bypass -File ""{app}\scripts\install-service.ps1"" -Force"; WorkingDir: "{app}"; StatusMsg: "Windowsサービスをインストールしています..."; Tasks: installservice; Flags: runhidden waituntilterminated
 Filename: "powershell.exe"; Parameters: "-NoProfile -ExecutionPolicy Bypass -File ""{app}\scripts\add-firewall-rules.ps1"""; WorkingDir: "{app}"; StatusMsg: "Windows Firewallルールを追加しています..."; Tasks: firewallrules; Flags: runhidden waituntilterminated
 Filename: "powershell.exe"; Parameters: "-NoProfile -ExecutionPolicy Bypass -File ""{app}\scripts\start-service.ps1"""; WorkingDir: "{app}"; StatusMsg: "Windowsサービスを開始しています..."; Tasks: installservice; Flags: runhidden waituntilterminated
-Filename: "{app}\TinyWinNfsManager-Admin.cmd"; Description: "TinyWinNFS Managerを起動する"; WorkingDir: "{app}"; Flags: nowait postinstall skipifsilent
+Filename: "{app}\{#AppExeName}"; Description: "TinyWinNFS Managerを起動する"; WorkingDir: "{app}"; Flags: nowait postinstall skipifsilent
 
 [UninstallRun]
 Filename: "powershell.exe"; Parameters: "-NoProfile -ExecutionPolicy Bypass -File ""{app}\scripts\uninstall-service.ps1"""; WorkingDir: "{app}"; StatusMsg: "Windowsサービスを削除しています..."; Flags: runhidden waituntilterminated; RunOnceId: "TinyWinNfsServerUninstallService"
