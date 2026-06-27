@@ -1,6 +1,6 @@
 # Service stability test
 
-This check is for the v1.5.0 operational hardening milestone.
+This check is for operational hardening after the NFSv3 and TCP transport milestones.
 
 Run it only on a machine where TinyWinNFS Server is installed as a Windows service and the configured export is safe for test file creation.
 
@@ -24,7 +24,7 @@ The integrity smoke test verifies create, overwrite, truncate, append, rename ov
 .\scripts\test-service-stability.ps1 -DurationMinutes 60 -IntervalSeconds 15 -RestartEveryIterations 10
 ```
 
-This adds regular service restarts between integrity passes. Use this before release when validating that UDP ports are released and rebound cleanly.
+This adds regular service restarts between integrity passes. Use this before release when validating that UDP/TCP ports are released and rebound cleanly.
 
 ## Pass criteria
 

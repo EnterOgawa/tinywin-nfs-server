@@ -2,6 +2,8 @@ param(
 	[string]$DriveLetter = "Z",
 	[string]$ServerHost = "127.0.0.1",
 	[string]$ExportName = "export",
+	[ValidateSet("UDP", "TCP")]
+	[string]$Transport = "UDP",
 	[switch]$KeepWork
 )
 
@@ -17,11 +19,17 @@ $configPath = Join-Path $workRoot "nfs-server.properties"
 $logPath = Join-Path $workRoot "nfs-server.log"
 $mountExe = Join-Path $env:SystemRoot "System32\mount.exe"
 $umountExe = Join-Path $env:SystemRoot "System32\umount.exe"
+$nfsAdminExe = Join-Path $env:SystemRoot "System32\nfsadmin.exe"
 $driveName = $DriveLetter.TrimEnd(":")
 $drivePath = $driveName + ":"
 $mountPath = $drivePath + "\"
 $serverProcess = $null
 $mounted = $false
+$originalProtocol = $null
+
+if( !$PSBoundParameters.ContainsKey("ExportName")) {
+	$ExportName = "export-$($Transport.ToLowerInvariant())-$(Get-Date -Format 'yyyyMMddHHmmss')"
+}
 
 function Assert-CommandPath {
 	param(
@@ -61,6 +69,58 @@ function Wait-UdpPorts {
 	}
 
 	throw "UDP ports did not start listening: $($Ports -join ', ')"
+}
+
+function Wait-TcpPorts {
+	param(
+		[int[]]$Ports,
+		[int]$TimeoutSeconds = 15
+	)
+
+	$deadline = (Get-Date).AddSeconds($TimeoutSeconds)
+
+	while( (Get-Date) -lt $deadline) {
+		$missing = @()
+
+		foreach( $port in $Ports) {
+			$endpoint = Get-NetTCPConnection -LocalPort $port -State Listen -ErrorAction SilentlyContinue
+
+			if( $endpoint -eq $null) {
+				$missing += $port
+			}
+		}
+
+		if( $missing.Count -eq 0) {
+			return
+		}
+
+		Start-Sleep -Milliseconds 500
+	}
+
+	throw "TCP ports did not start listening: $($Ports -join ', ')"
+}
+
+function Get-NfsClientProtocol {
+	$output = & $nfsAdminExe client
+	$line = $output | Where-Object { $_ -match "^\s*Protocol\s*:" } | Select-Object -First 1
+
+	if( [string]::IsNullOrWhiteSpace($line)) {
+		return "TCP+UDP"
+	}
+
+	return ($line -split ":", 2)[1].Trim()
+}
+
+function Set-NfsClientProtocol {
+	param(
+		[string]$Protocol
+	)
+
+	& $nfsAdminExe client config "protocol=$Protocol" | Out-Host
+
+	if( $LASTEXITCODE -ne 0) {
+		throw "nfsadmin client config protocol=$Protocol failed: $LASTEXITCODE"
+	}
 }
 
 function Remove-TestPath {
@@ -164,19 +224,41 @@ function Invoke-WindowsNfsChecks {
 	}
 }
 
+function Wait-LogPattern {
+	param(
+		[string]$Pattern,
+		[string]$Description,
+		[int]$TimeoutSeconds = 10
+	)
+
+	$deadline = (Get-Date).AddSeconds($TimeoutSeconds)
+
+	while( (Get-Date) -lt $deadline) {
+		if( Test-Path -LiteralPath $logPath) {
+			$logText = Get-Content -LiteralPath $logPath -Raw
+
+			if( $logText -match $Pattern) {
+				return
+			}
+		}
+
+		Start-Sleep -Milliseconds 250
+	}
+
+	throw "$Description was not observed in server log."
+}
+
 function Assert-NfsV3Log {
 	if( !(Test-Path -LiteralPath $logPath)) {
 		throw "server log was not created: $logPath"
 	}
 
-	$logText = Get-Content -LiteralPath $logPath -Raw
+	Wait-LogPattern -Pattern "program=100005 version=3" -Description "MOUNT v3 request"
+	Wait-LogPattern -Pattern "program=100003 version=3" -Description "NFSv3 request"
 
-	if( $logText -notmatch "program=100005 version=3") {
-		throw "MOUNT v3 request was not observed in server log."
-	}
-
-	if( $logText -notmatch "program=100003 version=3") {
-		throw "NFSv3 request was not observed in server log."
+	if( $Transport -eq "TCP") {
+		Wait-LogPattern -Pattern "server=nfs-mount-tcp.*program=100005 version=3" -Description "MOUNT v3 request over TCP"
+		Wait-LogPattern -Pattern "server=nfs-tcp.*program=100003 version=3" -Description "NFSv3 request over TCP"
 	}
 }
 
@@ -184,6 +266,7 @@ try {
 	Assert-CommandPath -Path $java -Name "java.exe"
 	Assert-CommandPath -Path $mountExe -Name "mount.exe"
 	Assert-CommandPath -Path $umountExe -Name "umount.exe"
+	Assert-CommandPath -Path $nfsAdminExe -Name "nfsadmin.exe"
 
 	$nfsClient = Get-Service -Name NfsClnt -ErrorAction SilentlyContinue
 
@@ -202,6 +285,10 @@ try {
 	foreach( $port in @(111, 2049, 20048)) {
 		if( Get-NetUDPEndpoint -LocalPort $port -ErrorAction SilentlyContinue) {
 			throw "UDP port $port is already in use."
+		}
+
+		if( Get-NetTCPConnection -LocalPort $port -State Listen -ErrorAction SilentlyContinue) {
+			throw "TCP port $port is already in use."
 		}
 	}
 
@@ -223,11 +310,15 @@ try {
 	)
 	$serverProcess = Start-Process -FilePath $java -ArgumentList $arguments -WorkingDirectory $root -WindowStyle Hidden -PassThru
 	Wait-UdpPorts -Ports @(111, 2049, 20048)
+	Wait-TcpPorts -Ports @(111, 2049, 20048)
+	$originalProtocol = Get-NfsClientProtocol
+	Set-NfsClientProtocol -Protocol $Transport
 	Invoke-Mount
 	Invoke-WindowsNfsChecks
 	Assert-NfsV3Log
 
 	Write-Host "PASS: Windows Client for NFS mount"
+	Write-Host "PASS: Windows Client for NFS $Transport transport"
 	Write-Host "PASS: Windows Client for NFS v3 RPC"
 	Write-Host "PASS: Windows Client for NFS create/read/update/rename/delete"
 	Write-Host "PASS: Windows Client for NFS directory create/delete"
@@ -244,6 +335,10 @@ try {
 		if( $running -ne $null) {
 			Stop-Process -Id $serverProcess.Id -Force
 		}
+	}
+
+	if( $originalProtocol -ne $null) {
+		Set-NfsClientProtocol -Protocol $originalProtocol
 	}
 
 	if( !$KeepWork) {

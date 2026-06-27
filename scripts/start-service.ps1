@@ -60,6 +60,35 @@ function Wait-UdpPorts {
 	throw "UDP ports did not start listening: $($Ports -join ', ')"
 }
 
+function Wait-TcpPorts {
+	param(
+		[int[]]$Ports,
+		[int]$TimeoutSeconds = 30
+	)
+
+	$deadline = (Get-Date).AddSeconds($TimeoutSeconds)
+
+	while( (Get-Date) -lt $deadline) {
+		$missing = @()
+
+		foreach( $port in $Ports) {
+			$endpoint = Get-NetTCPConnection -LocalPort $port -State Listen -ErrorAction SilentlyContinue
+
+			if( $endpoint -eq $null) {
+				$missing += $port
+			}
+		}
+
+		if( $missing.Count -eq 0) {
+			return
+		}
+
+		Start-Sleep -Milliseconds 500
+	}
+
+	throw "TCP ports did not start listening: $($Ports -join ', ')"
+}
+
 $existing = $null
 
 foreach( $candidate in $serviceNames) {
@@ -86,4 +115,5 @@ $ports += Get-ConfigInt -Key "portmap.port" -DefaultValue 111
 $ports += Get-ConfigInt -Key "nfs.port" -DefaultValue 2049
 $ports += Get-ConfigInt -Key "mount.port" -DefaultValue 20048
 Wait-UdpPorts $ports
+Wait-TcpPorts $ports
 Get-Service -Name $serviceName

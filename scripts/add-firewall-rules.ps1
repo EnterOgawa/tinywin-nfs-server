@@ -10,9 +10,12 @@ if( !(Test-Administrator)) {
 }
 
 $rules = @(
-	@{ Name = "TinyWinNFS-Portmap-UDP-111"; Port = 111 },
-	@{ Name = "TinyWinNFS-NFS-UDP-2049"; Port = 2049 },
-	@{ Name = "TinyWinNFS-Mount-UDP-20048"; Port = 20048 }
+	@{ Name = "TinyWinNFS-Portmap-UDP-111"; Protocol = "UDP"; Port = 111 },
+	@{ Name = "TinyWinNFS-NFS-UDP-2049"; Protocol = "UDP"; Port = 2049 },
+	@{ Name = "TinyWinNFS-Mount-UDP-20048"; Protocol = "UDP"; Port = 20048 },
+	@{ Name = "TinyWinNFS-Portmap-TCP-111"; Protocol = "TCP"; Port = 111 },
+	@{ Name = "TinyWinNFS-NFS-TCP-2049"; Protocol = "TCP"; Port = 2049 },
+	@{ Name = "TinyWinNFS-Mount-TCP-20048"; Protocol = "TCP"; Port = 20048 }
 )
 
 foreach( $rule in $rules) {
@@ -26,6 +29,6 @@ foreach( $rule in $rules) {
 		-DisplayName $rule.Name `
 		-Direction Inbound `
 		-Action Allow `
-		-Protocol UDP `
+		-Protocol $rule.Protocol `
 		-LocalPort $rule.Port | Out-Host
 }

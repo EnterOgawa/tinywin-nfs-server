@@ -1,8 +1,11 @@
 package jp.co.enterogawa.nfs;
 
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
+import java.net.Socket;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -51,6 +54,9 @@ public class ServiceSmokeTest {
 	/** XID */
 	private int							xid = 0x20000000 ;
 
+	/** TCP transport使用有無 */
+	private boolean						tcpTransport ;
+
 	//--------------------------------------------------------------------------
 	/**
 	 * テストを開始します。<br><br>
@@ -65,6 +71,12 @@ public class ServiceSmokeTest {
 		ServiceSmokeTest test = new ServiceSmokeTest() ;
 
 		if( args.length > 0) {
+			if( args.length == 1 && "tcp".equals( args[0])) {
+				test.tcpTransport = true ;
+				test.run() ;
+				return ;
+			}
+
 			if( args.length == 2 && "prepare-handle-persistence".equals( args[0])) {
 				test.prepareHandlePersistence( Path.of( args[1])) ;
 				return ;
@@ -214,7 +226,7 @@ public class ServiceSmokeTest {
 		XdrWriter arguments = new XdrWriter() ;
 		arguments.writeInt( RpcConstants.PROGRAM_NFS) ;
 		arguments.writeInt( 2) ;
-		arguments.writeInt( RpcConstants.IPPROTO_UDP) ;
+		arguments.writeInt( tcpTransport ? RpcConstants.IPPROTO_TCP : RpcConstants.IPPROTO_UDP) ;
 		arguments.writeInt( 0) ;
 
 		XdrReader reader = call( PORTMAP_PORT, RpcConstants.PROGRAM_PORTMAP, 2, 3, arguments) ;
@@ -605,6 +617,30 @@ public class ServiceSmokeTest {
 	 */
 	//--------------------------------------------------------------------------
 	private XdrReader call(int port, int program, int version, int procedure, XdrWriter arguments) throws Exception {
+		// TCP transportの場合
+		if( tcpTransport) {
+			return callTcp( port, program, version, procedure, arguments) ;
+		}
+
+		return callUdp( port, program, version, procedure, arguments) ;
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * UDP RPCを呼び出します。<br><br>
+	 *
+	 * <p>メソッド名称： UDP RPC呼出</p>
+	 *
+	 * @param port		ポート
+	 * @param program	Program
+	 * @param version	Version
+	 * @param procedure	Procedure
+	 * @param arguments	引数
+	 * @return 応答本文
+	 * @throws Exception 呼出異常
+	 */
+	//--------------------------------------------------------------------------
+	private XdrReader callUdp(int port, int program, int version, int procedure, XdrWriter arguments) throws Exception {
 		int requestXid = ++xid ;
 		byte[] request = createCall( requestXid, program, version, procedure, arguments) ;
 		byte[] buffer = new byte[65535] ;
@@ -625,6 +661,49 @@ public class ServiceSmokeTest {
 		reader.readOpaque() ;
 		assertEquals( "accept status", RpcConstants.ACCEPT_SUCCESS, reader.readInt()) ;
 		return new XdrReader( reader.readRemaining()) ;
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * TCP RPCを呼び出します。<br><br>
+	 *
+	 * <p>メソッド名称： TCP RPC呼出</p>
+	 *
+	 * @param port		ポート
+	 * @param program	Program
+	 * @param version	Version
+	 * @param procedure	Procedure
+	 * @param arguments	引数
+	 * @return 応答本文
+	 * @throws Exception 呼出異常
+	 */
+	//--------------------------------------------------------------------------
+	private XdrReader callTcp(int port, int program, int version, int procedure, XdrWriter arguments) throws Exception {
+		int requestXid = ++xid ;
+		byte[] request = createCall( requestXid, program, version, procedure, arguments) ;
+
+		try( Socket socket = new Socket( HOST, port)) {
+			socket.setSoTimeout( TIMEOUT) ;
+			DataOutputStream output = new DataOutputStream( socket.getOutputStream()) ;
+			DataInputStream input = new DataInputStream( socket.getInputStream()) ;
+			output.writeInt( 0x80000000 | request.length) ;
+			output.write( request) ;
+			output.flush() ;
+
+			int header = input.readInt() ;
+			int length = header & 0x7fffffff ;
+			byte[] response = input.readNBytes( length) ;
+
+			assertEquals( "tcp response length", length, response.length) ;
+			XdrReader reader = new XdrReader( response) ;
+			assertEquals( "xid", requestXid, reader.readInt()) ;
+			assertEquals( "message type", RpcConstants.MSG_REPLY, reader.readInt()) ;
+			assertEquals( "reply status", RpcConstants.REPLY_STAT_ACCEPTED, reader.readInt()) ;
+			reader.readInt() ;
+			reader.readOpaque() ;
+			assertEquals( "accept status", RpcConstants.ACCEPT_SUCCESS, reader.readInt()) ;
+			return new XdrReader( reader.readRemaining()) ;
+		}
 	}
 
 	//--------------------------------------------------------------------------

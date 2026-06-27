@@ -2,7 +2,8 @@
 
 Windows Client for NFS is the primary local integration test for v1.2.0 and later. It verifies that TinyWinNFS can be mounted by a native Windows NFS client without WSL or Hyper-V.
 
-For v1.4.0, this test also verifies that the server observed MOUNT v3 and NFSv3 RPC requests in its log.
+For v1.4.0 and later, this test also verifies that the server observed MOUNT v3 and NFSv3 RPC requests in its log.
+For v1.6.0 and later, the same script can validate UDP or TCP transport.
 
 QNX 4.25 on VMware remains the legacy-client compatibility reference. WSL checks are optional only.
 
@@ -11,7 +12,7 @@ QNX 4.25 on VMware remains the legacy-client compatibility reference. WSL checks
 - Windows Client for NFS is enabled.
 - The `NfsClnt` service is running.
 - PowerShell is running as Administrator.
-- UDP ports `111`, `2049`, and `20048` are free.
+- UDP and TCP ports `111`, `2049`, and `20048` are free.
 - Drive `Z:` is free, or another free drive letter is passed to the script.
 
 Check the client:
@@ -29,11 +30,20 @@ Run:
 .\scripts\test-windows-nfs-client.ps1
 ```
 
+Run the TCP transport path:
+
+```powershell
+.\scripts\test-windows-nfs-client.ps1 -Transport TCP
+```
+
+Run UDP and TCP as separate test invocations. Windows Client for NFS can cache mount or portmap state after a transport switch; if the TCP log assertion does not observe `server=nfs-mount-tcp`, rerun the TCP command after the previous mount has fully disappeared.
+
 The script:
 
 - creates a temporary export under `work\tmp`;
 - starts TinyWinNFS with a Windows-client test configuration;
-- mounts `\\127.0.0.1\export` to `Z:`;
+- configures Windows Client for NFS to use the selected transport and restores the previous protocol setting at the end;
+- mounts a unique default export name such as `\\127.0.0.1\export-udp-20260627153000` to `Z:`;
 - verifies that MOUNT v3 and NFSv3 requests reached the server;
 - verifies create, read, update, rename, delete;
 - verifies directory create/delete;
@@ -44,6 +54,7 @@ Expected result:
 
 ```text
 PASS: Windows Client for NFS mount
+PASS: Windows Client for NFS UDP transport
 PASS: Windows Client for NFS v3 RPC
 PASS: Windows Client for NFS create/read/update/rename/delete
 PASS: Windows Client for NFS directory create/delete
@@ -55,6 +66,12 @@ Use another drive letter:
 
 ```powershell
 .\scripts\test-windows-nfs-client.ps1 -DriveLetter Y
+```
+
+Use a fixed export name:
+
+```powershell
+.\scripts\test-windows-nfs-client.ps1 -ExportName export
 ```
 
 Keep the temporary work folder after the test:
@@ -76,6 +93,13 @@ Windows `mount.exe` does not expose a portable NFS version option in its help ou
 ```text
 program=100005 version=3
 program=100003 version=3
+```
+
+TCP validation also requires log entries containing:
+
+```text
+server=nfs-mount-tcp
+server=nfs-tcp
 ```
 
 Unmount:
@@ -109,6 +133,14 @@ If `mount.exe` is missing, enable Windows Client for NFS.
 If `NfsClnt` is not running:
 
 ```powershell
+Start-Service NfsClnt
+```
+
+If `NfsClnt` fails to start after a test interrupted the client service, stop TinyWinNFS first and restart the NFS redirector:
+
+```powershell
+sc.exe stop NfsRdr
+sc.exe start NfsRdr
 Start-Service NfsClnt
 ```
 

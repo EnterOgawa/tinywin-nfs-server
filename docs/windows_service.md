@@ -47,9 +47,9 @@ The Inno Setup installer can also run service installation and firewall setup as
 
 Default configuration uses:
 
-- UDP `111` for portmap
-- UDP `2049` for nfsd
-- UDP `20048` for mountd
+- UDP/TCP `111` for portmap
+- UDP/TCP `2049` for nfsd
+- UDP/TCP `20048` for mountd
 
 ## Logs
 
@@ -75,6 +75,12 @@ After the service starts, run:
 
 ```powershell
 .\scripts\smoke-service.ps1
+```
+
+For TCP transport, run:
+
+```powershell
+.\scripts\smoke-service.ps1 -Transport TCP
 ```
 
 Expected result:

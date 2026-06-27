@@ -93,7 +93,7 @@ The Options tab manages advanced values:
 
 - Display language
 - Server host and client mount point for command generation
-- Portmap, NFS, and MOUNT UDP ports
+- Portmap, NFS, and MOUNT ports used by both UDP and TCP transports
 - UID/GID, file mode, directory mode, block size, read size, and filename charset
 
 `filename.charset` controls how NFSv2 filename and symlink path strings are decoded and encoded.

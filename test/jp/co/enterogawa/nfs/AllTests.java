@@ -1,11 +1,14 @@
 package jp.co.enterogawa.nfs;
 
 import java.io.IOException;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.LinkOption;
 import java.nio.file.Path;
+import java.net.Socket;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashSet;
@@ -22,6 +25,7 @@ import jp.co.enterogawa.nfs.program.PortmapV2Program;
 import jp.co.enterogawa.nfs.rpc.RpcCall;
 import jp.co.enterogawa.nfs.rpc.RpcConstants;
 import jp.co.enterogawa.nfs.rpc.RpcRequestContext;
+import jp.co.enterogawa.nfs.server.NfsServer;
 import jp.co.enterogawa.nfs.xdr.XdrReader;
 import jp.co.enterogawa.nfs.xdr.XdrWriter;
 
@@ -80,6 +84,7 @@ public class AllTests {
 		runTest( "XDR round trip", this::testXdrRoundTrip) ;
 		runTest( "RPC call parse", this::testRpcCallParse) ;
 		runTest( "Portmap GETPORT", this::testPortmapGetPort) ;
+		runTest( "TCP RPC transport", this::testTcpRpcTransport) ;
 		runTest( "Mount MNT", this::testMount) ;
 		runTest( "Mount MNT v2", this::testMountV2) ;
 		runTest( "Multiple exports", this::testMultipleExports) ;
@@ -169,6 +174,138 @@ public class AllTests {
 		XdrReader reader = new XdrReader( response.toByteArray()) ;
 
 		assertEquals( "nfs port", TEST_NFS_PORT, reader.readInt()) ;
+
+		XdrWriter tcpArguments = new XdrWriter() ;
+		tcpArguments.writeInt( RpcConstants.PROGRAM_NFS) ;
+		tcpArguments.writeInt( 3) ;
+		tcpArguments.writeInt( RpcConstants.IPPROTO_TCP) ;
+		tcpArguments.writeInt( 0) ;
+		XdrWriter tcpResponse = handle( program, RpcConstants.PROGRAM_PORTMAP, 2, 3, tcpArguments) ;
+		XdrReader tcpReader = new XdrReader( tcpResponse.toByteArray()) ;
+
+		assertEquals( "nfs tcp port", TEST_NFS_PORT, tcpReader.readInt()) ;
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * TCP RPC transportテストを行います。<br><br>
+	 *
+	 * <p>メソッド名称： TCP RPC transportテスト</p>
+	 *
+	 * @throws Exception テスト異常
+	 */
+	//--------------------------------------------------------------------------
+	private void testTcpRpcTransport() throws Exception {
+		TestContext context = createContext() ;
+		NfsServer server = new NfsServer( context.getConfig()) ;
+
+		try {
+			server.start() ;
+			assertTcpPortmapGetPort() ;
+			FileHandle rootHandle = mountExportTcp() ;
+			assertTcpRootGetAttr( rootHandle) ;
+			assertTcpMultipleRecords() ;
+		} finally {
+			server.stop() ;
+			context.close() ;
+		}
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * TCP Portmap GETPORTを確認します。<br><br>
+	 *
+	 * <p>メソッド名称： TCP Portmap GETPORT確認</p>
+	 *
+	 * @throws IOException 処理異常
+	 */
+	//--------------------------------------------------------------------------
+	private void assertTcpPortmapGetPort() throws IOException {
+		XdrWriter arguments = new XdrWriter() ;
+		arguments.writeInt( RpcConstants.PROGRAM_NFS) ;
+		arguments.writeInt( 3) ;
+		arguments.writeInt( RpcConstants.IPPROTO_TCP) ;
+		arguments.writeInt( 0) ;
+		XdrReader reader = callTcp( TEST_PORTMAP_PORT, RpcConstants.PROGRAM_PORTMAP, 2, 3, arguments, true) ;
+
+		assertEquals( "tcp nfs port", TEST_NFS_PORT, reader.readInt()) ;
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * TCP MOUNTで公開をマウントします。<br><br>
+	 *
+	 * <p>メソッド名称： TCP MOUNT公開マウント</p>
+	 *
+	 * @return ルートハンドル
+	 * @throws IOException 処理異常
+	 */
+	//--------------------------------------------------------------------------
+	private FileHandle mountExportTcp() throws IOException {
+		XdrWriter arguments = new XdrWriter() ;
+		arguments.writeString( "/export") ;
+		XdrReader reader = callTcp( TEST_MOUNT_PORT, RpcConstants.PROGRAM_MOUNT, 1, 1, arguments, false) ;
+
+		assertEquals( "tcp mount status", NfsStatus.OK, reader.readInt()) ;
+		return new FileHandle( reader.readFixedOpaque( FileHandle.LENGTH)) ;
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * TCP NFS GETATTRを確認します。<br><br>
+	 *
+	 * <p>メソッド名称： TCP NFS GETATTR確認</p>
+	 *
+	 * @param rootHandle	ルートハンドル
+	 * @throws IOException 処理異常
+	 */
+	//--------------------------------------------------------------------------
+	private void assertTcpRootGetAttr(FileHandle rootHandle) throws IOException {
+		XdrWriter arguments = new XdrWriter() ;
+		arguments.writeFixedOpaque( rootHandle.getValue()) ;
+		XdrReader reader = callTcp( TEST_NFS_PORT, RpcConstants.PROGRAM_NFS, 2, 1, arguments, false) ;
+
+		assertEquals( "tcp getattr status", NfsStatus.OK, reader.readInt()) ;
+		assertEquals( "tcp getattr type", 2, reader.readInt()) ;
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * TCP 1接続複数recordを確認します。<br><br>
+	 *
+	 * <p>メソッド名称： TCP 1接続複数record確認</p>
+	 *
+	 * @throws IOException 処理異常
+	 */
+	//--------------------------------------------------------------------------
+	private void assertTcpMultipleRecords() throws IOException {
+		XdrWriter nfsArguments = new XdrWriter() ;
+		nfsArguments.writeInt( RpcConstants.PROGRAM_NFS) ;
+		nfsArguments.writeInt( 2) ;
+		nfsArguments.writeInt( RpcConstants.IPPROTO_TCP) ;
+		nfsArguments.writeInt( 0) ;
+		byte[] firstRequest = createCallBytes( XID + 101, RpcConstants.PROGRAM_PORTMAP, 2, 3, nfsArguments) ;
+
+		XdrWriter mountArguments = new XdrWriter() ;
+		mountArguments.writeInt( RpcConstants.PROGRAM_MOUNT) ;
+		mountArguments.writeInt( 3) ;
+		mountArguments.writeInt( RpcConstants.IPPROTO_TCP) ;
+		mountArguments.writeInt( 0) ;
+		byte[] secondRequest = createCallBytes( XID + 102, RpcConstants.PROGRAM_PORTMAP, 2, 3, mountArguments) ;
+
+		try( Socket socket = new Socket( "127.0.0.1", TEST_PORTMAP_PORT)) {
+			socket.setSoTimeout( 3000) ;
+			DataOutputStream output = new DataOutputStream( socket.getOutputStream()) ;
+			DataInputStream input = new DataInputStream( socket.getInputStream()) ;
+			writeTcpRecord( output, firstRequest, false) ;
+			writeTcpRecord( output, secondRequest, false) ;
+
+			XdrReader firstReader = parseAcceptedReply( XID + 101, readTcpRecord( input)) ;
+			XdrReader secondReader = parseAcceptedReply( XID + 102, readTcpRecord( input)) ;
+
+			assertEquals( "tcp multi nfs port", TEST_NFS_PORT, firstReader.readInt()) ;
+			assertEquals( "tcp multi mount port", TEST_MOUNT_PORT, secondReader.readInt()) ;
+		}
 	}
 
 	//--------------------------------------------------------------------------
@@ -1699,6 +1836,106 @@ public class AllTests {
 
 	//--------------------------------------------------------------------------
 	/**
+	 * TCP RPCを呼び出します。<br><br>
+	 *
+	 * <p>メソッド名称： TCP RPC呼出</p>
+	 *
+	 * @param port			ポート
+	 * @param program		Program
+	 * @param version		Version
+	 * @param procedure		Procedure
+	 * @param arguments		引数
+	 * @param fragmented	fragment分割有無
+	 * @return 応答本文
+	 * @throws IOException 処理異常
+	 */
+	//--------------------------------------------------------------------------
+	private XdrReader callTcp(int port, int program, int version, int procedure, XdrWriter arguments, boolean fragmented) throws IOException {
+		int requestXid = XID + 100 ;
+		byte[] request = createCallBytes( requestXid, program, version, procedure, arguments) ;
+
+		try( Socket socket = new Socket( "127.0.0.1", port)) {
+			socket.setSoTimeout( 3000) ;
+			DataOutputStream output = new DataOutputStream( socket.getOutputStream()) ;
+			DataInputStream input = new DataInputStream( socket.getInputStream()) ;
+			writeTcpRecord( output, request, fragmented) ;
+			return parseAcceptedReply( requestXid, readTcpRecord( input)) ;
+		}
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * TCP RPC recordを書き込みます。<br><br>
+	 *
+	 * <p>メソッド名称： TCP RPC record書込</p>
+	 *
+	 * @param output		出力
+	 * @param record		record
+	 * @param fragmented	fragment分割有無
+	 * @throws IOException 書込異常
+	 */
+	//--------------------------------------------------------------------------
+	private void writeTcpRecord(DataOutputStream output, byte[] record, boolean fragmented) throws IOException {
+		// 分割しない場合
+		if( !fragmented || record.length < 8) {
+			output.writeInt( 0x80000000 | record.length) ;
+			output.write( record) ;
+			output.flush() ;
+			return ;
+		}
+
+		int split = record.length / 2 ;
+		output.writeInt( split) ;
+		output.write( record, 0, split) ;
+		output.writeInt( 0x80000000 | (record.length - split)) ;
+		output.write( record, split, record.length - split) ;
+		output.flush() ;
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * TCP RPC recordを読み込みます。<br><br>
+	 *
+	 * <p>メソッド名称： TCP RPC record読込</p>
+	 *
+	 * @param input	入力
+	 * @return record
+	 * @throws IOException 読込異常
+	 */
+	//--------------------------------------------------------------------------
+	private byte[] readTcpRecord(DataInputStream input) throws IOException {
+		int header = input.readInt() ;
+		int length = header & 0x7fffffff ;
+		byte[] record = input.readNBytes( length) ;
+
+		assertEquals( "tcp record length", length, record.length) ;
+		return record ;
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * ACCEPT応答を解析します。<br><br>
+	 *
+	 * <p>メソッド名称： ACCEPT応答解析</p>
+	 *
+	 * @param xid		期待XID
+	 * @param response	RPC応答
+	 * @return 応答本文
+	 */
+	//--------------------------------------------------------------------------
+	private XdrReader parseAcceptedReply(int xid, byte[] response) {
+		XdrReader reader = new XdrReader( response) ;
+		assertEquals( "tcp xid", xid, reader.readInt()) ;
+		assertEquals( "tcp message type", RpcConstants.MSG_REPLY, reader.readInt()) ;
+		assertEquals( "tcp reply status", RpcConstants.REPLY_STAT_ACCEPTED, reader.readInt()) ;
+		reader.readInt() ;
+		reader.readOpaque() ;
+		assertEquals( "tcp accept status", RpcConstants.ACCEPT_SUCCESS, reader.readInt()) ;
+		return new XdrReader( reader.readRemaining()) ;
+	}
+
+	//--------------------------------------------------------------------------
+	/**
 	 * RPC呼出を作成します。<br><br>
 	 *
 	 * <p>メソッド名称： RPC呼出作成</p>
@@ -1711,8 +1948,27 @@ public class AllTests {
 	 */
 	//--------------------------------------------------------------------------
 	private RpcCall createCall(int program, int version, int procedure, XdrWriter arguments) {
+		byte[] request = createCallBytes( XID, program, version, procedure, arguments) ;
+		return RpcCall.read( request, request.length) ;
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * RPC呼出バイト列を作成します。<br><br>
+	 *
+	 * <p>メソッド名称： RPC呼出バイト列作成</p>
+	 *
+	 * @param xid		XID
+	 * @param program	Program
+	 * @param version	Version
+	 * @param procedure	Procedure
+	 * @param arguments	引数
+	 * @return RPC呼出バイト列
+	 */
+	//--------------------------------------------------------------------------
+	private byte[] createCallBytes(int xid, int program, int version, int procedure, XdrWriter arguments) {
 		XdrWriter writer = new XdrWriter() ;
-		writer.writeInt( XID) ;
+		writer.writeInt( xid) ;
 		writer.writeInt( RpcConstants.MSG_CALL) ;
 		writer.writeInt( RpcConstants.RPC_VERSION) ;
 		writer.writeInt( program) ;
@@ -1723,7 +1979,7 @@ public class AllTests {
 		writer.writeInt( RpcConstants.AUTH_NONE) ;
 		writer.writeOpaque( new byte[0]) ;
 		writer.writeFixedOpaque( arguments.toByteArray()) ;
-		return RpcCall.read( writer.toByteArray(), writer.toByteArray().length) ;
+		return writer.toByteArray() ;
 	}
 
 	//--------------------------------------------------------------------------

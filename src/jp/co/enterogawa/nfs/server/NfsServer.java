@@ -1,8 +1,8 @@
 package jp.co.enterogawa.nfs.server;
 
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.LinkOption;
-import java.net.SocketException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -15,6 +15,8 @@ import jp.co.enterogawa.nfs.program.NfsV3Program;
 import jp.co.enterogawa.nfs.program.PortmapV2Program;
 import jp.co.enterogawa.nfs.rpc.RpcConstants;
 import jp.co.enterogawa.nfs.rpc.RpcProgramRouter;
+import jp.co.enterogawa.nfs.rpc.RpcServer;
+import jp.co.enterogawa.nfs.rpc.TcpRpcServer;
 import jp.co.enterogawa.nfs.rpc.UdpRpcServer;
 
 //------------------------------------------------------------------------------
@@ -33,7 +35,7 @@ public class NfsServer {
 	private final NfsServerConfig		config ;
 
 	/** RPCサーバーリスト */
-	private final List<UdpRpcServer>		servers = new ArrayList<UdpRpcServer>() ;
+	private final List<RpcServer>		servers = new ArrayList<RpcServer>() ;
 
 	/** 実行状態 */
 	private boolean						started ;
@@ -50,20 +52,35 @@ public class NfsServer {
 	public NfsServer(NfsServerConfig config) {
 		this.config = config ;
 		FileHandleTable handleTable = new FileHandleTable( config.getExports()) ;
+		PortmapV2Program portmapProgram = new PortmapV2Program( config.getPortmapPort(), config.getNfsPort(), config.getMountPort()) ;
+		MountV1Program mountProgram = new MountV1Program( config, handleTable) ;
+		RpcProgramRouter nfsProgram = new RpcProgramRouter( RpcConstants.PROGRAM_NFS)
+				.add( new NfsV2Program( config, handleTable))
+				.add( new NfsV3Program( config, handleTable)) ;
 		servers.add( new UdpRpcServer(
-				"nfs-portmap",
+				"nfs-portmap-udp",
 				config.getPortmapPort(),
-				new PortmapV2Program( config.getPortmapPort(), config.getNfsPort(), config.getMountPort()))) ;
+				portmapProgram)) ;
+		servers.add( new TcpRpcServer(
+				"nfs-portmap-tcp",
+				config.getPortmapPort(),
+				portmapProgram)) ;
 		servers.add( new UdpRpcServer(
-				"nfs-mount-v1",
+				"nfs-mount-udp",
 				config.getMountPort(),
-				new MountV1Program( config, handleTable))) ;
+				mountProgram)) ;
+		servers.add( new TcpRpcServer(
+				"nfs-mount-tcp",
+				config.getMountPort(),
+				mountProgram)) ;
 		servers.add( new UdpRpcServer(
-				"nfs-v2",
+				"nfs-udp",
 				config.getNfsPort(),
-				new RpcProgramRouter( RpcConstants.PROGRAM_NFS)
-						.add( new NfsV2Program( config, handleTable))
-						.add( new NfsV3Program( config, handleTable)))) ;
+				nfsProgram)) ;
+		servers.add( new TcpRpcServer(
+				"nfs-tcp",
+				config.getNfsPort(),
+				nfsProgram)) ;
 	}
 
 	//--------------------------------------------------------------------------
@@ -72,10 +89,10 @@ public class NfsServer {
 	 *
 	 * <p>メソッド名称： サーバー開始</p>
 	 *
-	 * @throws SocketException ソケット異常
+	 * @throws IOException ソケット異常
 	 */
 	//--------------------------------------------------------------------------
-	public synchronized void start() throws SocketException {
+	public synchronized void start() throws IOException {
 		// 既に開始済みの場合
 		if( started) {
 			return ;
@@ -83,9 +100,14 @@ public class NfsServer {
 
 		validateExportPath() ;
 
-		// RPCサーバーを開始する
-		for( UdpRpcServer server : servers) {
-			server.start() ;
+		try {
+			// RPCサーバーを開始する
+			for( RpcServer server : servers) {
+				server.start() ;
+			}
+		} catch( IOException | RuntimeException ex) {
+			stopServers() ;
+			throw ex ;
 		}
 
 		started = true ;
@@ -104,12 +126,23 @@ public class NfsServer {
 			return ;
 		}
 
-		// RPCサーバーを停止する
-		for( UdpRpcServer server : servers) {
-			server.stop() ;
-		}
+		stopServers() ;
 
 		started = false ;
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * RPCサーバーを停止します。<br><br>
+	 *
+	 * <p>メソッド名称： RPCサーバー停止</p>
+	 */
+	//--------------------------------------------------------------------------
+	private void stopServers() {
+		// RPCサーバーを停止する
+		for( RpcServer server : servers) {
+			server.stop() ;
+		}
 	}
 
 	//--------------------------------------------------------------------------

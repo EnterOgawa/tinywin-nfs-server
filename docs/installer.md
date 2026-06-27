@@ -21,7 +21,7 @@ Install tasks:
 - Create a desktop shortcut.
 - Stop and remove an existing `TinyWinNfsServer` Windows service before files are installed, then install it again.
 - Stop and remove legacy `OgawaNfsServer` or `QnxNfsServer` services before installing `TinyWinNfsServer`.
-- Add Windows Firewall rules for UDP `111`, `2049`, and `20048`.
+- Add Windows Firewall rules for UDP/TCP `111`, `2049`, and `20048`.
 - Start `TinyWinNfsServer` after installation when the service task is selected.
 
 The installer requires administrator privileges because service installation and firewall changes are privileged operations.
@@ -46,6 +46,7 @@ Before a release, verify upgrade behavior from the previous public installer:
 
 ```powershell
 .\scripts\smoke-service.ps1
+.\scripts\smoke-service.ps1 -Transport TCP
 .\scripts\smoke-service.ps1 -VerifyFileIntegrity
 ```
 

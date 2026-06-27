@@ -11,7 +11,7 @@ This workspace currently has no WSL distribution installed, so this test cannot 
 - WSL2 with a Linux distribution installed.
 - Linux NFS client tools installed in WSL.
 - Linux kernel NFSv2 client support.
-- Windows Firewall allows UDP `11111`, `12049`, and `12048`.
+- Windows Firewall allows UDP/TCP `11111`, `12049`, and `12048`.
 
 Ubuntu example:
 
@@ -31,9 +31,9 @@ Use the high-port WSL test configuration:
 
 This starts:
 
-- portmap: UDP `11111`
-- nfsd: UDP `12049`
-- mountd: UDP `12048`
+- portmap: UDP/TCP `11111`
+- nfsd: UDP/TCP `12049`
+- mountd: UDP/TCP `12048`
 
 ## Mount from WSL
 

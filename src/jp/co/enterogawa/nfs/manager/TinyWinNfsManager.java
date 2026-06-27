@@ -291,9 +291,9 @@ public class TinyWinNfsManager extends JFrame {
 
 		row = addField( formPanel, row, "Export path", exportPathField, createButton( "Browse", this::onBrowseExportPath)) ;
 		row = addCheckBox( formPanel, row, "Writable", exportWritableCheckBox) ;
-		row = addField( formPanel, row, "Portmap UDP port", portmapPortField, null) ;
-		row = addField( formPanel, row, "NFS UDP port", nfsPortField, null) ;
-		row = addField( formPanel, row, "Mount UDP port", mountPortField, null) ;
+		row = addField( formPanel, row, "Portmap port", portmapPortField, null) ;
+		row = addField( formPanel, row, "NFS port", nfsPortField, null) ;
+		row = addField( formPanel, row, "Mount port", mountPortField, null) ;
 		row = addField( formPanel, row, "UID", uidField, null) ;
 		row = addField( formPanel, row, "GID", gidField, null) ;
 		row = addField( formPanel, row, "File mode", fileModeField, null) ;
@@ -384,7 +384,7 @@ public class TinyWinNfsManager extends JFrame {
 				+ "Legacy service IDs: " + String.join( ", ", LEGACY_SERVICE_NAMES) + "\n"
 				+ "Install/Uninstall and firewall changes require Administrator privileges.\n"
 				+ "After changing settings, restart the service.\n"
-				+ "Default ports: UDP 111, UDP 2049, UDP 20048.\n") ;
+				+ "Default ports: UDP/TCP 111, UDP/TCP 2049, UDP/TCP 20048.\n") ;
 		panel.add( new JScrollPane( textArea), BorderLayout.CENTER) ;
 		return panel ;
 	}
@@ -640,9 +640,9 @@ public class TinyWinNfsManager extends JFrame {
 	 */
 	//--------------------------------------------------------------------------
 	private void validateFields() {
-		validatePort( "Portmap UDP port", portmapPortField.getText()) ;
-		validatePort( "NFS UDP port", nfsPortField.getText()) ;
-		validatePort( "Mount UDP port", mountPortField.getText()) ;
+		validatePort( "Portmap port", portmapPortField.getText()) ;
+		validatePort( "NFS port", nfsPortField.getText()) ;
+		validatePort( "Mount port", mountPortField.getText()) ;
 		validatePositiveInt( "Block size", blockSizeField.getText()) ;
 		validatePositiveInt( "Read size", readSizeField.getText()) ;
 		validateInt( "UID", uidField.getText()) ;
@@ -966,9 +966,9 @@ public class TinyWinNfsManager extends JFrame {
 	//--------------------------------------------------------------------------
 	private List<String> runSmokeTest() throws Exception {
 		List<String> messages = new ArrayList<String>() ;
-		int portmapPort = validatePositiveInt( "Portmap UDP port", portmapPortField.getText()) ;
-		int nfsPort = validatePositiveInt( "NFS UDP port", nfsPortField.getText()) ;
-		int mountPort = validatePositiveInt( "Mount UDP port", mountPortField.getText()) ;
+		int portmapPort = validatePositiveInt( "Portmap port", portmapPortField.getText()) ;
+		int nfsPort = validatePositiveInt( "NFS port", nfsPortField.getText()) ;
+		int mountPort = validatePositiveInt( "Mount port", mountPortField.getText()) ;
 		int mappedNfsPort = getMappedPort( portmapPort, RpcConstants.PROGRAM_NFS, 2) ;
 
 		// Portmapが返したNFSポートが一致しない場合

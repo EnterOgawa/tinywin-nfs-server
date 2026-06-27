@@ -10,13 +10,13 @@ Default QNX mount point shown by the manager app is `/mnt`.
 The Windows folder exposed through `/export` is configured by the manager app shared folder setting.
 After changing it, save the configuration and restart the Windows service.
 
-Default UDP ports:
+Default UDP/TCP ports:
 
 - portmap: `111`
 - nfsd: `2049`
 - mountd: `20048`
 
-Windows Firewall must allow these UDP ports.
+Windows Firewall must allow these UDP/TCP ports.
 
 ## QNX 4.25
 
@@ -52,7 +52,7 @@ If the client supports mount options, prefer NFSv2 and UDP.
 
 ## Current Scope
 
-The current implementation supports NFSv2 read-write operations over UDP and multiple configured exports.
+QNX 4.25 validation uses NFSv2 read-write operations over UDP and multiple configured exports.
 
 Implemented NFSv2 procedures:
 
@@ -77,4 +77,4 @@ Implemented NFSv2 procedures:
 NFS lock manager support is intentionally out of the current scope.
 Filename encoding defaults to UTF-8 and can be changed with `filename.charset` if a legacy client requires another Java Charset.
 
-TCP transport and lock manager are planned follow-up work. NFSv3 is implemented for newer clients, while QNX 4.25 remains validated through the NFSv2 path.
+TCP transport is implemented for newer clients. NFS lock manager support remains out of scope, while QNX 4.25 remains validated through the NFSv2/UDP path.
