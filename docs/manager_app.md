@@ -55,10 +55,19 @@ TinyWinNfsManager/
   assets/tinywin-nfs-server.png
   service/winsw/nfs-server.exe
   service/winsw/nfs-server.xml
-  conf/nfs-server.properties
+  defaults/conf/nfs-server.properties
   export/
   scripts/
   docs/
+```
+
+Installed mutable data is stored outside the application directory:
+
+```text
+C:\ProgramData\EnterOgawa\TinyWinNFS Server\
+  conf/nfs-server.properties
+  export/
+  logs/nfs-server.log
 ```
 
 The service executable is still WinSW. The manager app hides the command-line operations from users.
@@ -66,8 +75,8 @@ The service executable is still WinSW. The manager app hides the command-line op
 `runtime` is used by both the manager app and the WinSW service process.
 The SWT jar is used only by the manager app.
 
-If `TinyWinNfsServer`, `OgawaNfsServer`, or the legacy `QnxNfsServer` is already installed, the manager app uses the installed service path as the configuration root.
-This prevents editing a copied app image while the Windows service is still reading another `conf/nfs-server.properties`.
+If `TinyWinNfsServer`, `OgawaNfsServer`, or the legacy `QnxNfsServer` is already installed, the manager app uses the installed service path as the application root and `ProgramData` as the data root.
+This prevents editing a copied app image while the Windows service is still reading another `nfs-server.properties`.
 
 ## Share Tab
 
@@ -114,7 +123,7 @@ The default is `UTF-8`. Use a Java Charset name such as `windows-31j` only when 
 
 The manager app supports English and Japanese UI resources.
 
-The language is stored in `conf/nfs-server.properties`:
+The language is stored in `C:\ProgramData\EnterOgawa\TinyWinNFS Server\conf\nfs-server.properties`:
 
 ```text
 ui.language=auto
@@ -138,7 +147,7 @@ mount_nfs <server-host>:/export /mnt
 ```
 
 After changing shared folders, use `Save + Restart` or restart the service from the `Service` tab.
-The service reads `conf/nfs-server.properties` only when it starts.
+The service reads `C:\ProgramData\EnterOgawa\TinyWinNFS Server\conf\nfs-server.properties` only when it starts.
 
 ## Client Restrictions
 
@@ -164,7 +173,9 @@ The Service tab shows:
 
 - Service ID and legacy IDs
 - Application root
+- Data root
 - Active config file
+- Active log file
 - Registered service executable path
 
 `Save + Restart` logs save success separately from restart success.

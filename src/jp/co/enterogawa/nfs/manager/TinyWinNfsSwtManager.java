@@ -48,6 +48,7 @@ import org.eclipse.swt.widgets.TableItem;
 import org.eclipse.swt.widgets.Text;
 
 import jp.co.enterogawa.nfs.config.NfsServerConfig;
+import jp.co.enterogawa.nfs.config.TinyWinNfsPaths;
 import jp.co.enterogawa.nfs.export.FileHandle;
 import jp.co.enterogawa.nfs.rpc.RpcConstants;
 import jp.co.enterogawa.nfs.xdr.XdrReader;
@@ -89,6 +90,9 @@ public class TinyWinNfsSwtManager {
 
 	/** プロジェクトルート */
 	private final Path					rootPath ;
+
+	/** データルート */
+	private final Path					dataRootPath ;
 
 	/** 設定ファイル */
 	private final Path					configPath ;
@@ -221,7 +225,9 @@ public class TinyWinNfsSwtManager {
 	public TinyWinNfsSwtManager(Display display) {
 		this.display = display ;
 		rootPath = detectRootPath() ;
-		configPath = rootPath.resolve( "conf").resolve( "nfs-server.properties") ;
+		dataRootPath = TinyWinNfsPaths.getDataRoot( rootPath) ;
+		configPath = TinyWinNfsPaths.getConfigPath( rootPath) ;
+		migrateLegacyConfiguration() ;
 		messages = ManagerMessages.load( readConfiguredLanguage()) ;
 	}
 
@@ -237,6 +243,7 @@ public class TinyWinNfsSwtManager {
 		loadConfig() ;
 		refreshStatus() ;
 		appendLog( format( "log.root", rootPath)) ;
+		appendLog( format( "log.dataRoot", dataRootPath)) ;
 		appendLog( format( "log.config", configPath)) ;
 		shell.open() ;
 
@@ -724,6 +731,39 @@ public class TinyWinNfsSwtManager {
 
 	//--------------------------------------------------------------------------
 	/**
+	 * 旧設定ファイルを移行します。<br><br>
+	 *
+	 * <p>メソッド名称： 旧設定ファイル移行</p>
+	 */
+	//--------------------------------------------------------------------------
+	private void migrateLegacyConfiguration() {
+		Path legacyConfigPath = TinyWinNfsPaths.getLegacyConfigPath( rootPath) ;
+
+		// 新設定ファイルが既に存在する場合
+		if( Files.exists( configPath)) {
+			return ;
+		}
+
+		// 旧設定ファイルが存在しない場合
+		if( !Files.exists( legacyConfigPath)) {
+			return ;
+		}
+
+		// 移行元と移行先が同一の場合
+		if( legacyConfigPath.equals( configPath)) {
+			return ;
+		}
+
+		try {
+			Files.createDirectories( configPath.getParent()) ;
+			Files.copy( legacyConfigPath, configPath) ;
+		} catch( IOException ioex) {
+			// 保存時に権限エラーとして通知する
+		}
+	}
+
+	//--------------------------------------------------------------------------
+	/**
 	 * 設定済み言語を読み込みます。<br><br>
 	 *
 	 * <p>メソッド名称： 設定済み言語読込</p>
@@ -872,16 +912,17 @@ public class TinyWinNfsSwtManager {
 
 				// 共有定義が入力されている場合
 				if( !name.isEmpty() && !path.isEmpty()) {
-					shareEntries.add( new ShareEntry( name, path, writable, allowedClients)) ;
+					shareEntries.add( new ShareEntry( name, resolveSharePath( path).toString(), writable, allowedClients)) ;
 				}
 			}
 		}
 
 		// 共有定義が存在しない場合
 		if( shareEntries.isEmpty()) {
+			String path = properties.getProperty( "export.path", defaultExportPath().toString()).trim() ;
 			shareEntries.add( new ShareEntry(
 					properties.getProperty( "export.name", "/export").trim(),
-					properties.getProperty( "export.path", rootPath.resolve( "export").toString()).trim(),
+					resolveSharePath( path).toString(),
 					Boolean.parseBoolean( properties.getProperty( "export.writable", "true")),
 					properties.getProperty( "export.allowed.clients", "" ).trim())) ;
 		}
@@ -1054,7 +1095,34 @@ public class TinyWinNfsSwtManager {
 			return shareEntries.get( 0) ;
 		}
 
-		return new ShareEntry( "/export", rootPath.resolve( "export").toString(), true, "" ) ;
+		return new ShareEntry( "/export", defaultExportPath().toString(), true, "" ) ;
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * 既定公開フォルダを取得します。<br><br>
+	 *
+	 * <p>メソッド名称： 既定公開フォルダ取得</p>
+	 *
+	 * @return 既定公開フォルダ
+	 */
+	//--------------------------------------------------------------------------
+	private Path defaultExportPath() {
+		return TinyWinNfsPaths.getExportPath( rootPath) ;
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * 共有フォルダパスを解決します。<br><br>
+	 *
+	 * <p>メソッド名称： 共有フォルダパス解決</p>
+	 *
+	 * @param value	設定値
+	 * @return 解決済みパス
+	 */
+	//--------------------------------------------------------------------------
+	private Path resolveSharePath(String value) {
+		return TinyWinNfsPaths.resolveConfiguredPath( dataRootPath, value) ;
 	}
 
 	//--------------------------------------------------------------------------
@@ -1438,7 +1506,8 @@ public class TinyWinNfsSwtManager {
 	private boolean isProtectedInstallPath(Path path) {
 		Path absolutePath = path.toAbsolutePath().normalize() ;
 		return isUnderEnvironmentPath( absolutePath, "ProgramFiles")
-				|| isUnderEnvironmentPath( absolutePath, "ProgramFiles(x86)") ;
+				|| isUnderEnvironmentPath( absolutePath, "ProgramFiles(x86)")
+				|| isUnderEnvironmentPath( absolutePath, "ProgramData") ;
 	}
 
 	//--------------------------------------------------------------------------
@@ -1863,8 +1932,10 @@ public class TinyWinNfsSwtManager {
 				SERVICE_NAME,
 				String.join( ", ", LEGACY_SERVICE_NAMES),
 				rootPath,
+				dataRootPath,
 				configPath,
-				executableText)) ;
+				executableText,
+				TinyWinNfsPaths.getLogPath( rootPath))) ;
 	}
 
 	//--------------------------------------------------------------------------
@@ -2376,14 +2447,7 @@ public class TinyWinNfsSwtManager {
 			return null ;
 		}
 
-		Path configFile = serviceRoot.resolve( "conf").resolve( "nfs-server.properties") ;
-
-		// 設定ファイルが存在する場合
-		if( Files.exists( configFile)) {
-			return serviceRoot.toAbsolutePath().normalize() ;
-		}
-
-		return null ;
+		return serviceRoot.toAbsolutePath().normalize() ;
 	}
 
 	//--------------------------------------------------------------------------

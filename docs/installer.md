@@ -14,7 +14,7 @@ dist\installer\TinyWinNfsSetup.exe
 
 ## Installer Behavior
 
-The installer contains the manager app, Java runtime, WinSW service wrapper, scripts, configuration, and docs.
+The installer contains the manager app, Java runtime, WinSW service wrapper, scripts, default configuration, and docs.
 
 Install tasks:
 
@@ -24,6 +24,8 @@ Install tasks:
 - Add Windows Firewall rules for UDP/TCP `111`, `2049`, and `20048`.
 - Start `TinyWinNfsServer` after installation when the service task is selected.
 - Register `TinyWinNfsManager.exe` with Windows `RUNASADMIN` compatibility so installed shortcuts launch through UAC without a command prompt.
+- Store mutable configuration, default export data, and TinyWinNFS server logs under `C:\ProgramData\EnterOgawa\TinyWinNFS Server`.
+- Migrate an existing `C:\Program Files\EnterOgawa\TinyWinNFS Server\conf\nfs-server.properties` to `ProgramData` when the `ProgramData` configuration does not exist yet.
 
 The installer requires administrator privileges because service installation and firewall changes are privileged operations.
 
@@ -42,7 +44,7 @@ Before a release, verify upgrade behavior from the previous public installer:
 
 5. Install the new package over the existing installation.
 6. Confirm the service was stopped, replaced, and started again.
-7. Confirm `conf\nfs-server.properties` still contains the configured exports.
+7. Confirm `C:\ProgramData\EnterOgawa\TinyWinNFS Server\conf\nfs-server.properties` still contains the configured exports.
 8. Run:
 
 ```powershell

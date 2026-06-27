@@ -1,5 +1,5 @@
 #define AppName "TinyWinNFS Server"
-#define AppVersion "1.7.0"
+#define AppVersion "1.7.1"
 #define AppPublisher "EnterOgawa"
 #define AppExeName "TinyWinNfsManager.exe"
 #define SourceDir "..\dist\TinyWinNfsManager"
@@ -44,12 +44,16 @@ Source: "{#SourceDir}\TinyWinNfsManager-Admin.cmd"; DestDir: "{app}"; Flags: ign
 Source: "{#SourceDir}\TinyWinNfsManager.exe"; DestDir: "{app}"; Flags: ignoreversion
 Source: "{#SourceDir}\app\*"; DestDir: "{app}\app"; Flags: ignoreversion recursesubdirs createallsubdirs
 Source: "{#SourceDir}\assets\*"; DestDir: "{app}\assets"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "{#SourceDir}\conf\*"; DestDir: "{app}\defaults\conf"; Flags: ignoreversion recursesubdirs createallsubdirs
 Source: "{#SourceDir}\docs\*"; DestDir: "{app}\docs"; Flags: ignoreversion recursesubdirs createallsubdirs
-Source: "{#SourceDir}\export\*"; DestDir: "{app}\export"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "{#SourceDir}\export\*"; DestDir: "{commonappdata}\EnterOgawa\TinyWinNFS Server\export"; Flags: ignoreversion recursesubdirs createallsubdirs onlyifdoesntexist
 Source: "{#SourceDir}\runtime\*"; DestDir: "{app}\runtime"; Flags: ignoreversion recursesubdirs createallsubdirs
 Source: "{#SourceDir}\scripts\*"; DestDir: "{app}\scripts"; Flags: ignoreversion recursesubdirs createallsubdirs
 Source: "{#SourceDir}\service\*"; DestDir: "{app}\service"; Flags: ignoreversion recursesubdirs createallsubdirs
-Source: "{#SourceDir}\conf\*"; DestDir: "{app}\conf"; Flags: ignoreversion recursesubdirs createallsubdirs onlyifdoesntexist
+
+[Dirs]
+Name: "{commonappdata}\EnterOgawa\TinyWinNFS Server\conf"
+Name: "{commonappdata}\EnterOgawa\TinyWinNFS Server\logs"
 
 [Registry]
 Root: HKLM; Subkey: "Software\Microsoft\Windows NT\CurrentVersion\AppCompatFlags\Layers"; ValueType: string; ValueName: "{app}\{#AppExeName}"; ValueData: "~ RUNASADMIN"; Flags: uninsdeletevalue

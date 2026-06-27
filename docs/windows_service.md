@@ -9,6 +9,7 @@ The service uses WinSW v2.12.0.
 - Service id: `TinyWinNfsServer`
 - Legacy service ids: `OgawaNfsServer`, `QnxNfsServer`
 - Packaged Java runtime: `runtime/bin/java.exe`
+- Data root: `C:\ProgramData\EnterOgawa\TinyWinNFS Server`
 
 The packaged manager and service share the same Java runtime.
 
@@ -58,12 +59,12 @@ WinSW writes service logs under `service/winsw`.
 TinyWinNFS writes request diagnostics to:
 
 ```text
-logs/nfs-server.log
+C:\ProgramData\EnterOgawa\TinyWinNFS Server\logs\nfs-server.log
 ```
 
 By default, TinyWinNFS keeps operational logs useful for troubleshooting while suppressing high-volume success logs such as RPC request traces and successful mutation operations. This avoids excessive synchronous I/O during large file copies and bulk deletes.
 
-Write responses use `write.sync=false` by default so large copies can use the Windows file cache. Set `write.sync=true` in `conf/nfs-server.properties` only when each WRITE must be physically synchronized before the server replies.
+Write responses use `write.sync=false` by default so large copies can use the Windows file cache. Set `write.sync=true` in `C:\ProgramData\EnterOgawa\TinyWinNFS Server\conf\nfs-server.properties` only when each WRITE must be physically synchronized before the server replies.
 
 Write file caching is also enabled by default. It keeps recently written files open for a short time to avoid repeated open/close overhead:
 

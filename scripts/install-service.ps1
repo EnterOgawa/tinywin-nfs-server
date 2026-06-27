@@ -10,10 +10,71 @@ $serviceExe = Join-Path $serviceDir "nfs-server.exe"
 $serviceXml = Join-Path $serviceDir "nfs-server.xml"
 $serviceName = "TinyWinNfsServer"
 $legacyServiceNames = @("OgawaNfsServer", "QnxNfsServer")
+$dataRoot = if( [string]::IsNullOrWhiteSpace($env:TINYWIN_NFS_DATA)) { Join-Path $env:ProgramData "EnterOgawa\TinyWinNFS Server" } else { $env:TINYWIN_NFS_DATA }
+$dataConfDir = Join-Path $dataRoot "conf"
+$dataExportDir = Join-Path $dataRoot "export"
+$dataLogDir = Join-Path $dataRoot "logs"
+$dataConfigPath = Join-Path $dataConfDir "nfs-server.properties"
 
 function Test-Administrator {
 	$principal = New-Object Security.Principal.WindowsPrincipal([Security.Principal.WindowsIdentity]::GetCurrent())
 	return $principal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
+}
+
+function Copy-FileIfMissing {
+	param(
+		[string]$Source,
+		[string]$Destination
+	)
+
+	if( !(Test-Path -LiteralPath $Source)) {
+		return
+	}
+
+	if( Test-Path -LiteralPath $Destination) {
+		return
+	}
+
+	Copy-Item -LiteralPath $Source -Destination $Destination -Force
+}
+
+function Initialize-DataLayout {
+	New-Item -ItemType Directory -Path $dataConfDir -Force | Out-Null
+	New-Item -ItemType Directory -Path $dataExportDir -Force | Out-Null
+	New-Item -ItemType Directory -Path $dataLogDir -Force | Out-Null
+
+	$configCandidates = @(
+		(Join-Path $root "conf\nfs-server.properties"),
+		(Join-Path $root "defaults\conf\nfs-server.properties")
+	)
+
+	foreach( $candidate in $configCandidates) {
+		if( Test-Path -LiteralPath $dataConfigPath) {
+			break
+		}
+
+		Copy-FileIfMissing -Source $candidate -Destination $dataConfigPath
+	}
+
+	$sampleConfigCandidates = @(
+		(Join-Path $root "conf\nfs-server-windows-client-test.properties"),
+		(Join-Path $root "defaults\conf\nfs-server-windows-client-test.properties"),
+		(Join-Path $root "conf\nfs-server-wsl-test.properties"),
+		(Join-Path $root "defaults\conf\nfs-server-wsl-test.properties")
+	)
+
+	foreach( $sampleConfig in $sampleConfigCandidates) {
+		$destination = Join-Path $dataConfDir (Split-Path -Leaf $sampleConfig)
+		Copy-FileIfMissing -Source $sampleConfig -Destination $destination
+	}
+
+	$exportSource = Join-Path $root "export"
+
+	if( Test-Path -LiteralPath $exportSource) {
+		Get-ChildItem -LiteralPath $exportSource -File | ForEach-Object {
+			Copy-FileIfMissing -Source $_.FullName -Destination (Join-Path $dataExportDir $_.Name)
+		}
+	}
 }
 
 function Get-ExecutablePathFromServicePath {
@@ -66,6 +127,8 @@ if( !(Test-Path -LiteralPath $serviceExe)) {
 if( !(Test-Path -LiteralPath $serviceXml)) {
 	throw "WinSW XML is not found: $serviceXml"
 }
+
+Initialize-DataLayout
 
 $compileScript = Join-Path $root "scripts\compile.ps1"
 $srcDir = Join-Path $root "src"

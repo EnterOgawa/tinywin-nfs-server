@@ -15,16 +15,17 @@ $bin = Join-Path $root "bin"
 $testBin = Join-Path $root "work\tmp\test-bin"
 $smokeTest = Join-Path $root "test\jp\co\enterogawa\nfs\ServiceSmokeTest.java"
 $appJar = Join-Path $root "app\tinywin-nfs-server.jar"
-$configPath = Join-Path $root "conf\nfs-server.properties"
-$installedRoot = Join-Path $env:ProgramFiles "EnterOgawa\TinyWinNFS Server"
-$installedConfigPath = Join-Path $installedRoot "conf\nfs-server.properties"
-$serviceConfigRoot = $root
+$dataRoot = if( [string]::IsNullOrWhiteSpace($env:TINYWIN_NFS_DATA)) { Join-Path $env:ProgramData "EnterOgawa\TinyWinNFS Server" } else { $env:TINYWIN_NFS_DATA }
+$configPath = Join-Path $dataRoot "conf\nfs-server.properties"
+$legacyConfigPath = Join-Path $root "conf\nfs-server.properties"
+$serviceConfigRoot = $dataRoot
 $serviceConfigPath = $configPath
 $stateFile = Join-Path $env:TEMP "tinywin-nfs-handle-persistence.txt"
 
-if( !(Test-Path -LiteralPath $appJar) -and (Test-Path -LiteralPath $installedConfigPath)) {
-	$serviceConfigRoot = $installedRoot
-	$serviceConfigPath = $installedConfigPath
+if( !(Test-Path -LiteralPath $configPath) -and (Test-Path -LiteralPath $legacyConfigPath)) {
+	$serviceConfigRoot = $root
+	$serviceConfigPath = $legacyConfigPath
+	$configPath = $legacyConfigPath
 }
 
 if( (Test-Path -LiteralPath $appJar) -and (Test-Path -LiteralPath $java)) {

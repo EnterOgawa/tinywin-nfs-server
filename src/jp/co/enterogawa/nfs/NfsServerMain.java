@@ -1,8 +1,10 @@
 package jp.co.enterogawa.nfs;
 
+import java.nio.file.Files;
 import java.nio.file.Path;
 
 import jp.co.enterogawa.nfs.config.NfsServerConfig;
+import jp.co.enterogawa.nfs.config.TinyWinNfsPaths;
 import jp.co.enterogawa.nfs.server.NfsServer;
 
 //------------------------------------------------------------------------------
@@ -29,7 +31,14 @@ public class NfsServerMain {
 	 */
 	//--------------------------------------------------------------------------
 	public static void main(String[] args) throws Exception {
-		Path configPath = Path.of("conf", "nfs-server.properties") ;
+		Path applicationRoot = Path.of( System.getProperty( "user.dir")).toAbsolutePath().normalize() ;
+		Path localConfigPath = applicationRoot.resolve( "conf").resolve( "nfs-server.properties") ;
+		Path configPath = TinyWinNfsPaths.getConfigPath( applicationRoot) ;
+
+		// ローカル設定ファイルが存在する場合
+		if( Files.exists( localConfigPath)) {
+			configPath = localConfigPath ;
+		}
 
 		// 設定ファイル指定がある場合
 		if( args.length > 0) {

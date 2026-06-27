@@ -3,7 +3,13 @@ $ErrorActionPreference = "Stop"
 $root = Split-Path -Parent $PSScriptRoot
 $serviceName = "TinyWinNfsServer"
 $serviceNames = @("TinyWinNfsServer", "OgawaNfsServer", "QnxNfsServer")
-$configPath = Join-Path $root "conf\nfs-server.properties"
+$dataRoot = if( [string]::IsNullOrWhiteSpace($env:TINYWIN_NFS_DATA)) { Join-Path $env:ProgramData "EnterOgawa\TinyWinNFS Server" } else { $env:TINYWIN_NFS_DATA }
+$configPath = Join-Path $dataRoot "conf\nfs-server.properties"
+$legacyConfigPath = Join-Path $root "conf\nfs-server.properties"
+
+if( !(Test-Path -LiteralPath $configPath) -and (Test-Path -LiteralPath $legacyConfigPath)) {
+	$configPath = $legacyConfigPath
+}
 
 function Get-ConfigInt {
 	param(

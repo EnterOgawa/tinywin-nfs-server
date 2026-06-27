@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.7.1 - Unreleased
+
+- Moved installed runtime configuration, default export data, and server log paths to `ProgramData\EnterOgawa\TinyWinNFS Server`.
+- Added one-time migration from legacy `Program Files` configuration into the new `ProgramData` data root.
+- Resolved relative `export.path` values against the data root when the configuration file lives under `conf`.
+- Updated the SWT manager service diagnostics to show application root, data root, config file, service executable, and log file separately.
+- Updated installer, WinSW service configuration, service scripts, smoke tests, and documentation for the separated app/data layout.
+
 ## 1.7.0 - 2026-06-27
 
 - Hardened NFSv2/NFSv3 `READLINK` so broken or unreadable symlinks return stable NFS statuses instead of escaping as transport-level handler errors.

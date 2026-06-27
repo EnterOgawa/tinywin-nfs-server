@@ -90,6 +90,7 @@ public class AllTests {
 		runTest( "Mount MNT v2", this::testMountV2) ;
 		runTest( "Multiple exports", this::testMultipleExports) ;
 		runTest( "Config validation", this::testConfigValidation) ;
+		runTest( "Config relative export base", this::testConfigRelativeExportBase) ;
 		runTest( "Client access restrictions", this::testClientAccessRestrictions) ;
 		runTest( "NFSv2 procedures", this::testNfsV2Procedures) ;
 		runTest( "NFSv3 procedures", this::testNfsV3Procedures) ;
@@ -475,6 +476,49 @@ public class AllTests {
 			assertThrows( "missing export path", () -> NfsServerConfig.load( missingPathConfig)) ;
 		} finally {
 			deleteDirectory( root) ;
+		}
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * 設定ファイル基準の相対公開パス解決を確認します。<br><br>
+	 *
+	 * <p>メソッド名称： 設定相対公開パス解決確認</p>
+	 *
+	 * @throws Exception テスト異常
+	 */
+	//--------------------------------------------------------------------------
+	private void testConfigRelativeExportBase() throws Exception {
+		Path dataRoot = Path.of( "work", "tmp", "test-config-relative-base").toAbsolutePath().normalize() ;
+		Path configDirectory = dataRoot.resolve( "conf") ;
+		Path exportRoot = dataRoot.resolve( "export") ;
+		Path configPath = configDirectory.resolve( "nfs-server.properties") ;
+		deleteDirectory( dataRoot) ;
+		Files.createDirectories( configDirectory) ;
+		Files.createDirectories( exportRoot) ;
+
+		try {
+			String configText = ""
+					+ "portmap.port=" + TEST_PORTMAP_PORT + "\n"
+					+ "nfs.port=" + TEST_NFS_PORT + "\n"
+					+ "mount.port=" + TEST_MOUNT_PORT + "\n"
+					+ "export.name=/export\n"
+					+ "export.path=export\n"
+					+ "export.writable=true\n"
+					+ "uid=0\n"
+					+ "gid=0\n"
+					+ "file.mode=0644\n"
+					+ "directory.mode=0755\n"
+					+ "block.size=4096\n"
+					+ "read.size=8192\n"
+					+ "write.sync=true\n"
+					+ "filename.charset=UTF-8\n" ;
+			Files.writeString( configPath, configText, StandardCharsets.UTF_8) ;
+			NfsServerConfig config = NfsServerConfig.load( configPath) ;
+
+			assertEquals( "relative export path", exportRoot.toString(), config.getExports().get( 0).getPath().toString()) ;
+		} finally {
+			deleteDirectory( dataRoot) ;
 		}
 	}
 

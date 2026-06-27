@@ -91,14 +91,15 @@ public class NfsServerConfig {
 	 *
 	 * <p>メソッド名称： コンストラクタ</p>
 	 *
-	 * @param properties	設定値
+	 * @param properties		設定値
+	 * @param configBasePath	設定基準パス
 	 */
 	//--------------------------------------------------------------------------
-	private NfsServerConfig(Properties properties) {
+	private NfsServerConfig(Properties properties, Path configBasePath) {
 		portmapPort = getInt( properties, "portmap.port", DEFAULT_PORTMAP_PORT) ;
 		nfsPort = getInt( properties, "nfs.port", DEFAULT_NFS_PORT) ;
 		mountPort = getInt( properties, "mount.port", DEFAULT_MOUNT_PORT) ;
-		exports = loadExports( properties) ;
+		exports = loadExports( properties, configBasePath) ;
 		uid = getInt( properties, "uid", 0) ;
 		gid = getInt( properties, "gid", 0) ;
 		permissionIdentity = getString( properties, "permission.identity", "auto") ;
@@ -125,7 +126,7 @@ public class NfsServerConfig {
 	 * @return 公開定義
 	 */
 	//--------------------------------------------------------------------------
-	private List<NfsExport> loadExports(Properties properties) {
+	private List<NfsExport> loadExports(Properties properties, Path configBasePath) {
 		int count = getInt( properties, "exports.count", 0) ;
 		List<NfsExport> result = new ArrayList<NfsExport>() ;
 
@@ -143,7 +144,7 @@ public class NfsServerConfig {
 					throw new IllegalArgumentException( prefix + "name and " + prefix + "path are required.") ;
 				}
 
-				result.add( new NfsExport( name, Path.of( path.trim()), writable, allowedClients)) ;
+				result.add( new NfsExport( name, TinyWinNfsPaths.resolveConfiguredPath( configBasePath, path), writable, allowedClients)) ;
 			}
 
 			return List.copyOf( result) ;
@@ -153,7 +154,7 @@ public class NfsServerConfig {
 		String path = properties.getProperty( "export.path", "export") ;
 		boolean writable = Boolean.parseBoolean( properties.getProperty( "export.writable", "true")) ;
 		List<String> allowedClients = getAllowedClients( properties, "export.allowed.clients") ;
-		result.add( new NfsExport( name, Path.of( path.trim()), writable, allowedClients)) ;
+		result.add( new NfsExport( name, TinyWinNfsPaths.resolveConfiguredPath( configBasePath, path), writable, allowedClients)) ;
 		return List.copyOf( result) ;
 	}
 
@@ -170,6 +171,7 @@ public class NfsServerConfig {
 	//--------------------------------------------------------------------------
 	public static NfsServerConfig load(Path configPath) throws IOException {
 		Properties properties = new Properties() ;
+		Path configBasePath = TinyWinNfsPaths.getConfigBasePath( configPath) ;
 
 		// 設定ファイルが存在する場合
 		if( Files.exists( configPath)) {
@@ -178,7 +180,7 @@ public class NfsServerConfig {
 			}
 		}
 
-		return new NfsServerConfig( properties) ;
+		return new NfsServerConfig( properties, configBasePath) ;
 	}
 
 	//--------------------------------------------------------------------------
