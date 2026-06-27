@@ -297,6 +297,7 @@ public class AllTests {
 		assertWriteCache( program) ;
 		assertWriteFile( program, fileHandle, context.getRoot()) ;
 		assertSetAttrFile( program, fileHandle, context.getRoot()) ;
+		assertSetAttrMode( program, fileHandle) ;
 		assertBidirectionalEditFile( program, fileHandle, context.getRoot()) ;
 		assertTempRenameOverwriteFile( program, rootHandle, context.getRoot()) ;
 		assertCreateFile( program, rootHandle, context.getRoot()) ;
@@ -306,6 +307,9 @@ public class AllTests {
 		assertStatFs( program, rootHandle) ;
 		assertInvalidLookup( program, rootHandle) ;
 		assertReadLinkOnRegularFile( program, fileHandle) ;
+		assertHardLink( program, rootHandle, fileHandle, context.getRoot()) ;
+		assertLongSymlinkTarget( program, rootHandle) ;
+		assertJapaneseCreate( program, rootHandle, context.getRoot()) ;
 		context.close() ;
 	}
 
@@ -535,6 +539,39 @@ public class AllTests {
 
 	//--------------------------------------------------------------------------
 	/**
+	 * ファイルSETATTR modeを確認します。<br><br>
+	 *
+	 * <p>メソッド名称： ファイルSETATTR mode確認</p>
+	 *
+	 * @param program	NFSプログラム
+	 * @param handle	ファイルハンドル
+	 * @throws IOException 処理異常
+	 */
+	//--------------------------------------------------------------------------
+	private void assertSetAttrMode(NfsV2Program program, FileHandle handle) throws IOException {
+		XdrWriter readOnlyArguments = new XdrWriter() ;
+		readOnlyArguments.writeFixedOpaque( handle.getValue()) ;
+		writeSattrMode( readOnlyArguments, 0444) ;
+		XdrWriter readOnlyResponse = handle( program, RpcConstants.PROGRAM_NFS, 2, 2, readOnlyArguments) ;
+		XdrReader readOnlyReader = new XdrReader( readOnlyResponse.toByteArray()) ;
+
+		assertEquals( "setattr readonly status", NfsStatus.OK, readOnlyReader.readInt()) ;
+		readOnlyReader.readInt() ;
+		assertEquals( "setattr readonly mode", 0, readOnlyReader.readInt() & 0222) ;
+
+		XdrWriter writableArguments = new XdrWriter() ;
+		writableArguments.writeFixedOpaque( handle.getValue()) ;
+		writeSattrMode( writableArguments, 0644) ;
+		XdrWriter writableResponse = handle( program, RpcConstants.PROGRAM_NFS, 2, 2, writableArguments) ;
+		XdrReader writableReader = new XdrReader( writableResponse.toByteArray()) ;
+
+		assertEquals( "setattr writable status", NfsStatus.OK, writableReader.readInt()) ;
+		writableReader.readInt() ;
+		assertEquals( "setattr writable mode", 0200, writableReader.readInt() & 0200) ;
+	}
+
+	//--------------------------------------------------------------------------
+	/**
 	 * 双方向編集を確認します。<br><br>
 	 *
 	 * <p>メソッド名称： 双方向編集確認</p>
@@ -725,26 +762,58 @@ public class AllTests {
 	 */
 	//--------------------------------------------------------------------------
 	private void assertReadDir(NfsV2Program program, FileHandle rootHandle) throws IOException {
+		ReadDirPage page = readDirPage( program, rootHandle, 0, 8192) ;
+		List<String> names = new ArrayList<String>( page.getNames()) ;
+
+		assertTrue( "readdir eof", page.isEof()) ;
+		assertTrue( "readdir dot", names.contains( ".")) ;
+		assertTrue( "readdir dotdot", names.contains( "..")) ;
+		assertTrue( "readdir file", names.contains( "hello.txt")) ;
+
+		ReadDirPage firstPage = readDirPage( program, rootHandle, 0, 40) ;
+		ReadDirPage secondPage = readDirPage( program, rootHandle, firstPage.getLastCookie(), 8192) ;
+		List<String> pagedNames = new ArrayList<String>() ;
+		pagedNames.addAll( firstPage.getNames()) ;
+		pagedNames.addAll( secondPage.getNames()) ;
+
+		assertTrue( "readdir first page not eof", !firstPage.isEof()) ;
+		assertTrue( "readdir second page eof", secondPage.isEof()) ;
+		assertTrue( "readdir paged file", pagedNames.contains( "hello.txt")) ;
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * READDIRページを取得します。<br><br>
+	 *
+	 * <p>メソッド名称： READDIRページ取得</p>
+	 *
+	 * @param program		NFSプログラム
+	 * @param rootHandle	ルートハンドル
+	 * @param cookie		cookie
+	 * @param count			読込サイズ
+	 * @return READDIRページ
+	 * @throws IOException 処理異常
+	 */
+	//--------------------------------------------------------------------------
+	private ReadDirPage readDirPage(NfsV2Program program, FileHandle rootHandle, int cookie, int count) throws IOException {
 		XdrWriter arguments = new XdrWriter() ;
 		arguments.writeFixedOpaque( rootHandle.getValue()) ;
-		arguments.writeInt( 0) ;
-		arguments.writeInt( 8192) ;
+		arguments.writeInt( cookie) ;
+		arguments.writeInt( count) ;
 		XdrWriter response = handle( program, RpcConstants.PROGRAM_NFS, 2, 16, arguments) ;
 		XdrReader reader = new XdrReader( response.toByteArray()) ;
 		List<String> names = new ArrayList<String>() ;
+		List<Integer> cookies = new ArrayList<Integer>() ;
 
 		assertEquals( "readdir status", NfsStatus.OK, reader.readInt()) ;
 
 		while( reader.readBoolean()) {
 			reader.readUnsignedInt() ;
 			names.add( reader.readString()) ;
-			reader.readUnsignedInt() ;
+			cookies.add( (int)reader.readUnsignedInt()) ;
 		}
 
-		assertTrue( "readdir eof", reader.readBoolean()) ;
-		assertTrue( "readdir dot", names.contains( ".")) ;
-		assertTrue( "readdir dotdot", names.contains( "..")) ;
-		assertTrue( "readdir file", names.contains( "hello.txt")) ;
+		return new ReadDirPage( names, cookies, reader.readBoolean()) ;
 	}
 
 	//--------------------------------------------------------------------------
@@ -766,7 +835,10 @@ public class AllTests {
 
 		assertEquals( "statfs status", NfsStatus.OK, reader.readInt()) ;
 		assertEquals( "statfs transfer size", 8192, reader.readInt()) ;
-		assertEquals( "statfs block size", 4096, reader.readInt()) ;
+		assertTrue( "statfs block size", reader.readUnsignedInt() > 0) ;
+		assertTrue( "statfs blocks", reader.readUnsignedInt() > 0) ;
+		reader.readUnsignedInt() ;
+		reader.readUnsignedInt() ;
 	}
 
 	//--------------------------------------------------------------------------
@@ -788,6 +860,14 @@ public class AllTests {
 		XdrReader reader = new XdrReader( response.toByteArray()) ;
 
 		assertEquals( "invalid lookup status", NfsStatus.ACCES, reader.readInt()) ;
+
+		XdrWriter windowsArguments = new XdrWriter() ;
+		windowsArguments.writeFixedOpaque( rootHandle.getValue()) ;
+		windowsArguments.writeString( "bad:name") ;
+		XdrWriter windowsResponse = handle( program, RpcConstants.PROGRAM_NFS, 2, 4, windowsArguments) ;
+		XdrReader windowsReader = new XdrReader( windowsResponse.toByteArray()) ;
+
+		assertEquals( "invalid windows name status", NfsStatus.ACCES, windowsReader.readInt()) ;
 	}
 
 	//--------------------------------------------------------------------------
@@ -808,6 +888,78 @@ public class AllTests {
 		XdrReader reader = new XdrReader( response.toByteArray()) ;
 
 		assertEquals( "readlink status", NfsStatus.INVAL, reader.readInt()) ;
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * ハードリンクを確認します。<br><br>
+	 *
+	 * <p>メソッド名称： ハードリンク確認</p>
+	 *
+	 * @param program		NFSプログラム
+	 * @param rootHandle	ルートハンドル
+	 * @param fileHandle	ファイルハンドル
+	 * @param root			公開ルート
+	 * @throws IOException 処理異常
+	 */
+	//--------------------------------------------------------------------------
+	private void assertHardLink(NfsV2Program program, FileHandle rootHandle, FileHandle fileHandle, Path root) throws IOException {
+		XdrWriter arguments = new XdrWriter() ;
+		arguments.writeFixedOpaque( fileHandle.getValue()) ;
+		writeDiropargs( arguments, rootHandle, "hard-link.txt") ;
+		XdrWriter response = handle( program, RpcConstants.PROGRAM_NFS, 2, 12, arguments) ;
+		XdrReader reader = new XdrReader( response.toByteArray()) ;
+
+		assertEquals( "hard link status", NfsStatus.OK, reader.readInt()) ;
+		assertEquals( "hard link content", Files.readString( root.resolve( "hello.txt"), StandardCharsets.UTF_8), Files.readString( root.resolve( "hard-link.txt"), StandardCharsets.UTF_8)) ;
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * 長すぎるsymlink先を確認します。<br><br>
+	 *
+	 * <p>メソッド名称： 長すぎるsymlink先確認</p>
+	 *
+	 * @param program		NFSプログラム
+	 * @param rootHandle	ルートハンドル
+	 * @throws IOException 処理異常
+	 */
+	//--------------------------------------------------------------------------
+	private void assertLongSymlinkTarget(NfsV2Program program, FileHandle rootHandle) throws IOException {
+		XdrWriter arguments = new XdrWriter() ;
+		writeDiropargs( arguments, rootHandle, "long-link") ;
+		arguments.writeString( "a".repeat( 1025)) ;
+		writeSattrUnset( arguments) ;
+		XdrWriter response = handle( program, RpcConstants.PROGRAM_NFS, 2, 13, arguments) ;
+		XdrReader reader = new XdrReader( response.toByteArray()) ;
+
+		assertEquals( "long symlink status", NfsStatus.NAMETOOLONG, reader.readInt()) ;
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * 日本語ファイル名CREATEを確認します。<br><br>
+	 *
+	 * <p>メソッド名称： 日本語ファイル名CREATE確認</p>
+	 *
+	 * @param program		NFSプログラム
+	 * @param rootHandle	ルートハンドル
+	 * @param root			公開ルート
+	 * @throws IOException 処理異常
+	 */
+	//--------------------------------------------------------------------------
+	private void assertJapaneseCreate(NfsV2Program program, FileHandle rootHandle, Path root) throws IOException {
+		String name = "日本語.txt" ;
+		XdrWriter arguments = new XdrWriter() ;
+		writeDiropargs( arguments, rootHandle, name) ;
+		writeSattrUnset( arguments) ;
+		XdrWriter response = handle( program, RpcConstants.PROGRAM_NFS, 2, 9, arguments) ;
+		XdrReader reader = new XdrReader( response.toByteArray()) ;
+
+		assertEquals( "japanese create status", NfsStatus.OK, reader.readInt()) ;
+		reader.readFixedOpaque( FileHandle.LENGTH) ;
+		skipAttributes( reader) ;
+		assertTrue( "japanese file exists", Files.exists( root.resolve( name), LinkOption.NOFOLLOW_LINKS)) ;
 	}
 
 	//--------------------------------------------------------------------------
@@ -1001,6 +1153,27 @@ public class AllTests {
 
 	//--------------------------------------------------------------------------
 	/**
+	 * モード指定sattrを書き込みます。<br><br>
+	 *
+	 * <p>メソッド名称： モード指定sattr書込</p>
+	 *
+	 * @param writer	書込
+	 * @param mode		モード
+	 */
+	//--------------------------------------------------------------------------
+	private void writeSattrMode(XdrWriter writer, int mode) {
+		writer.writeUnsignedInt( mode) ;
+		writer.writeInt( -1) ;
+		writer.writeInt( -1) ;
+		writer.writeInt( -1) ;
+		writer.writeInt( -1) ;
+		writer.writeInt( -1) ;
+		writer.writeInt( -1) ;
+		writer.writeInt( -1) ;
+	}
+
+	//--------------------------------------------------------------------------
+	/**
 	 * 真偽値を検証します。<br><br>
 	 *
 	 * <p>メソッド名称： 真偽値検証</p>
@@ -1094,6 +1267,84 @@ public class AllTests {
 		 */
 		//----------------------------------------------------------------------
 		void run() throws Exception ;
+	}
+
+	//------------------------------------------------------------------------------
+	/**
+	 * READDIRページクラスです。<br><br>
+	 *
+	 * <p>クラス名称： READDIRページ</p>
+	 *
+	 * @author Shunji Ogawa
+	 * @version 01.00.00
+	 */
+	//------------------------------------------------------------------------------
+	private static class ReadDirPage {
+		//	内部定義	--------------------------------------------------------
+		/** 名前一覧 */
+		private final List<String>		names ;
+
+		/** cookie一覧 */
+		private final List<Integer>		cookies ;
+
+		/** EOF */
+		private final boolean			eof ;
+
+		//----------------------------------------------------------------------
+		/**
+		 * インスタンスを生成します。<br><br>
+		 *
+		 * <p>メソッド名称： コンストラクタ</p>
+		 *
+		 * @param names		名前一覧
+		 * @param cookies	cookie一覧
+		 * @param eof		EOF
+		 */
+		//----------------------------------------------------------------------
+		ReadDirPage(List<String> names, List<Integer> cookies, boolean eof) {
+			this.names = names ;
+			this.cookies = cookies ;
+			this.eof = eof ;
+		}
+
+		//----------------------------------------------------------------------
+		/**
+		 * 名前一覧を取得します。<br><br>
+		 *
+		 * <p>メソッド名称： 名前一覧取得</p>
+		 *
+		 * @return 名前一覧
+		 */
+		//----------------------------------------------------------------------
+		List<String> getNames() {
+			return names ;
+		}
+
+		//----------------------------------------------------------------------
+		/**
+		 * 最後のcookieを取得します。<br><br>
+		 *
+		 * <p>メソッド名称： 最後のcookie取得</p>
+		 *
+		 * @return 最後のcookie
+		 */
+		//----------------------------------------------------------------------
+		int getLastCookie() {
+			return cookies.get( cookies.size() - 1) ;
+		}
+
+		//----------------------------------------------------------------------
+		/**
+		 * EOFを取得します。<br><br>
+		 *
+		 * <p>メソッド名称： EOF取得</p>
+		 *
+		 * @return true:EOF false:継続あり
+		 */
+		//----------------------------------------------------------------------
+		boolean isEof() {
+			return eof ;
+		}
 	}
 
 	//------------------------------------------------------------------------------

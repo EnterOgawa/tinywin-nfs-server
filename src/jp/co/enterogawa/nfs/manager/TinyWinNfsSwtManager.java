@@ -158,6 +158,9 @@ public class TinyWinNfsSwtManager {
 	/** 読込サイズ */
 	private Text						readSizeText ;
 
+	/** ファイル名文字コード */
+	private Text						filenameCharsetText ;
+
 	/** 表示言語 */
 	private Combo						uiLanguageCombo ;
 
@@ -426,6 +429,7 @@ public class TinyWinNfsSwtManager {
 		directoryModeText = addField( permissionGroup, text( "label.directoryMode")) ;
 		blockSizeText = addField( permissionGroup, text( "label.blockSize")) ;
 		readSizeText = addField( permissionGroup, text( "label.readSize")) ;
+		filenameCharsetText = addField( permissionGroup, text( "label.filenameCharset")) ;
 
 		Composite buttons = createButtonRow( panel) ;
 		createButton( buttons, text( "button.reload"), event -> loadConfig()) ;
@@ -1079,6 +1083,7 @@ public class TinyWinNfsSwtManager {
 			directoryModeText.setText( properties.getProperty( "directory.mode", "0755")) ;
 			blockSizeText.setText( properties.getProperty( "block.size", "4096")) ;
 			readSizeText.setText( properties.getProperty( "read.size", "8192")) ;
+			filenameCharsetText.setText( properties.getProperty( "filename.charset", "UTF-8")) ;
 			updateMountCommand() ;
 			appendLog( text( "log.configurationLoaded")) ;
 		} catch( IOException ioex) {
@@ -1134,6 +1139,7 @@ public class TinyWinNfsSwtManager {
 			lines.add( "directory.mode=" + directoryModeText.getText().trim()) ;
 			lines.add( "block.size=" + blockSizeText.getText().trim()) ;
 			lines.add( "read.size=" + readSizeText.getText().trim()) ;
+			lines.add( "filename.charset=" + filenameCharsetText.getText().trim()) ;
 			Files.write( configPath, lines, StandardCharsets.UTF_8) ;
 			updateMountCommand() ;
 			appendLog( text( "log.configurationSaved")) ;
@@ -1176,6 +1182,7 @@ public class TinyWinNfsSwtManager {
 		validatePositiveInt( text( "label.readSize"), readSizeText.getText()) ;
 		validateInt( text( "label.uid"), uidText.getText()) ;
 		validateInt( text( "label.gid"), gidText.getText()) ;
+		validateCharset( text( "label.filenameCharset"), filenameCharsetText.getText()) ;
 
 		// 共有定義が存在しない場合
 		if( shareEntries.isEmpty()) {
@@ -1255,6 +1262,24 @@ public class TinyWinNfsSwtManager {
 			return Integer.parseInt( value.trim()) ;
 		} catch( NumberFormatException nfex) {
 			throw new IllegalArgumentException( format( "error.mustBeInteger", label) ) ;
+		}
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * 文字コードを検証します。<br><br>
+	 *
+	 * <p>メソッド名称： 文字コード検証</p>
+	 *
+	 * @param label	ラベル
+	 * @param value	値
+	 */
+	//--------------------------------------------------------------------------
+	private void validateCharset(String label, String value) {
+		try {
+			Charset.forName( value.trim()) ;
+		} catch( RuntimeException rex) {
+			throw new IllegalArgumentException( format( "error.invalidCharset", label) ) ;
 		}
 	}
 

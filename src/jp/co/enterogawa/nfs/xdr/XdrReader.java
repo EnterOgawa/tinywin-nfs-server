@@ -1,6 +1,7 @@
 package jp.co.enterogawa.nfs.xdr;
 
 import java.nio.charset.StandardCharsets;
+import java.nio.charset.Charset;
 import java.util.Arrays;
 
 //------------------------------------------------------------------------------
@@ -139,6 +140,21 @@ public class XdrReader {
 	public String readString() {
 		byte[] value = readOpaque() ;
 		return new String( value, StandardCharsets.UTF_8) ;
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * 文字列を読み込みます。<br><br>
+	 *
+	 * <p>メソッド名称： 文字列読込</p>
+	 *
+	 * @param charset	文字コード
+	 * @return 文字列
+	 */
+	//--------------------------------------------------------------------------
+	public String readString(Charset charset) {
+		byte[] value = readOpaque() ;
+		return new String( value, charset) ;
 	}
 
 	//--------------------------------------------------------------------------

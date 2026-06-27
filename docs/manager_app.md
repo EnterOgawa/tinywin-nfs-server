@@ -93,7 +93,10 @@ The Options tab manages advanced values:
 - Display language
 - Server host and client mount point for command generation
 - Portmap, NFS, and MOUNT UDP ports
-- UID/GID, file mode, directory mode, block size, and read size
+- UID/GID, file mode, directory mode, block size, read size, and filename charset
+
+`filename.charset` controls how NFSv2 filename and symlink path strings are decoded and encoded.
+The default is `UTF-8`. Use a Java Charset name such as `windows-31j` only when a legacy client requires it.
 
 ## Language
 

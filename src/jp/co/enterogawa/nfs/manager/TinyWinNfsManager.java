@@ -142,6 +142,9 @@ public class TinyWinNfsManager extends JFrame {
 	/** 読込サイズ */
 	private final JTextField				readSizeField = new JTextField() ;
 
+	/** ファイル名文字コード */
+	private final JTextField				filenameCharsetField = new JTextField() ;
+
 	/** RPC XID */
 	private int							xid = 0x30000000 ;
 
@@ -296,7 +299,8 @@ public class TinyWinNfsManager extends JFrame {
 		row = addField( formPanel, row, "File mode", fileModeField, null) ;
 		row = addField( formPanel, row, "Directory mode", directoryModeField, null) ;
 		row = addField( formPanel, row, "Block size", blockSizeField, null) ;
-		addField( formPanel, row, "Read size", readSizeField, null) ;
+		row = addField( formPanel, row, "Read size", readSizeField, null) ;
+		addField( formPanel, row, "Filename charset", filenameCharsetField, null) ;
 
 		JPanel buttonPanel = new JPanel( new FlowLayout( FlowLayout.RIGHT)) ;
 		buttonPanel.add( createButton( "Reload", event -> loadConfig())) ;
@@ -560,6 +564,7 @@ public class TinyWinNfsManager extends JFrame {
 			directoryModeField.setText( properties.getProperty( "directory.mode", "0755")) ;
 			blockSizeField.setText( properties.getProperty( "block.size", "4096")) ;
 			readSizeField.setText( properties.getProperty( "read.size", "8192")) ;
+			filenameCharsetField.setText( properties.getProperty( "filename.charset", "UTF-8")) ;
 			updateMountCommand() ;
 			appendLog( "Configuration loaded.") ;
 		} catch( IOException ioex) {
@@ -599,6 +604,7 @@ public class TinyWinNfsManager extends JFrame {
 			lines.add( "directory.mode=" + directoryModeField.getText().trim()) ;
 			lines.add( "block.size=" + blockSizeField.getText().trim()) ;
 			lines.add( "read.size=" + readSizeField.getText().trim()) ;
+			lines.add( "filename.charset=" + filenameCharsetField.getText().trim()) ;
 			Files.write( configPath, lines, StandardCharsets.UTF_8) ;
 			updateMountCommand() ;
 			appendLog( "Configuration saved.") ;
@@ -641,6 +647,7 @@ public class TinyWinNfsManager extends JFrame {
 		validatePositiveInt( "Read size", readSizeField.getText()) ;
 		validateInt( "UID", uidField.getText()) ;
 		validateInt( "GID", gidField.getText()) ;
+		validateCharset( "Filename charset", filenameCharsetField.getText()) ;
 
 		// export名が不正な場合
 		if( !exportNameField.getText().trim().startsWith( "/")) {
@@ -727,6 +734,24 @@ public class TinyWinNfsManager extends JFrame {
 			return Integer.parseInt( value.trim()) ;
 		} catch( NumberFormatException nfex) {
 			throw new IllegalArgumentException( label + " must be integer." ) ;
+		}
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * 文字コードを検証します。<br><br>
+	 *
+	 * <p>メソッド名称： 文字コード検証</p>
+	 *
+	 * @param label	ラベル
+	 * @param value	値
+	 */
+	//--------------------------------------------------------------------------
+	private void validateCharset(String label, String value) {
+		try {
+			Charset.forName( value.trim()) ;
+		} catch( RuntimeException rex) {
+			throw new IllegalArgumentException( label + " is not a supported charset." ) ;
 		}
 	}
 

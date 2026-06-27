@@ -1,6 +1,7 @@
 package jp.co.enterogawa.nfs.xdr;
 
 import java.io.ByteArrayOutputStream;
+import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 
 //------------------------------------------------------------------------------
@@ -99,6 +100,20 @@ public class XdrWriter {
 	//--------------------------------------------------------------------------
 	public void writeString(String value) {
 		writeOpaque( value.getBytes( StandardCharsets.UTF_8)) ;
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * 文字列を書き込みます。<br><br>
+	 *
+	 * <p>メソッド名称： 文字列書込</p>
+	 *
+	 * @param value		文字列
+	 * @param charset	文字コード
+	 */
+	//--------------------------------------------------------------------------
+	public void writeString(String value, Charset charset) {
+		writeOpaque( value.getBytes( charset)) ;
 	}
 
 	//--------------------------------------------------------------------------

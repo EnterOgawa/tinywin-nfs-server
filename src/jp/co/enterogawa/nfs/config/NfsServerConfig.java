@@ -2,6 +2,7 @@ package jp.co.enterogawa.nfs.config;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -62,6 +63,9 @@ public class NfsServerConfig {
 	/** 読込サイズ */
 	private final int					readSize ;
 
+	/** ファイル名文字コード */
+	private final Charset				filenameCharset ;
+
 	//--------------------------------------------------------------------------
 	/**
 	 * インスタンスを生成します。<br><br>
@@ -82,6 +86,7 @@ public class NfsServerConfig {
 		directoryMode = getOctalInt( properties, "directory.mode", 0755) ;
 		blockSize = getInt( properties, "block.size", 4096) ;
 		readSize = getInt( properties, "read.size", 8192) ;
+		filenameCharset = Charset.forName( getString( properties, "filename.charset", "UTF-8")) ;
 		validate() ;
 	}
 
@@ -193,6 +198,29 @@ public class NfsServerConfig {
 		}
 
 		return Integer.parseInt( value.trim(), 8) ;
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * 文字列設定を取得します。<br><br>
+	 *
+	 * <p>メソッド名称： 文字列設定取得</p>
+	 *
+	 * @param properties	設定値
+	 * @param key		キー
+	 * @param defaultValue	デフォルト値
+	 * @return 文字列設定
+	 */
+	//--------------------------------------------------------------------------
+	private static String getString(Properties properties, String key, String defaultValue) {
+		String value = properties.getProperty( key) ;
+
+		// 設定がない場合
+		if( value == null || value.isBlank()) {
+			return defaultValue ;
+		}
+
+		return value.trim() ;
 	}
 
 	//--------------------------------------------------------------------------
@@ -465,5 +493,18 @@ public class NfsServerConfig {
 	//--------------------------------------------------------------------------
 	public int getReadSize() {
 		return readSize ;
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * ファイル名文字コードを取得します。<br><br>
+	 *
+	 * <p>メソッド名称： ファイル名文字コード取得</p>
+	 *
+	 * @return ファイル名文字コード
+	 */
+	//--------------------------------------------------------------------------
+	public Charset getFilenameCharset() {
+		return filenameCharset ;
 	}
 }
