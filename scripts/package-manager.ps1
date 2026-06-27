@@ -13,6 +13,7 @@ $input = Join-Path $work "input"
 $smokeBin = Join-Path $work "smoke-bin"
 $dist = Join-Path $root "dist"
 $appName = "TinyWinNfsManager"
+$appVersion = "1.0.1"
 $appImage = Join-Path $dist $appName
 $appJar = Join-Path $input "tinywin-nfs-server.jar"
 $smokeTest = Join-Path $root "test\jp\co\enterogawa\nfs\ServiceSmokeTest.java"
@@ -65,6 +66,7 @@ if( $LASTEXITCODE -ne 0) {
 & $jpackage `
 	--type app-image `
 	--name $appName `
+	--app-version $appVersion `
 	--input $input `
 	--main-jar "tinywin-nfs-server.jar" `
 	--main-class jp.co.enterogawa.nfs.manager.TinyWinNfsSwtManager `
@@ -83,6 +85,8 @@ Copy-Item -LiteralPath (Join-Path $root "export") -Destination (Join-Path $appIm
 Copy-Item -LiteralPath (Join-Path $root "docs") -Destination (Join-Path $appImage "docs") -Recurse -Force
 Copy-Item -LiteralPath (Join-Path $root "service") -Destination (Join-Path $appImage "service") -Recurse -Force
 Copy-Item -LiteralPath (Join-Path $root "launcher\TinyWinNfsManager-Admin.cmd") -Destination (Join-Path $appImage "TinyWinNfsManager-Admin.cmd") -Force
+Copy-Item -LiteralPath (Join-Path $root "LICENSE") -Destination (Join-Path $appImage "LICENSE") -Force
+Copy-Item -LiteralPath (Join-Path $root "THIRD_PARTY_NOTICES.md") -Destination (Join-Path $appImage "THIRD_PARTY_NOTICES.md") -Force
 
 $scriptTarget = Join-Path $appImage "scripts"
 $runtimeScripts = @(

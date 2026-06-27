@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.0.1 - 2026-06-27
+
+- Added Apache License 2.0 for the project source.
+- Added third-party license notices for packaged components.
+- Included license files in the app image and installer.
+
 ## 1.0.0 - 2026-06-27
 
 - Added Windows user-space NFSv2 server over UDP.

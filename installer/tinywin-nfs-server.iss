@@ -1,5 +1,5 @@
 #define AppName "TinyWinNFS Server"
-#define AppVersion "1.0.0"
+#define AppVersion "1.0.1"
 #define AppPublisher "EnterOgawa"
 #define AppExeName "TinyWinNfsManager.exe"
 #define SourceDir "..\dist\TinyWinNfsManager"
@@ -9,6 +9,7 @@ AppId={{8F5216BB-CCAB-4E7E-B8FA-3D2F52B2F214}
 AppName={#AppName}
 AppVersion={#AppVersion}
 AppPublisher={#AppPublisher}
+AppCopyright=Copyright 2026 Shunji Ogawa
 DefaultDirName={autopf}\EnterOgawa\TinyWinNFS Server
 DefaultGroupName=TinyWinNFS Server
 DisableProgramGroupPage=yes
@@ -16,6 +17,8 @@ OutputDir=..\dist\installer
 OutputBaseFilename=TinyWinNfsSetup
 SetupIconFile=..\assets\tinywin-nfs-server.ico
 UninstallDisplayIcon={app}\{#AppExeName}
+LicenseFile=..\LICENSE
+InfoBeforeFile=..\THIRD_PARTY_NOTICES.md
 Compression=lzma2
 SolidCompression=yes
 WizardStyle=modern
