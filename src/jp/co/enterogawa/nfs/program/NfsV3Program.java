@@ -6,6 +6,7 @@ import java.nio.charset.Charset;
 import java.nio.file.AccessDeniedException;
 import java.nio.file.DirectoryNotEmptyException;
 import java.nio.file.FileAlreadyExistsException;
+import java.nio.file.FileSystemException;
 import java.nio.file.FileStore;
 import java.nio.file.Files;
 import java.nio.file.InvalidPathException;
@@ -552,6 +553,14 @@ public class NfsV3Program implements RpcProgram {
 			return ;
 		}
 
+		// クライアントが許可されていない場合
+		if( !isClientAllowed( path)) {
+			logAccessDenied( "READLINK", path, "client-denied") ;
+			response.writeInt( NfsStatus.ACCES) ;
+			writePostOpAttr( response, path) ;
+			return ;
+		}
+
 		// シンボリックリンクではない場合
 		if( !Files.isSymbolicLink( path)) {
 			response.writeInt( NfsStatus.INVAL) ;
@@ -559,10 +568,25 @@ public class NfsV3Program implements RpcProgram {
 			return ;
 		}
 
-		Path target = Files.readSymbolicLink( path) ;
-		response.writeInt( NfsStatus.OK) ;
-		writePostOpAttr( response, path) ;
-		response.writeString( target.toString(), filenameCharset) ;
+		try {
+			Path target = Files.readSymbolicLink( path) ;
+			response.writeInt( NfsStatus.OK) ;
+			writePostOpAttr( response, path) ;
+			response.writeString( target.toString(), filenameCharset) ;
+		} catch( UnsupportedOperationException uoex) {
+			logMutation( "READLINK", path, NfsStatus.PERM, uoex.getClass().getSimpleName()) ;
+			response.writeInt( NfsStatus.PERM) ;
+			writePostOpAttr( response, path) ;
+		} catch( SecurityException sex) {
+			logMutation( "READLINK", path, NfsStatus.ACCES, sex.getClass().getSimpleName()) ;
+			response.writeInt( NfsStatus.ACCES) ;
+			writePostOpAttr( response, path) ;
+		} catch( IOException ioex) {
+			int status = mapIoStatus( ioex) ;
+			logMutation( "READLINK", path, status, ioex.getClass().getSimpleName()) ;
+			response.writeInt( status) ;
+			writePostOpAttr( response, path) ;
+		}
 	}
 
 	//--------------------------------------------------------------------------
@@ -853,8 +877,12 @@ public class NfsV3Program implements RpcProgram {
 
 		try {
 			Files.createSymbolicLink( path, Path.of( linkTarget)) ;
+		} catch( InvalidPathException ipex) {
+			logMutation( "SYMLINK", path, NfsStatus.ACCES, ipex.getClass().getSimpleName()) ;
+			writeCreateResult( response, NfsStatus.ACCES, path, target.getDirectory(), directoryBefore, null) ;
+			return ;
 		} catch( IOException | UnsupportedOperationException | SecurityException ex) {
-			int status = ex instanceof IOException ioex ? mapIoStatus( ioex) : NfsStatus.PERM ;
+			int status = ex instanceof IOException ioex ? mapSymlinkStatus( ioex) : NfsStatus.PERM ;
 			logMutation( "SYMLINK", path, status, ex.getClass().getSimpleName()) ;
 			writeCreateResult( response, status, path, target.getDirectory(), directoryBefore, null) ;
 			return ;
@@ -2199,6 +2227,27 @@ public class NfsV3Program implements RpcProgram {
 		}
 
 		return NfsStatus.IO ;
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * SYMLINK用のIO例外をNFSステータスへ変換します。<br><br>
+	 *
+	 * <p>メソッド名称： SYMLINK IO例外変換</p>
+	 *
+	 * @param ioex	IO例外
+	 * @return NFSステータス
+	 */
+	//--------------------------------------------------------------------------
+	private int mapSymlinkStatus(IOException ioex) {
+		int status = mapIoStatus( ioex) ;
+
+		// Windowsのsymlink権限不足は汎用FileSystemExceptionになることがある
+		if( status == NfsStatus.IO && ioex instanceof FileSystemException) {
+			return NfsStatus.ACCES ;
+		}
+
+		return status ;
 	}
 
 	//--------------------------------------------------------------------------

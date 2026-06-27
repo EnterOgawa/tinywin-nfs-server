@@ -50,6 +50,8 @@ The script:
 - verifies a Japanese filename using `lang=shift-jis`;
 - unmounts the drive and stops the temporary server.
 
+v1.7.0 unit tests cover NFSv2/NFSv3 `READLINK`, `SYMLINK`, broken symlink `READLINK`, and NFSv3 `MKNOD` rejection. Windows Client for NFS integration checks remain focused on mount, regular files, directories, and filename encoding because Windows client behavior for POSIX symlink creation is environment dependent.
+
 Expected result:
 
 ```text

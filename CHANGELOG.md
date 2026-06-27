@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.7.0 - Unreleased
+
+- Hardened NFSv2/NFSv3 `READLINK` so broken or unreadable symlinks return stable NFS statuses instead of escaping as transport-level handler errors.
+- Added NFSv3 `READLINK` client allow-list enforcement to match other handle-based operations.
+- Improved NFSv2/NFSv3 `SYMLINK` error mapping for Windows symlink privilege failures and invalid link targets.
+- Added regression coverage for NFSv2/NFSv3 symlink creation, broken symlink `READLINK`, regular-file `READLINK`, and NFSv3 `MKNOD` `NOTSUPP`.
+- Documented link compatibility policy and Windows symlink limitations.
+
 ## 1.6.1 - 2026-06-27
 
 - Added AUTH_SYS UID/GID based automatic permission identity responses with `permission.identity=auto`.

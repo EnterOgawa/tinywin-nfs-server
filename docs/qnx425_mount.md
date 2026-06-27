@@ -78,3 +78,14 @@ NFS lock manager support is intentionally out of the current scope.
 Filename encoding defaults to UTF-8 and can be changed with `filename.charset` if a legacy client requires another Java Charset.
 
 TCP transport is implemented for newer clients. NFS lock manager support remains out of scope, while QNX 4.25 remains validated through the NFSv2/UDP path.
+
+## Link Compatibility
+
+TinyWinNFS exposes real Windows filesystem links through NFS:
+
+- `READLINK` returns the stored target for an actual symlink, including broken symlinks.
+- `SYMLINK` creates a Windows symlink only when the service account and filesystem allow it.
+- If Windows denies symlink creation, TinyWinNFS returns an NFS failure status and does not create a placeholder regular file.
+- `LINK` creates a hard link when Windows supports it for the target.
+
+QNX directory copies that contain symlinks should therefore either create real symlinks on the Windows export or fail that entry without corrupting the server-side file tree. Device nodes and other special files are not emulated as regular files.

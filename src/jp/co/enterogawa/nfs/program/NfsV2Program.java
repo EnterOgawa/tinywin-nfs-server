@@ -7,6 +7,7 @@ import java.nio.file.AccessDeniedException;
 import java.nio.file.DirectoryNotEmptyException;
 import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.FileVisitResult;
+import java.nio.file.FileSystemException;
 import java.nio.file.FileStore;
 import java.nio.file.Files;
 import java.nio.file.InvalidPathException;
@@ -456,9 +457,21 @@ public class NfsV2Program implements RpcProgram {
 			return ;
 		}
 
-		Path target = Files.readSymbolicLink( path) ;
-		response.writeInt( NfsStatus.OK) ;
-		response.writeString( target.toString(), filenameCharset) ;
+		try {
+			Path target = Files.readSymbolicLink( path) ;
+			response.writeInt( NfsStatus.OK) ;
+			response.writeString( target.toString(), filenameCharset) ;
+		} catch( UnsupportedOperationException uoex) {
+			logMutation( "READLINK", path, NfsStatus.PERM, uoex.getClass().getSimpleName()) ;
+			response.writeInt( NfsStatus.PERM) ;
+		} catch( SecurityException sex) {
+			logMutation( "READLINK", path, NfsStatus.ACCES, sex.getClass().getSimpleName()) ;
+			response.writeInt( NfsStatus.ACCES) ;
+		} catch( IOException ioex) {
+			int status = mapIoStatus( ioex) ;
+			logMutation( "READLINK", path, status, ioex.getClass().getSimpleName()) ;
+			response.writeInt( status) ;
+		}
 	}
 
 	//--------------------------------------------------------------------------
@@ -1247,7 +1260,7 @@ public class NfsV2Program implements RpcProgram {
 			logMutation( "SYMLINK", target.getPath(), NfsStatus.ACCES, sex.getClass().getSimpleName()) ;
 			response.writeInt( NfsStatus.ACCES) ;
 		} catch( IOException ioex) {
-			int status = mapIoStatus( ioex) ;
+			int status = mapSymlinkStatus( ioex) ;
 			logMutation( "SYMLINK", target.getPath(), status, ioex.getClass().getSimpleName()) ;
 			response.writeInt( status) ;
 		}
@@ -1850,6 +1863,27 @@ public class NfsV2Program implements RpcProgram {
 		}
 
 		return NfsStatus.IO ;
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * SYMLINK用のIO例外をNFSステータスへ変換します。<br><br>
+	 *
+	 * <p>メソッド名称： SYMLINK IO例外変換</p>
+	 *
+	 * @param ioex	IO例外
+	 * @return NFSステータス
+	 */
+	//--------------------------------------------------------------------------
+	private int mapSymlinkStatus(IOException ioex) {
+		int status = mapIoStatus( ioex) ;
+
+		// Windowsのsymlink権限不足は汎用FileSystemExceptionになることがある
+		if( status == NfsStatus.IO && ioex instanceof FileSystemException) {
+			return NfsStatus.ACCES ;
+		}
+
+		return status ;
 	}
 
 	//--------------------------------------------------------------------------

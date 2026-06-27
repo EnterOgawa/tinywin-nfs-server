@@ -585,6 +585,8 @@ public class AllTests {
 		assertReadLinkOnRegularFile( program, fileHandle) ;
 		assertHardLink( program, rootHandle, fileHandle, context.getRoot()) ;
 		assertLongSymlinkTarget( program, rootHandle) ;
+		assertSymbolicLinkV2( program, rootHandle, context.getRoot()) ;
+		assertBrokenSymbolicLinkV2( program, rootHandle, context.getRoot()) ;
 		assertJapaneseCreate( program, rootHandle, context.getRoot()) ;
 		program.close() ;
 		context.close() ;
@@ -612,11 +614,16 @@ public class AllTests {
 			assertGetAttrAuthSysV3( program, rootHandle) ;
 			assertAccessV3( program, rootHandle) ;
 			assertReadFileV3( program, fileHandle) ;
+			assertReadLinkOnRegularFileV3( program, fileHandle) ;
 			assertWriteAndCommitV3( program, fileHandle, context.getRoot()) ;
 			assertSetAttrV3( program, fileHandle, context.getRoot()) ;
 			assertCreateRemoveV3( program, rootHandle, context.getRoot()) ;
 			assertMkdirRmdirV3( program, rootHandle, context.getRoot()) ;
 			assertRenameV3( program, rootHandle, context.getRoot()) ;
+			assertSymbolicLinkV3( program, rootHandle, context.getRoot()) ;
+			assertBrokenSymbolicLinkV3( program, rootHandle, context.getRoot()) ;
+			assertInvalidSymlinkTargetV3( program, rootHandle, context.getRoot()) ;
+			assertMknodV3( program, rootHandle, context.getRoot()) ;
 			assertReadDirPlusV3( program, rootHandle) ;
 			assertFsInfoV3( program, rootHandle) ;
 		} finally {
@@ -796,6 +803,26 @@ public class AllTests {
 		assertEquals( "v3 read count", "hello qnx".length(), reader.readInt()) ;
 		assertTrue( "v3 read eof", reader.readBoolean()) ;
 		assertEquals( "v3 read content", "hello qnx", new String( reader.readOpaque(), StandardCharsets.UTF_8)) ;
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * NFSv3通常ファイルREADLINKを確認します。<br><br>
+	 *
+	 * <p>メソッド名称： NFSv3通常ファイルREADLINK確認</p>
+	 *
+	 * @param program	NFSv3プログラム
+	 * @param handle	ファイルハンドル
+	 * @throws IOException 処理異常
+	 */
+	//--------------------------------------------------------------------------
+	private void assertReadLinkOnRegularFileV3(NfsV3Program program, FileHandle handle) throws IOException {
+		XdrWriter arguments = new XdrWriter() ;
+		arguments.writeOpaque( handle.getValue()) ;
+		XdrReader reader = new XdrReader( handle( program, RpcConstants.PROGRAM_NFS, 3, 5, arguments).toByteArray()) ;
+
+		assertEquals( "v3 regular readlink status", NfsStatus.INVAL, reader.readInt()) ;
+		skipPostOpAttrV3( reader) ;
 	}
 
 	//--------------------------------------------------------------------------
@@ -1060,6 +1087,147 @@ public class AllTests {
 		assertEquals( "v3 pathconf status", NfsStatus.OK, pathConfReader.readInt()) ;
 		skipPostOpAttrV3( pathConfReader) ;
 		assertTrue( "v3 pathconf name max", pathConfReader.readInt() > 0) ;
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * NFSv3 symlink作成を確認します。<br><br>
+	 *
+	 * <p>メソッド名称： NFSv3 symlink作成確認</p>
+	 *
+	 * @param program		NFSv3プログラム
+	 * @param rootHandle	ルートハンドル
+	 * @param root			公開ルート
+	 * @throws IOException 処理異常
+	 */
+	//--------------------------------------------------------------------------
+	private void assertSymbolicLinkV3(NfsV3Program program, FileHandle rootHandle, Path root) throws IOException {
+		String linkName = "v3-link.txt" ;
+		String linkTarget = "hello.txt" ;
+		XdrWriter arguments = new XdrWriter() ;
+		writeDiropargsV3( arguments, rootHandle, linkName) ;
+		writeSattr3Unset( arguments) ;
+		arguments.writeString( linkTarget) ;
+		XdrReader reader = new XdrReader( handle( program, RpcConstants.PROGRAM_NFS, 3, 10, arguments).toByteArray()) ;
+		int status = reader.readInt() ;
+		Path linkPath = root.resolve( linkName) ;
+
+		// Windows環境でsymlink作成権限がない場合は安定したエラーを確認する
+		if( status != NfsStatus.OK) {
+			assertLinkCreationFailureStatus( "v3 symlink status", status) ;
+			skipWccDataV3( reader) ;
+			assertFalse( "v3 symlink not created", Files.exists( linkPath, LinkOption.NOFOLLOW_LINKS)) ;
+			return ;
+		}
+
+		assertTrue( "v3 symlink handle follows", reader.readBoolean()) ;
+		FileHandle linkHandle = new FileHandle( reader.readOpaque()) ;
+		skipPostOpAttrV3( reader) ;
+		skipWccDataV3( reader) ;
+		assertTrue( "v3 symlink exists", Files.isSymbolicLink( linkPath)) ;
+		assertEquals( "v3 symlink target", linkTarget, Files.readSymbolicLink( linkPath).toString()) ;
+		assertReadLinkV3( program, linkHandle, linkTarget) ;
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * NFSv3の壊れたsymlink READLINKを確認します。<br><br>
+	 *
+	 * <p>メソッド名称： NFSv3壊れたsymlink READLINK確認</p>
+	 *
+	 * @param program		NFSv3プログラム
+	 * @param rootHandle	ルートハンドル
+	 * @param root			公開ルート
+	 * @throws IOException 処理異常
+	 */
+	//--------------------------------------------------------------------------
+	private void assertBrokenSymbolicLinkV3(NfsV3Program program, FileHandle rootHandle, Path root) throws IOException {
+		String linkName = "v3-broken-link.txt" ;
+		String linkTarget = "missing-target.txt" ;
+		Path linkPath = root.resolve( linkName) ;
+
+		if( !createLocalSymbolicLink( linkPath, linkTarget)) {
+			return ;
+		}
+
+		FileHandle linkHandle = lookupV3( program, rootHandle, linkName) ;
+		assertTrue( "v3 broken symlink exists", Files.isSymbolicLink( linkPath)) ;
+		assertFalse( "v3 broken symlink target missing", Files.exists( root.resolve( linkTarget), LinkOption.NOFOLLOW_LINKS)) ;
+		assertReadLinkV3( program, linkHandle, linkTarget) ;
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * NFSv3不正symlink先を確認します。<br><br>
+	 *
+	 * <p>メソッド名称： NFSv3不正symlink先確認</p>
+	 *
+	 * @param program		NFSv3プログラム
+	 * @param rootHandle	ルートハンドル
+	 * @param root			公開ルート
+	 * @throws IOException 処理異常
+	 */
+	//--------------------------------------------------------------------------
+	private void assertInvalidSymlinkTargetV3(NfsV3Program program, FileHandle rootHandle, Path root) throws IOException {
+		String linkName = "v3-invalid-link.txt" ;
+		XdrWriter arguments = new XdrWriter() ;
+		writeDiropargsV3( arguments, rootHandle, linkName) ;
+		writeSattr3Unset( arguments) ;
+		arguments.writeString( "bad" + '\0' + "target") ;
+		XdrReader reader = new XdrReader( handle( program, RpcConstants.PROGRAM_NFS, 3, 10, arguments).toByteArray()) ;
+
+		assertEquals( "v3 invalid symlink target status", NfsStatus.ACCES, reader.readInt()) ;
+		skipWccDataV3( reader) ;
+		assertFalse( "v3 invalid symlink not created", Files.exists( root.resolve( linkName), LinkOption.NOFOLLOW_LINKS)) ;
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * NFSv3 MKNOD非対応を確認します。<br><br>
+	 *
+	 * <p>メソッド名称： NFSv3 MKNOD非対応確認</p>
+	 *
+	 * @param program		NFSv3プログラム
+	 * @param rootHandle	ルートハンドル
+	 * @param root			公開ルート
+	 * @throws IOException 処理異常
+	 */
+	//--------------------------------------------------------------------------
+	private void assertMknodV3(NfsV3Program program, FileHandle rootHandle, Path root) throws IOException {
+		String name = "v3-special-node" ;
+		XdrWriter arguments = new XdrWriter() ;
+		writeDiropargsV3( arguments, rootHandle, name) ;
+		arguments.writeInt( 4) ;
+		writeSattr3Unset( arguments) ;
+		arguments.writeInt( 0) ;
+		arguments.writeInt( 0) ;
+		XdrReader reader = new XdrReader( handle( program, RpcConstants.PROGRAM_NFS, 3, 11, arguments).toByteArray()) ;
+
+		assertEquals( "v3 mknod status", NfsStatus.NOTSUPP, reader.readInt()) ;
+		skipWccDataV3( reader) ;
+		assertFalse( "v3 mknod not created", Files.exists( root.resolve( name), LinkOption.NOFOLLOW_LINKS)) ;
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * NFSv3 READLINKを確認します。<br><br>
+	 *
+	 * <p>メソッド名称： NFSv3 READLINK確認</p>
+	 *
+	 * @param program	NFSv3プログラム
+	 * @param handle	ファイルハンドル
+	 * @param expected	期待リンク先
+	 * @throws IOException 処理異常
+	 */
+	//--------------------------------------------------------------------------
+	private void assertReadLinkV3(NfsV3Program program, FileHandle handle, String expected) throws IOException {
+		XdrWriter arguments = new XdrWriter() ;
+		arguments.writeOpaque( handle.getValue()) ;
+		XdrReader reader = new XdrReader( handle( program, RpcConstants.PROGRAM_NFS, 3, 5, arguments).toByteArray()) ;
+
+		assertEquals( "v3 readlink status", NfsStatus.OK, reader.readInt()) ;
+		skipPostOpAttrV3( reader) ;
+		assertEquals( "v3 readlink target", expected, reader.readString()) ;
 	}
 
 	//--------------------------------------------------------------------------
@@ -1979,6 +2147,89 @@ public class AllTests {
 
 	//--------------------------------------------------------------------------
 	/**
+	 * NFSv2 symlink作成を確認します。<br><br>
+	 *
+	 * <p>メソッド名称： NFSv2 symlink作成確認</p>
+	 *
+	 * @param program		NFSプログラム
+	 * @param rootHandle	ルートハンドル
+	 * @param root			公開ルート
+	 * @throws IOException 処理異常
+	 */
+	//--------------------------------------------------------------------------
+	private void assertSymbolicLinkV2(NfsV2Program program, FileHandle rootHandle, Path root) throws IOException {
+		String linkName = "v2-link.txt" ;
+		String linkTarget = "hello.txt" ;
+		XdrWriter arguments = new XdrWriter() ;
+		writeDiropargs( arguments, rootHandle, linkName) ;
+		arguments.writeString( linkTarget) ;
+		writeSattrUnset( arguments) ;
+		XdrReader reader = new XdrReader( handle( program, RpcConstants.PROGRAM_NFS, 2, 13, arguments).toByteArray()) ;
+		int status = reader.readInt() ;
+		Path linkPath = root.resolve( linkName) ;
+
+		// Windows環境でsymlink作成権限がない場合は安定したエラーを確認する
+		if( status != NfsStatus.OK) {
+			assertLinkCreationFailureStatus( "v2 symlink status", status) ;
+			assertFalse( "v2 symlink not created", Files.exists( linkPath, LinkOption.NOFOLLOW_LINKS)) ;
+			return ;
+		}
+
+		assertTrue( "v2 symlink exists", Files.isSymbolicLink( linkPath)) ;
+		assertEquals( "v2 symlink target", linkTarget, Files.readSymbolicLink( linkPath).toString()) ;
+		assertReadLinkV2( program, lookupV2( program, rootHandle, linkName), linkTarget) ;
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * NFSv2の壊れたsymlink READLINKを確認します。<br><br>
+	 *
+	 * <p>メソッド名称： NFSv2壊れたsymlink READLINK確認</p>
+	 *
+	 * @param program		NFSプログラム
+	 * @param rootHandle	ルートハンドル
+	 * @param root			公開ルート
+	 * @throws IOException 処理異常
+	 */
+	//--------------------------------------------------------------------------
+	private void assertBrokenSymbolicLinkV2(NfsV2Program program, FileHandle rootHandle, Path root) throws IOException {
+		String linkName = "v2-broken-link.txt" ;
+		String linkTarget = "missing-target.txt" ;
+		Path linkPath = root.resolve( linkName) ;
+
+		if( !createLocalSymbolicLink( linkPath, linkTarget)) {
+			return ;
+		}
+
+		FileHandle linkHandle = lookupV2( program, rootHandle, linkName) ;
+		assertTrue( "v2 broken symlink exists", Files.isSymbolicLink( linkPath)) ;
+		assertFalse( "v2 broken symlink target missing", Files.exists( root.resolve( linkTarget), LinkOption.NOFOLLOW_LINKS)) ;
+		assertReadLinkV2( program, linkHandle, linkTarget) ;
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * NFSv2 READLINKを確認します。<br><br>
+	 *
+	 * <p>メソッド名称： NFSv2 READLINK確認</p>
+	 *
+	 * @param program	NFSプログラム
+	 * @param handle	ファイルハンドル
+	 * @param expected	期待リンク先
+	 * @throws IOException 処理異常
+	 */
+	//--------------------------------------------------------------------------
+	private void assertReadLinkV2(NfsV2Program program, FileHandle handle, String expected) throws IOException {
+		XdrWriter arguments = new XdrWriter() ;
+		arguments.writeFixedOpaque( handle.getValue()) ;
+		XdrReader reader = new XdrReader( handle( program, RpcConstants.PROGRAM_NFS, 2, 5, arguments).toByteArray()) ;
+
+		assertEquals( "v2 readlink status", NfsStatus.OK, reader.readInt()) ;
+		assertEquals( "v2 readlink target", expected, reader.readString()) ;
+	}
+
+	//--------------------------------------------------------------------------
+	/**
 	 * 日本語ファイル名CREATEを確認します。<br><br>
 	 *
 	 * <p>メソッド名称： 日本語ファイル名CREATE確認</p>
@@ -2001,6 +2252,98 @@ public class AllTests {
 		reader.readFixedOpaque( FileHandle.LENGTH) ;
 		skipAttributes( reader) ;
 		assertTrue( "japanese file exists", Files.exists( root.resolve( name), LinkOption.NOFOLLOW_LINKS)) ;
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * NFSv2 LOOKUPを行います。<br><br>
+	 *
+	 * <p>メソッド名称： NFSv2 LOOKUP実行</p>
+	 *
+	 * @param program		NFSプログラム
+	 * @param rootHandle	ルートハンドル
+	 * @param name			名前
+	 * @return ファイルハンドル
+	 * @throws IOException 処理異常
+	 */
+	//--------------------------------------------------------------------------
+	private FileHandle lookupV2(NfsV2Program program, FileHandle rootHandle, String name) throws IOException {
+		XdrWriter arguments = new XdrWriter() ;
+		writeDiropargs( arguments, rootHandle, name) ;
+		XdrReader reader = new XdrReader( handle( program, RpcConstants.PROGRAM_NFS, 2, 4, arguments).toByteArray()) ;
+
+		assertEquals( "v2 lookup " + name + " status", NfsStatus.OK, reader.readInt()) ;
+		FileHandle handle = new FileHandle( reader.readFixedOpaque( FileHandle.LENGTH)) ;
+		skipAttributes( reader) ;
+		return handle ;
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * NFSv3 LOOKUPを行います。<br><br>
+	 *
+	 * <p>メソッド名称： NFSv3 LOOKUP実行</p>
+	 *
+	 * @param program		NFSv3プログラム
+	 * @param rootHandle	ルートハンドル
+	 * @param name			名前
+	 * @return ファイルハンドル
+	 * @throws IOException 処理異常
+	 */
+	//--------------------------------------------------------------------------
+	private FileHandle lookupV3(NfsV3Program program, FileHandle rootHandle, String name) throws IOException {
+		XdrWriter arguments = new XdrWriter() ;
+		writeDiropargsV3( arguments, rootHandle, name) ;
+		XdrReader reader = new XdrReader( handle( program, RpcConstants.PROGRAM_NFS, 3, 3, arguments).toByteArray()) ;
+
+		assertEquals( "v3 lookup " + name + " status", NfsStatus.OK, reader.readInt()) ;
+		FileHandle handle = new FileHandle( reader.readOpaque()) ;
+		skipPostOpAttrV3( reader) ;
+		skipPostOpAttrV3( reader) ;
+		return handle ;
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * ローカルsymlinkを作成します。<br><br>
+	 *
+	 * <p>メソッド名称： ローカルsymlink作成</p>
+	 *
+	 * @param link		リンクパス
+	 * @param target	リンク先
+	 * @return true:作成済み false:環境がsymlink作成不可
+	 * @throws IOException 削除異常
+	 */
+	//--------------------------------------------------------------------------
+	private boolean createLocalSymbolicLink(Path link, String target) throws IOException {
+		Files.deleteIfExists( link) ;
+
+		try {
+			Files.createSymbolicLink( link, Path.of( target)) ;
+			return true ;
+		} catch( IOException | UnsupportedOperationException | SecurityException ex) {
+			Files.deleteIfExists( link) ;
+			return false ;
+		}
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * symlink作成失敗ステータスを確認します。<br><br>
+	 *
+	 * <p>メソッド名称： symlink作成失敗ステータス確認</p>
+	 *
+	 * @param name		検証名
+	 * @param status	ステータス
+	 */
+	//--------------------------------------------------------------------------
+	private void assertLinkCreationFailureStatus(String name, int status) {
+		// Windowsのsymlink権限不足やファイルシステム非対応は作成不可として扱う
+		if( status == NfsStatus.PERM || status == NfsStatus.ACCES || status == NfsStatus.NOTSUPP) {
+			return ;
+		}
+
+		throw new AssertionError( name + " expected link creation failure status actual=" + status) ;
 	}
 
 	//--------------------------------------------------------------------------

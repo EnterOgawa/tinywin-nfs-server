@@ -1,5 +1,5 @@
 #define AppName "TinyWinNFS Server"
-#define AppVersion "1.6.1"
+#define AppVersion "1.7.0"
 #define AppPublisher "EnterOgawa"
 #define AppExeName "TinyWinNfsManager.exe"
 #define SourceDir "..\dist\TinyWinNfsManager"
