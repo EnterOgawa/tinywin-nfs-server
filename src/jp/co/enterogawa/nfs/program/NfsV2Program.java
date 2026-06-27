@@ -57,6 +57,9 @@ public class NfsV2Program implements RpcProgram {
 	/** NFSv2最大パスバイト数 */
 	private static final int				MAX_PATH_BYTES = 1024 ;
 
+	/** NFSv2最大WRITEデータバイト数 */
+	private static final int				MAX_WRITE_BYTES = 8192 ;
+
 	/** 書込権限ビット */
 	private static final int				MODE_WRITE_BITS = 0222 ;
 
@@ -543,8 +546,8 @@ public class NfsV2Program implements RpcProgram {
 		FileHandle handle = readHandle( arguments) ;
 		arguments.readUnsignedInt() ;
 		long offset = arguments.readUnsignedInt() ;
-		arguments.readUnsignedInt() ;
-		byte[] data = arguments.readOpaque() ;
+		long totalCount = arguments.readUnsignedInt() ;
+		byte[] data = readWriteData( arguments, totalCount) ;
 		Path path = handleTable.getPath( handle) ;
 
 		// ファイルハンドルが不明な場合
@@ -588,6 +591,70 @@ public class NfsV2Program implements RpcProgram {
 
 		logMutation( "WRITE", path, NfsStatus.OK, "offset=" + offset + " bytes=" + data.length) ;
 		writeStatusAttr( response, path, handle) ;
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * WRITEデータを読み込みます。<br><br>
+	 *
+	 * <p>メソッド名称： WRITEデータ読込</p>
+	 *
+	 * @param arguments	引数
+	 * @param totalCount	WRITE totalcount
+	 * @return WRITEデータ
+	 */
+	//--------------------------------------------------------------------------
+	private byte[] readWriteData(XdrReader arguments, long totalCount) {
+		if( isValidWriteCount( totalCount)) {
+			int count = (int)totalCount ;
+
+			// QNX 4.25はNFSv2 WRITEのdataを長さなし固定長opaqueとして送る場合がある。
+			if( arguments.remainingLength() == getPaddedLength( count)) {
+				return arguments.readFixedOpaque( count) ;
+			}
+		}
+
+		int position = arguments.getPosition() ;
+		try {
+			return arguments.readOpaque() ;
+		} catch( IllegalArgumentException iaex) {
+			arguments.setPosition( position) ;
+
+			// data lengthが付かない古いクライアント向けの限定的な互換処理
+			if( isValidWriteCount( totalCount) && arguments.remainingLength() == getPaddedLength( (int)totalCount)) {
+				return arguments.readFixedOpaque( (int)totalCount) ;
+			}
+
+			throw iaex ;
+		}
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * WRITE countが有効か確認します。<br><br>
+	 *
+	 * <p>メソッド名称： WRITE count有効確認</p>
+	 *
+	 * @param count	WRITE count
+	 * @return true:有効 false:無効
+	 */
+	//--------------------------------------------------------------------------
+	private boolean isValidWriteCount(long count) {
+		return 0 <= count && count <= MAX_WRITE_BYTES ;
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * XDRパディング込みの長さを取得します。<br><br>
+	 *
+	 * <p>メソッド名称： XDRパディング長取得</p>
+	 *
+	 * @param length	実データ長
+	 * @return パディング込み長
+	 */
+	//--------------------------------------------------------------------------
+	private int getPaddedLength(int length) {
+		return length + (4 - (length % 4)) % 4 ;
 	}
 
 	//--------------------------------------------------------------------------

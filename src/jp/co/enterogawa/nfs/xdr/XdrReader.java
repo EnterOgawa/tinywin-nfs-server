@@ -121,6 +121,9 @@ public class XdrReader {
 	//--------------------------------------------------------------------------
 	public byte[] readOpaque() {
 		int length = readInt() ;
+		if( length < 0) {
+			throw new IllegalArgumentException( "XDR opaque length is invalid.") ;
+		}
 		byte[] value = readFixedOpaque( length) ;
 		return value ;
 	}
@@ -136,6 +139,9 @@ public class XdrReader {
 	 */
 	//--------------------------------------------------------------------------
 	public byte[] readFixedOpaque(int length) {
+		if( length < 0) {
+			throw new IllegalArgumentException( "XDR opaque length is invalid.") ;
+		}
 		require( length) ;
 		byte[] value = Arrays.copyOfRange( data, position, position + length) ;
 		position += length ;
@@ -185,6 +191,48 @@ public class XdrReader {
 		byte[] value = Arrays.copyOfRange( data, position, data.length) ;
 		position = data.length ;
 		return value ;
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * 読込位置を取得します。<br><br>
+	 *
+	 * <p>メソッド名称： 読込位置取得</p>
+	 *
+	 * @return 読込位置
+	 */
+	//--------------------------------------------------------------------------
+	public int getPosition() {
+		return position ;
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * 読込位置を設定します。<br><br>
+	 *
+	 * <p>メソッド名称： 読込位置設定</p>
+	 *
+	 * @param position	読込位置
+	 */
+	//--------------------------------------------------------------------------
+	public void setPosition(int position) {
+		if( position < 0 || position > data.length) {
+			throw new IllegalArgumentException( "XDR position is invalid.") ;
+		}
+		this.position = position ;
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * 残データ長を取得します。<br><br>
+	 *
+	 * <p>メソッド名称： 残データ長取得</p>
+	 *
+	 * @return 残データ長
+	 */
+	//--------------------------------------------------------------------------
+	public int remainingLength() {
+		return data.length - position ;
 	}
 
 	//--------------------------------------------------------------------------

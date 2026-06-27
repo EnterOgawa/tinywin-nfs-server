@@ -563,6 +563,7 @@ public class AllTests {
 		assertReadFile( program, fileHandle) ;
 		assertWriteCache( program) ;
 		assertWriteFile( program, fileHandle, context.getRoot()) ;
+		assertQnxFixedOpaqueWriteFile( program, fileHandle, context.getRoot()) ;
 		assertSetAttrFile( program, fileHandle, context.getRoot()) ;
 		assertSetAttrMode( program, fileHandle) ;
 		assertSetAttrTime( program, fileHandle) ;
@@ -1222,6 +1223,34 @@ public class AllTests {
 		assertEquals( "write status", NfsStatus.OK, reader.readInt()) ;
 		skipAttributes( reader) ;
 		assertEquals( "write content", "hello nfs", Files.readString( root.resolve( "hello.txt"), StandardCharsets.UTF_8)) ;
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * QNX互換形式のファイルWRITEを確認します。<br><br>
+	 *
+	 * <p>メソッド名称： QNX互換形式ファイルWRITE確認</p>
+	 *
+	 * @param program	NFSプログラム
+	 * @param handle	ファイルハンドル
+	 * @param root		公開ルート
+	 * @throws IOException 処理異常
+	 */
+	//--------------------------------------------------------------------------
+	private void assertQnxFixedOpaqueWriteFile(NfsV2Program program, FileHandle handle, Path root) throws IOException {
+		XdrWriter arguments = new XdrWriter() ;
+		byte[] data = "qnx".getBytes( StandardCharsets.UTF_8) ;
+		arguments.writeFixedOpaque( handle.getValue()) ;
+		arguments.writeUnsignedInt( 0) ;
+		arguments.writeUnsignedInt( 6) ;
+		arguments.writeUnsignedInt( data.length) ;
+		arguments.writeFixedOpaque( data) ;
+		XdrWriter response = handle( program, RpcConstants.PROGRAM_NFS, 2, 8, arguments) ;
+		XdrReader reader = new XdrReader( response.toByteArray()) ;
+
+		assertEquals( "qnx fixed write status", NfsStatus.OK, reader.readInt()) ;
+		skipAttributes( reader) ;
+		assertEquals( "qnx fixed write content", "hello qnx", Files.readString( root.resolve( "hello.txt"), StandardCharsets.UTF_8)) ;
 	}
 
 	//--------------------------------------------------------------------------

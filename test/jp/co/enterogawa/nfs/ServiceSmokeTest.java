@@ -313,6 +313,9 @@ public class ServiceSmokeTest {
 		writeFile( fileHandle, "service write" ) ;
 		assertReadFile( fileHandle, "service write" ) ;
 		setFileSize( fileHandle, 0) ;
+		writeFileQnxFixed( fileHandle, "service qnx write" ) ;
+		assertReadFile( fileHandle, "service qnx write" ) ;
+		setFileSize( fileHandle, 0) ;
 		writeFile( fileHandle, "service rewrite" ) ;
 		assertReadFile( fileHandle, "service rewrite" ) ;
 		assertRenameOverwrite( rootHandle, fileName) ;
@@ -420,6 +423,34 @@ public class ServiceSmokeTest {
 		// WRITEが失敗した場合
 		if( status != 0) {
 			throw new AssertionError( "WRITE failed: " + status) ;
+		}
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * QNX互換形式でファイルを書き込みます。<br><br>
+	 *
+	 * <p>メソッド名称： QNX互換形式ファイル書込</p>
+	 *
+	 * @param fileHandle	ファイルハンドル
+	 * @param value		値
+	 * @throws Exception 書込異常
+	 */
+	//--------------------------------------------------------------------------
+	private void writeFileQnxFixed(byte[] fileHandle, String value) throws Exception {
+		XdrWriter arguments = new XdrWriter() ;
+		byte[] data = value.getBytes( StandardCharsets.UTF_8) ;
+		arguments.writeFixedOpaque( fileHandle) ;
+		arguments.writeUnsignedInt( 0) ;
+		arguments.writeUnsignedInt( 0) ;
+		arguments.writeUnsignedInt( data.length) ;
+		arguments.writeFixedOpaque( data) ;
+		XdrReader reader = call( NFS_PORT, RpcConstants.PROGRAM_NFS, 2, 8, arguments) ;
+		int status = reader.readInt() ;
+
+		// WRITEが失敗した場合
+		if( status != 0) {
+			throw new AssertionError( "QNX fixed WRITE failed: " + status) ;
 		}
 	}
 
