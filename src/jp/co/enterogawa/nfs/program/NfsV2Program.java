@@ -64,6 +64,9 @@ public class NfsV2Program implements RpcProgram {
 	/** NFSPROC_READ */
 	private static final int				PROC_READ = 6 ;
 
+	/** NFSPROC_WRITECACHE */
+	private static final int				PROC_WRITECACHE = 7 ;
+
 	/** NFSPROC_WRITE */
 	private static final int				PROC_WRITE = 8 ;
 
@@ -187,6 +190,9 @@ public class NfsV2Program implements RpcProgram {
 
 			case PROC_READ:
 				handleRead( call.getArguments(), response) ;
+				return RpcConstants.ACCEPT_SUCCESS ;
+
+			case PROC_WRITECACHE:
 				return RpcConstants.ACCEPT_SUCCESS ;
 
 			case PROC_READDIR:

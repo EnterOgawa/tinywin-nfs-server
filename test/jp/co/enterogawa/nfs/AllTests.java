@@ -294,6 +294,7 @@ public class AllTests {
 		FileHandle fileHandle = assertLookupFile( program, rootHandle) ;
 		assertGetAttrRoot( program, rootHandle) ;
 		assertReadFile( program, fileHandle) ;
+		assertWriteCache( program) ;
 		assertWriteFile( program, fileHandle, context.getRoot()) ;
 		assertSetAttrFile( program, fileHandle, context.getRoot()) ;
 		assertBidirectionalEditFile( program, fileHandle, context.getRoot()) ;
@@ -410,6 +411,23 @@ public class AllTests {
 	//--------------------------------------------------------------------------
 	private void assertReadFile(NfsV2Program program, FileHandle handle) throws IOException {
 		assertEquals( "read data", "hello qnx", readFileValue( program, handle)) ;
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * WRITECACHEを確認します。<br><br>
+	 *
+	 * <p>メソッド名称： WRITECACHE確認</p>
+	 *
+	 * @param program	NFSプログラム
+	 * @throws IOException 処理異常
+	 */
+	//--------------------------------------------------------------------------
+	private void assertWriteCache(NfsV2Program program) throws IOException {
+		XdrWriter arguments = new XdrWriter() ;
+		XdrWriter response = handle( program, RpcConstants.PROGRAM_NFS, 2, 7, arguments) ;
+
+		assertEquals( "writecache response length", 0, response.toByteArray().length) ;
 	}
 
 	//--------------------------------------------------------------------------
