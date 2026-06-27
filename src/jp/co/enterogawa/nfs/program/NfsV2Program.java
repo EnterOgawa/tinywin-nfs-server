@@ -24,12 +24,14 @@ import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.TimeUnit;
 
+import jp.co.enterogawa.nfs.config.NfsExport;
 import jp.co.enterogawa.nfs.config.NfsServerConfig;
 import jp.co.enterogawa.nfs.export.FileHandle;
 import jp.co.enterogawa.nfs.export.FileHandleTable;
 import jp.co.enterogawa.nfs.rpc.RpcCall;
 import jp.co.enterogawa.nfs.rpc.RpcConstants;
 import jp.co.enterogawa.nfs.rpc.RpcProgram;
+import jp.co.enterogawa.nfs.rpc.RpcRequestContext;
 import jp.co.enterogawa.nfs.util.ServerLog;
 import jp.co.enterogawa.nfs.xdr.XdrReader;
 import jp.co.enterogawa.nfs.xdr.XdrWriter;
@@ -294,6 +296,13 @@ public class NfsV2Program implements RpcProgram {
 			return ;
 		}
 
+		// クライアントが許可されていない場合
+		if( !isClientAllowed( path)) {
+			logAccessDenied( "GETATTR", path, "client-denied") ;
+			response.writeInt( NfsStatus.ACCES) ;
+			return ;
+		}
+
 		writeStatusAttr( response, path, handle) ;
 	}
 
@@ -316,6 +325,13 @@ public class NfsV2Program implements RpcProgram {
 		// ディレクトリハンドルが不明な場合
 		if( directory == null) {
 			response.writeInt( NfsStatus.NOENT) ;
+			return ;
+		}
+
+		// クライアントが許可されていない場合
+		if( !isClientAllowed( directory)) {
+			logAccessDenied( "LOOKUP", directory, "client-denied name=" + name) ;
+			response.writeInt( NfsStatus.ACCES) ;
 			return ;
 		}
 
@@ -379,6 +395,13 @@ public class NfsV2Program implements RpcProgram {
 			return ;
 		}
 
+		// クライアントが許可されていない場合
+		if( !isClientAllowed( path)) {
+			logAccessDenied( "READLINK", path, "client-denied") ;
+			response.writeInt( NfsStatus.ACCES) ;
+			return ;
+		}
+
 		// シンボリックリンクではない場合
 		if( !Files.isSymbolicLink( path)) {
 			response.writeInt( NfsStatus.INVAL) ;
@@ -411,6 +434,13 @@ public class NfsV2Program implements RpcProgram {
 		// ファイルハンドルが不明な場合
 		if( path == null) {
 			response.writeInt( NfsStatus.NOENT) ;
+			return ;
+		}
+
+		// クライアントが許可されていない場合
+		if( !isClientAllowed( path)) {
+			logAccessDenied( "READ", path, "client-denied offset=" + offset + " bytes=" + count) ;
+			response.writeInt( NfsStatus.ACCES) ;
 			return ;
 		}
 
@@ -461,6 +491,13 @@ public class NfsV2Program implements RpcProgram {
 		if( path == null) {
 			logMutation( "SETATTR", path, NfsStatus.NOENT, "unknown-handle" ) ;
 			response.writeInt( NfsStatus.NOENT) ;
+			return ;
+		}
+
+		// クライアントが許可されていない場合
+		if( !isClientAllowed( path)) {
+			logMutation( "SETATTR", path, NfsStatus.ACCES, "client-denied" ) ;
+			response.writeInt( NfsStatus.ACCES) ;
 			return ;
 		}
 
@@ -517,6 +554,13 @@ public class NfsV2Program implements RpcProgram {
 			return ;
 		}
 
+		// クライアントが許可されていない場合
+		if( !isClientAllowed( path)) {
+			logMutation( "WRITE", path, NfsStatus.ACCES, "client-denied offset=" + offset + " bytes=" + data.length) ;
+			response.writeInt( NfsStatus.ACCES) ;
+			return ;
+		}
+
 		// 書込不可の場合
 		if( !isWritable( path)) {
 			logMutation( "WRITE", path, NfsStatus.ROFS, "read-only offset=" + offset + " bytes=" + data.length) ;
@@ -565,6 +609,13 @@ public class NfsV2Program implements RpcProgram {
 		if( !target.isOk()) {
 			logMutation( "CREATE", target.getPath(), target.getStatus(), "invalid-target" ) ;
 			response.writeInt( target.getStatus()) ;
+			return ;
+		}
+
+		// クライアントが許可されていない場合
+		if( !isClientAllowed( target.getPath())) {
+			logMutation( "CREATE", target.getPath(), NfsStatus.ACCES, "client-denied" ) ;
+			response.writeInt( NfsStatus.ACCES) ;
 			return ;
 		}
 
@@ -622,6 +673,13 @@ public class NfsV2Program implements RpcProgram {
 		if( !target.isOk()) {
 			logMutation( "REMOVE", target.getPath(), target.getStatus(), "invalid-target" ) ;
 			response.writeInt( target.getStatus()) ;
+			return ;
+		}
+
+		// クライアントが許可されていない場合
+		if( !isClientAllowed( target.getPath())) {
+			logMutation( "REMOVE", target.getPath(), NfsStatus.ACCES, "client-denied" ) ;
+			response.writeInt( NfsStatus.ACCES) ;
 			return ;
 		}
 
@@ -687,6 +745,13 @@ public class NfsV2Program implements RpcProgram {
 			return ;
 		}
 
+		// クライアントが許可されていない場合
+		if( !isClientAllowed( source.getPath()) || !isClientAllowed( target.getPath())) {
+			logMutation( "RENAME", source.getPath(), NfsStatus.ACCES, "client-denied target=" + target.getPath()) ;
+			response.writeInt( NfsStatus.ACCES) ;
+			return ;
+		}
+
 		// 書込不可の場合
 		if( !isWritable( source.getPath()) || !isWritable( target.getPath())) {
 			logMutation( "RENAME", source.getPath(), NfsStatus.ROFS, "read-only target=" + target.getPath()) ;
@@ -738,42 +803,56 @@ public class NfsV2Program implements RpcProgram {
 
 		// 移動元が不明な場合
 		if( source == null) {
+			logMutation( "LINK", source, NfsStatus.NOENT, "unknown-source" ) ;
 			response.writeInt( NfsStatus.NOENT) ;
 			return ;
 		}
 
 		// 移動先が不正な場合
 		if( !target.isOk()) {
+			logMutation( "LINK", source, target.getStatus(), "invalid-target target=" + target.getPath()) ;
 			response.writeInt( target.getStatus()) ;
+			return ;
+		}
+
+		// クライアントが許可されていない場合
+		if( !isClientAllowed( source) || !isClientAllowed( target.getPath())) {
+			logMutation( "LINK", source, NfsStatus.ACCES, "client-denied target=" + target.getPath()) ;
+			response.writeInt( NfsStatus.ACCES) ;
 			return ;
 		}
 
 		// 公開ルートを跨ぐ場合
 		if( !handleTable.isSameExport( source, target.getPath())) {
+			logMutation( "LINK", source, NfsStatus.ACCES, "cross-export target=" + target.getPath()) ;
 			response.writeInt( NfsStatus.ACCES) ;
 			return ;
 		}
 
 		// 書込不可の場合
 		if( !isWritable( target.getPath())) {
+			logMutation( "LINK", target.getPath(), NfsStatus.ROFS, "read-only" ) ;
 			response.writeInt( NfsStatus.ROFS) ;
 			return ;
 		}
 
 		// 移動元が存在しない場合
 		if( !Files.exists( source, LinkOption.NOFOLLOW_LINKS)) {
+			logMutation( "LINK", source, NfsStatus.NOENT, "missing" ) ;
 			response.writeInt( NfsStatus.NOENT) ;
 			return ;
 		}
 
 		// ディレクトリへのハードリンクの場合
 		if( Files.isDirectory( source, LinkOption.NOFOLLOW_LINKS)) {
+			logMutation( "LINK", source, NfsStatus.ISDIR, "directory" ) ;
 			response.writeInt( NfsStatus.ISDIR) ;
 			return ;
 		}
 
 		// 移動先が存在済みの場合
 		if( Files.exists( target.getPath(), LinkOption.NOFOLLOW_LINKS)) {
+			logMutation( "LINK", target.getPath(), NfsStatus.EXIST, "exists" ) ;
 			response.writeInt( NfsStatus.EXIST) ;
 			return ;
 		}
@@ -781,11 +860,15 @@ public class NfsV2Program implements RpcProgram {
 		try {
 			Files.createLink( target.getPath(), source) ;
 			handleTable.getOrCreate( target.getPath()) ;
+			logMutation( "LINK", source, NfsStatus.OK, "target=" + target.getPath()) ;
 			response.writeInt( NfsStatus.OK) ;
 		} catch( SecurityException sex) {
+			logMutation( "LINK", source, NfsStatus.ACCES, sex.getClass().getSimpleName() + " target=" + target.getPath()) ;
 			response.writeInt( NfsStatus.ACCES) ;
 		} catch( IOException ioex) {
-			response.writeInt( mapIoStatus( ioex)) ;
+			int status = mapIoStatus( ioex) ;
+			logMutation( "LINK", source, status, ioex.getClass().getSimpleName() + " target=" + target.getPath()) ;
+			response.writeInt( status) ;
 		}
 	}
 
@@ -807,24 +890,35 @@ public class NfsV2Program implements RpcProgram {
 
 		// 対象パスが不正な場合
 		if( !target.isOk()) {
+			logMutation( "SYMLINK", target.getPath(), target.getStatus(), "invalid-target" ) ;
 			response.writeInt( target.getStatus()) ;
+			return ;
+		}
+
+		// クライアントが許可されていない場合
+		if( !isClientAllowed( target.getPath())) {
+			logMutation( "SYMLINK", target.getPath(), NfsStatus.ACCES, "client-denied" ) ;
+			response.writeInt( NfsStatus.ACCES) ;
 			return ;
 		}
 
 		// 書込不可の場合
 		if( !isWritable( target.getPath())) {
+			logMutation( "SYMLINK", target.getPath(), NfsStatus.ROFS, "read-only" ) ;
 			response.writeInt( NfsStatus.ROFS) ;
 			return ;
 		}
 
 		// リンク先パスが長すぎる場合
 		if( linkTarget.getBytes( filenameCharset).length > MAX_PATH_BYTES) {
+			logMutation( "SYMLINK", target.getPath(), NfsStatus.NAMETOOLONG, "target-too-long" ) ;
 			response.writeInt( NfsStatus.NAMETOOLONG) ;
 			return ;
 		}
 
 		// 対象が存在済みの場合
 		if( Files.exists( target.getPath(), LinkOption.NOFOLLOW_LINKS)) {
+			logMutation( "SYMLINK", target.getPath(), NfsStatus.EXIST, "exists" ) ;
 			response.writeInt( NfsStatus.EXIST) ;
 			return ;
 		}
@@ -836,20 +930,27 @@ public class NfsV2Program implements RpcProgram {
 			// 属性反映が失敗した場合
 			if( status != NfsStatus.OK) {
 				Files.deleteIfExists( target.getPath()) ;
+				logMutation( "SYMLINK", target.getPath(), status, "setattr" ) ;
 				response.writeInt( status) ;
 				return ;
 			}
 
 			handleTable.getOrCreate( target.getPath()) ;
+			logMutation( "SYMLINK", target.getPath(), NfsStatus.OK, "target=" + linkTarget) ;
 			response.writeInt( NfsStatus.OK) ;
 		} catch( UnsupportedOperationException uoex) {
+			logMutation( "SYMLINK", target.getPath(), NfsStatus.PERM, uoex.getClass().getSimpleName()) ;
 			response.writeInt( NfsStatus.PERM) ;
 		} catch( InvalidPathException ipex) {
+			logMutation( "SYMLINK", target.getPath(), NfsStatus.ACCES, ipex.getClass().getSimpleName()) ;
 			response.writeInt( NfsStatus.ACCES) ;
 		} catch( SecurityException sex) {
+			logMutation( "SYMLINK", target.getPath(), NfsStatus.ACCES, sex.getClass().getSimpleName()) ;
 			response.writeInt( NfsStatus.ACCES) ;
 		} catch( IOException ioex) {
-			response.writeInt( mapIoStatus( ioex)) ;
+			int status = mapIoStatus( ioex) ;
+			logMutation( "SYMLINK", target.getPath(), status, ioex.getClass().getSimpleName()) ;
+			response.writeInt( status) ;
 		}
 	}
 
@@ -870,12 +971,21 @@ public class NfsV2Program implements RpcProgram {
 
 		// 対象パスが不正な場合
 		if( !target.isOk()) {
+			logMutation( "MKDIR", target.getPath(), target.getStatus(), "invalid-target" ) ;
 			response.writeInt( target.getStatus()) ;
+			return ;
+		}
+
+		// クライアントが許可されていない場合
+		if( !isClientAllowed( target.getPath())) {
+			logMutation( "MKDIR", target.getPath(), NfsStatus.ACCES, "client-denied" ) ;
+			response.writeInt( NfsStatus.ACCES) ;
 			return ;
 		}
 
 		// 書込不可の場合
 		if( !isWritable( target.getPath())) {
+			logMutation( "MKDIR", target.getPath(), NfsStatus.ROFS, "read-only" ) ;
 			response.writeInt( NfsStatus.ROFS) ;
 			return ;
 		}
@@ -886,14 +996,18 @@ public class NfsV2Program implements RpcProgram {
 
 			// 属性反映が失敗した場合
 			if( status != NfsStatus.OK) {
+				logMutation( "MKDIR", target.getPath(), status, "setattr" ) ;
 				response.writeInt( status) ;
 				return ;
 			}
 		} catch( IOException ioex) {
-			response.writeInt( mapIoStatus( ioex)) ;
+			int status = mapIoStatus( ioex) ;
+			logMutation( "MKDIR", target.getPath(), status, ioex.getClass().getSimpleName()) ;
+			response.writeInt( status) ;
 			return ;
 		}
 
+		logMutation( "MKDIR", target.getPath(), NfsStatus.OK, "" ) ;
 		FileHandle handle = handleTable.getOrCreate( target.getPath()) ;
 		writeDiropResult( response, target.getPath(), handle) ;
 	}
@@ -914,18 +1028,28 @@ public class NfsV2Program implements RpcProgram {
 
 		// 対象パスが不正な場合
 		if( !target.isOk()) {
+			logMutation( "RMDIR", target.getPath(), target.getStatus(), "invalid-target" ) ;
 			response.writeInt( target.getStatus()) ;
+			return ;
+		}
+
+		// クライアントが許可されていない場合
+		if( !isClientAllowed( target.getPath())) {
+			logMutation( "RMDIR", target.getPath(), NfsStatus.ACCES, "client-denied" ) ;
+			response.writeInt( NfsStatus.ACCES) ;
 			return ;
 		}
 
 		// 書込不可の場合
 		if( !isWritable( target.getPath())) {
+			logMutation( "RMDIR", target.getPath(), NfsStatus.ROFS, "read-only" ) ;
 			response.writeInt( NfsStatus.ROFS) ;
 			return ;
 		}
 
 		// 対象がディレクトリではない場合
 		if( !Files.isDirectory( target.getPath(), LinkOption.NOFOLLOW_LINKS)) {
+			logMutation( "RMDIR", target.getPath(), NfsStatus.NOTDIR, "not-directory" ) ;
 			response.writeInt( NfsStatus.NOTDIR) ;
 			return ;
 		}
@@ -933,9 +1057,12 @@ public class NfsV2Program implements RpcProgram {
 		try {
 			Files.delete( target.getPath()) ;
 			handleTable.forget( target.getPath()) ;
+			logMutation( "RMDIR", target.getPath(), NfsStatus.OK, "" ) ;
 			response.writeInt( NfsStatus.OK) ;
 		} catch( IOException ioex) {
-			response.writeInt( mapIoStatus( ioex)) ;
+			int status = mapIoStatus( ioex) ;
+			logMutation( "RMDIR", target.getPath(), status, ioex.getClass().getSimpleName()) ;
+			response.writeInt( status) ;
 		}
 	}
 
@@ -959,6 +1086,13 @@ public class NfsV2Program implements RpcProgram {
 		// ファイルハンドルが不明な場合
 		if( directory == null) {
 			response.writeInt( NfsStatus.NOENT) ;
+			return ;
+		}
+
+		// クライアントが許可されていない場合
+		if( !isClientAllowed( directory)) {
+			logAccessDenied( "READDIR", directory, "client-denied cookie=" + cookie) ;
+			response.writeInt( NfsStatus.ACCES) ;
 			return ;
 		}
 
@@ -1202,6 +1336,27 @@ public class NfsV2Program implements RpcProgram {
 
 	//--------------------------------------------------------------------------
 	/**
+	 * クライアント許可可否を取得します。<br><br>
+	 *
+	 * <p>メソッド名称： クライアント許可可否取得</p>
+	 *
+	 * @param path	対象パス
+	 * @return true:許可 false:拒否
+	 */
+	//--------------------------------------------------------------------------
+	private boolean isClientAllowed(Path path) {
+		NfsExport export = handleTable.getExport( path) ;
+
+		// 公開定義が取得できない場合
+		if( export == null) {
+			return false ;
+		}
+
+		return export.allowsClient( RpcRequestContext.current().getClientAddress()) ;
+	}
+
+	//--------------------------------------------------------------------------
+	/**
 	 * ディレクトリ操作対象を読み込みます。<br><br>
 	 *
 	 * <p>メソッド名称： ディレクトリ操作対象読込</p>
@@ -1411,8 +1566,15 @@ public class NfsV2Program implements RpcProgram {
 	 */
 	//--------------------------------------------------------------------------
 	private void logMutation(String operation, Path path, int status, String detail) {
+		RpcRequestContext context = RpcRequestContext.current() ;
 		StringBuilder message = new StringBuilder() ;
-		message.append( "NFS ").append( operation).append( " status=").append( status) ;
+		message.append( "NFS " ).append( operation )
+				.append( " client=" ).append( context.getClientAddress() )
+				.append( " xid=" ).append( context.formatXid() )
+				.append( " program=" ).append( context.getProgram() )
+				.append( " version=" ).append( context.getVersion() )
+				.append( " procedure=" ).append( context.getProcedure() )
+				.append( " status=" ).append( status) ;
 
 		// パスが存在する場合
 		if( path != null) {
@@ -1425,6 +1587,21 @@ public class NfsV2Program implements RpcProgram {
 		}
 
 		ServerLog.info( message.toString()) ;
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * アクセス拒否ログを出力します。<br><br>
+	 *
+	 * <p>メソッド名称： アクセス拒否ログ出力</p>
+	 *
+	 * @param operation	操作名
+	 * @param path		対象パス
+	 * @param detail	詳細
+	 */
+	//--------------------------------------------------------------------------
+	private void logAccessDenied(String operation, Path path, String detail) {
+		logMutation( operation, path, NfsStatus.ACCES, detail) ;
 	}
 
 	//--------------------------------------------------------------------------
@@ -1445,6 +1622,13 @@ public class NfsV2Program implements RpcProgram {
 		// ファイルハンドルが不明な場合
 		if( path == null) {
 			response.writeInt( NfsStatus.NOENT) ;
+			return ;
+		}
+
+		// クライアントが許可されていない場合
+		if( !isClientAllowed( path)) {
+			logAccessDenied( "STATFS", path, "client-denied") ;
+			response.writeInt( NfsStatus.ACCES) ;
 			return ;
 		}
 

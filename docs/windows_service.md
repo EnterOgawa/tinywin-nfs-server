@@ -55,6 +55,20 @@ Default configuration uses:
 
 WinSW writes service logs under `service/winsw`.
 
+TinyWinNFS writes request diagnostics to:
+
+```text
+logs/nfs-server.log
+```
+
+The request log includes client address, XID, RPC program, version, procedure, status, and path where available.
+Successful NFS READ request-level logs are suppressed by default to avoid excessive volume during normal file reads.
+Set the Java system property below to include successful READ request logs:
+
+```text
+-Dtinywin.nfs.debug=true
+```
+
 ## Smoke Test
 
 After the service starts, run:

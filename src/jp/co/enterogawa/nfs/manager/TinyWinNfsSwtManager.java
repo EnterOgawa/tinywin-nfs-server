@@ -104,6 +104,9 @@ public class TinyWinNfsSwtManager {
 	/** 管理者権限表示 */
 	private Label						adminValueLabel ;
 
+	/** サービス情報 */
+	private Text						serviceInfoText ;
+
 	/** export名 */
 	private Text						exportNameText ;
 
@@ -121,6 +124,9 @@ public class TinyWinNfsSwtManager {
 
 	/** export書込可否 */
 	private Button						exportWritableButton ;
+
+	/** 許可クライアント */
+	private Text						exportAllowedClientsText ;
 
 	/** サーバーホスト名 */
 	private Text						serverHostText ;
@@ -349,8 +355,9 @@ public class TinyWinNfsSwtManager {
 		exportTable.setLinesVisible( true) ;
 		exportTable.setLayoutData( new GridData( SWT.FILL, SWT.FILL, true, true)) ;
 		createTableColumn( exportTable, text( "column.export"), 130) ;
-		createTableColumn( exportTable, text( "column.folder"), 460) ;
+		createTableColumn( exportTable, text( "column.folder"), 360) ;
 		createTableColumn( exportTable, text( "column.writable"), 80) ;
+		createTableColumn( exportTable, text( "column.allowedClients"), 160) ;
 		exportTable.addSelectionListener( new SelectionAdapter() {
 			@Override
 			public void widgetSelected(SelectionEvent event) {
@@ -370,6 +377,9 @@ public class TinyWinNfsSwtManager {
 		exportWritableButton = new Button( shareGroup, SWT.CHECK) ;
 		exportWritableButton.setText( text( "label.writable") ) ;
 		exportWritableButton.setLayoutData( createSpanData( 2)) ;
+		createLabel( shareGroup, text( "label.allowedClients") ) ;
+		exportAllowedClientsText = createText( shareGroup, SWT.BORDER) ;
+		exportAllowedClientsText.setLayoutData( createSpanData( 2)) ;
 
 		Composite shareButtons = createButtonRow( panel) ;
 		createButton( shareButtons, text( "button.add"), event -> addShare()) ;
@@ -455,18 +465,18 @@ public class TinyWinNfsSwtManager {
 		Composite buttons = new Composite( panel, SWT.NONE) ;
 		buttons.setLayoutData( new GridData( SWT.FILL, SWT.TOP, true, false)) ;
 		buttons.setLayout( createGridLayout( 8, false, 6, 6)) ;
-		createButton( buttons, text( "button.install"), event -> runScriptAsync( "install-service.ps1")) ;
-		createButton( buttons, text( "button.start"), event -> runScriptAsync( "start-service.ps1")) ;
-		createButton( buttons, text( "button.stop"), event -> runScriptAsync( "stop-service.ps1")) ;
-		createButton( buttons, text( "button.restart"), event -> runScriptAsync( "restart-service.ps1")) ;
+		createButton( buttons, text( "button.install"), event -> runPrivilegedScriptAsync( "install-service.ps1")) ;
+		createButton( buttons, text( "button.start"), event -> runPrivilegedScriptAsync( "start-service.ps1")) ;
+		createButton( buttons, text( "button.stop"), event -> runPrivilegedScriptAsync( "stop-service.ps1")) ;
+		createButton( buttons, text( "button.restart"), event -> runPrivilegedScriptAsync( "restart-service.ps1")) ;
 		createButton( buttons, text( "button.uninstall"), event -> confirmAndRun( text( "dialog.uninstallService"), "uninstall-service.ps1")) ;
-		createButton( buttons, text( "button.firewall"), event -> runScriptAsync( "add-firewall-rules.ps1")) ;
+		createButton( buttons, text( "button.firewall"), event -> runPrivilegedScriptAsync( "add-firewall-rules.ps1")) ;
 		createButton( buttons, text( "button.smokeTest"), event -> runSmokeTestAsync()) ;
 		createButton( buttons, text( "button.status"), event -> refreshStatus()) ;
 
-		Text statusText = createText( panel, SWT.BORDER | SWT.MULTI | SWT.READ_ONLY | SWT.WRAP | SWT.V_SCROLL) ;
-		statusText.setLayoutData( new GridData( SWT.FILL, SWT.FILL, true, true)) ;
-		statusText.setText( format( "service.info", SERVICE_NAME, String.join( ", ", LEGACY_SERVICE_NAMES))) ;
+		serviceInfoText = createText( panel, SWT.BORDER | SWT.MULTI | SWT.READ_ONLY | SWT.WRAP | SWT.V_SCROLL) ;
+		serviceInfoText.setLayoutData( new GridData( SWT.FILL, SWT.FILL, true, true)) ;
+		updateServiceInfoText() ;
 		return panel ;
 	}
 
@@ -793,6 +803,25 @@ public class TinyWinNfsSwtManager {
 
 	//--------------------------------------------------------------------------
 	/**
+	 * 許可クライアント表示を取得します。<br><br>
+	 *
+	 * <p>メソッド名称： 許可クライアント表示取得</p>
+	 *
+	 * @param value	許可クライアント
+	 * @return 表示文字列
+	 */
+	//--------------------------------------------------------------------------
+	private String displayAllowedClients(String value) {
+		// 未設定の場合
+		if( value == null || value.isBlank()) {
+			return text( "value.any") ;
+		}
+
+		return value ;
+	}
+
+	//--------------------------------------------------------------------------
+	/**
 	 * 共有定義を読み込みます。<br><br>
 	 *
 	 * <p>メソッド名称： 共有定義読込</p>
@@ -811,10 +840,11 @@ public class TinyWinNfsSwtManager {
 				String name = properties.getProperty( prefix + "name", "" ).trim() ;
 				String path = properties.getProperty( prefix + "path", "" ).trim() ;
 				boolean writable = Boolean.parseBoolean( properties.getProperty( prefix + "writable", "true")) ;
+				String allowedClients = properties.getProperty( prefix + "allowed.clients", "" ).trim() ;
 
 				// 共有定義が入力されている場合
 				if( !name.isEmpty() && !path.isEmpty()) {
-					shareEntries.add( new ShareEntry( name, path, writable)) ;
+					shareEntries.add( new ShareEntry( name, path, writable, allowedClients)) ;
 				}
 			}
 		}
@@ -824,7 +854,8 @@ public class TinyWinNfsSwtManager {
 			shareEntries.add( new ShareEntry(
 					properties.getProperty( "export.name", "/export").trim(),
 					properties.getProperty( "export.path", rootPath.resolve( "export").toString()).trim(),
-					Boolean.parseBoolean( properties.getProperty( "export.writable", "true")))) ;
+					Boolean.parseBoolean( properties.getProperty( "export.writable", "true")),
+					properties.getProperty( "export.allowed.clients", "" ).trim())) ;
 		}
 
 		refreshShareTable() ;
@@ -847,7 +878,8 @@ public class TinyWinNfsSwtManager {
 			item.setText( new String[] {
 					entry.getName(),
 					entry.getPath(),
-					boolText( entry.isWritable()) }) ;
+					boolText( entry.isWritable()),
+					displayAllowedClients( entry.getAllowedClients()) }) ;
 		}
 	}
 
@@ -867,6 +899,7 @@ public class TinyWinNfsSwtManager {
 			exportNameText.setText( "" ) ;
 			exportPathText.setText( "" ) ;
 			exportWritableButton.setSelection( true) ;
+			exportAllowedClientsText.setText( "" ) ;
 			updateMountCommand() ;
 			return ;
 		}
@@ -877,6 +910,7 @@ public class TinyWinNfsSwtManager {
 		exportNameText.setText( entry.getName()) ;
 		exportPathText.setText( entry.getPath()) ;
 		exportWritableButton.setSelection( entry.isWritable()) ;
+		exportAllowedClientsText.setText( entry.getAllowedClients()) ;
 		updateMountCommand() ;
 	}
 
@@ -968,7 +1002,8 @@ public class TinyWinNfsSwtManager {
 		return new ShareEntry(
 				exportNameText.getText().trim(),
 				exportPathText.getText().trim(),
-				exportWritableButton.getSelection()) ;
+				exportWritableButton.getSelection(),
+				exportAllowedClientsText.getText().trim()) ;
 	}
 
 	//--------------------------------------------------------------------------
@@ -991,7 +1026,7 @@ public class TinyWinNfsSwtManager {
 			return shareEntries.get( 0) ;
 		}
 
-		return new ShareEntry( "/export", rootPath.resolve( "export").toString(), true) ;
+		return new ShareEntry( "/export", rootPath.resolve( "export").toString(), true, "" ) ;
 	}
 
 	//--------------------------------------------------------------------------
@@ -1006,7 +1041,7 @@ public class TinyWinNfsSwtManager {
 	//--------------------------------------------------------------------------
 	private void validateShareEntry(ShareEntry entry, int selfIndex) {
 		// export名が不正な場合
-		if( !entry.getName().startsWith( "/")) {
+		if( !isValidExportName( entry.getName())) {
 			throw new IllegalArgumentException( text( "error.exportNameRequired") ) ;
 		}
 
@@ -1022,6 +1057,17 @@ public class TinyWinNfsSwtManager {
 			throw new IllegalArgumentException( format( "error.sharedFolderNotDirectory", exportPath)) ;
 		}
 
+		// exportパスが読込不可の場合
+		if( !Files.isReadable( exportPath)) {
+			throw new IllegalArgumentException( format( "error.sharedFolderNotReadable", exportPath)) ;
+		}
+
+		// 書込可能設定だがフォルダへ書き込めない場合
+		if( entry.isWritable() && !Files.isWritable( exportPath)) {
+			throw new IllegalArgumentException( format( "error.sharedFolderNotWritable", exportPath)) ;
+		}
+
+		validateAllowedClients( entry.getAllowedClients()) ;
 		Path normalized = exportPath.toAbsolutePath().normalize() ;
 
 		// 共有定義の重複を検証する
@@ -1050,6 +1096,121 @@ public class TinyWinNfsSwtManager {
 				throw new IllegalArgumentException( format( "error.sharedFoldersNested", normalized, existingPath)) ;
 			}
 		}
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * 公開名を検証します。<br><br>
+	 *
+	 * <p>メソッド名称： 公開名検証</p>
+	 *
+	 * @param value	公開名
+	 * @return true:正常 false:異常
+	 */
+	//--------------------------------------------------------------------------
+	private boolean isValidExportName(String value) {
+		// 公開名が絶対パス形式ではない場合
+		if( value == null || value.isBlank() || !value.startsWith( "/") || "/".equals( value)) {
+			return false ;
+		}
+
+		// 公開名が不正文字を含む場合
+		if( value.contains( "\\" ) || value.contains( "//")) {
+			return false ;
+		}
+
+		// 公開名の各文字を確認する
+		for( int i = 0; i < value.length(); i++) {
+			// 空白文字の場合
+			if( Character.isWhitespace( value.charAt( i))) {
+				return false ;
+			}
+		}
+
+		String[] segments = value.split( "/" ) ;
+
+		// パスセグメントを確認する
+		for( String segment : segments) {
+			// 親ディレクトリセグメントの場合
+			if( "..".equals( segment)) {
+				return false ;
+			}
+		}
+
+		return true ;
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * 許可クライアントを検証します。<br><br>
+	 *
+	 * <p>メソッド名称： 許可クライアント検証</p>
+	 *
+	 * @param value	許可クライアント
+	 */
+	//--------------------------------------------------------------------------
+	private void validateAllowedClients(String value) {
+		// 未設定の場合
+		if( value == null || value.isBlank()) {
+			return ;
+		}
+
+		String[] entries = value.split( "," ) ;
+
+		// 許可クライアントを検証する
+		for( String entry : entries) {
+			String address = entry.trim() ;
+
+			// 空要素の場合
+			if( address.isEmpty()) {
+				continue ;
+			}
+
+			// IPv4アドレスではない場合
+			if( !isExactIpv4Address( address)) {
+				throw new IllegalArgumentException( format( "error.invalidAllowedClient", address)) ;
+			}
+		}
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * IPv4アドレスを確認します。<br><br>
+	 *
+	 * <p>メソッド名称： IPv4アドレス確認</p>
+	 *
+	 * @param value	値
+	 * @return true:IPv4 false:IPv4以外
+	 */
+	//--------------------------------------------------------------------------
+	private boolean isExactIpv4Address(String value) {
+		String[] parts = value.split( "\\.", -1) ;
+
+		// 4オクテットではない場合
+		if( parts.length != 4) {
+			return false ;
+		}
+
+		// 各オクテットを検証する
+		for( String part : parts) {
+			// 空オクテットの場合
+			if( part.isEmpty()) {
+				return false ;
+			}
+
+			try {
+				int octet = Integer.parseInt( part) ;
+
+				// 範囲外の場合
+				if( octet < 0 || octet > 255) {
+					return false ;
+				}
+			} catch( NumberFormatException nfex) {
+				return false ;
+			}
+		}
+
+		return true ;
 	}
 
 	//--------------------------------------------------------------------------
@@ -1117,6 +1278,7 @@ public class TinyWinNfsSwtManager {
 			lines.add( "export.name=" + firstShare.getName()) ;
 			lines.add( "export.path=" + escapePath( firstShare.getPath()) ) ;
 			lines.add( "export.writable=" + firstShare.isWritable()) ;
+			lines.add( "export.allowed.clients=" + firstShare.getAllowedClients()) ;
 			lines.add( "" ) ;
 			lines.add( "exports.count=" + shareEntries.size()) ;
 
@@ -1126,6 +1288,7 @@ public class TinyWinNfsSwtManager {
 				lines.add( prefix + "name=" + entry.getName()) ;
 				lines.add( prefix + "path=" + escapePath( entry.getPath()) ) ;
 				lines.add( prefix + "writable=" + entry.isWritable()) ;
+				lines.add( prefix + "allowed.clients=" + entry.getAllowedClients()) ;
 			}
 
 			lines.add( "" ) ;
@@ -1163,7 +1326,19 @@ public class TinyWinNfsSwtManager {
 
 		// 保存に成功した場合
 		if( saved) {
-			runScriptAsync( "restart-service.ps1") ;
+			appendLog( text( "log.restartAfterSaveStarted")) ;
+			runPrivilegedScriptAsync( "restart-service.ps1", result -> {
+				refreshStatus() ;
+
+				// 再起動に成功した場合
+				if( result.getExitCode() == 0) {
+					appendLog( text( "log.restartAfterSaveSucceeded")) ;
+				}
+				// 再起動に失敗した場合
+				else {
+					appendLog( format( "log.restartAfterSaveFailed", result.getExitCode())) ;
+				}
+			}) ;
 		}
 	}
 
@@ -1495,8 +1670,33 @@ public class TinyWinNfsSwtManager {
 
 					statusValueLabel.setText( status) ;
 					adminValueLabel.setText( boolText( isAdministrator()) ) ;
+					updateServiceInfoText() ;
 					shell.layout( true, true) ;
 				}) ;
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * サービス情報表示を更新します。<br><br>
+	 *
+	 * <p>メソッド名称： サービス情報表示更新</p>
+	 */
+	//--------------------------------------------------------------------------
+	private void updateServiceInfoText() {
+		// サービス情報表示が存在しない場合
+		if( serviceInfoText == null || serviceInfoText.isDisposed()) {
+			return ;
+		}
+
+		Path serviceExecutable = detectInstalledServiceExecutablePath() ;
+		String executableText = serviceExecutable == null ? text( "status.notInstalled") : serviceExecutable.toString() ;
+		serviceInfoText.setText( format(
+				"service.info",
+				SERVICE_NAME,
+				String.join( ", ", LEGACY_SERVICE_NAMES),
+				rootPath,
+				configPath,
+				executableText)) ;
 	}
 
 	//--------------------------------------------------------------------------
@@ -1517,7 +1717,7 @@ public class TinyWinNfsSwtManager {
 
 		// はいが選択された場合
 		if( result == SWT.YES) {
-			runScriptAsync( script) ;
+			runPrivilegedScriptAsync( script) ;
 		}
 	}
 
@@ -1755,6 +1955,55 @@ public class TinyWinNfsSwtManager {
 	 */
 	//--------------------------------------------------------------------------
 	private void runScriptAsync(String scriptName) {
+		runScriptAsync( scriptName, result -> refreshStatus()) ;
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * 権限が必要なスクリプトを非同期実行します。<br><br>
+	 *
+	 * <p>メソッド名称： 権限必要スクリプト非同期実行</p>
+	 *
+	 * @param scriptName	スクリプト名
+	 */
+	//--------------------------------------------------------------------------
+	private void runPrivilegedScriptAsync(String scriptName) {
+		runPrivilegedScriptAsync( scriptName, result -> refreshStatus()) ;
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * 権限が必要なスクリプトを非同期実行します。<br><br>
+	 *
+	 * <p>メソッド名称： 権限必要スクリプト非同期実行</p>
+	 *
+	 * @param scriptName	スクリプト名
+	 * @param callback	コールバック
+	 */
+	//--------------------------------------------------------------------------
+	private void runPrivilegedScriptAsync(String scriptName, ResultCallback callback) {
+		// 管理者権限がない場合
+		if( !isAdministrator()) {
+			appendLog( text( "log.adminRequired")) ;
+			showError( text( "error.adminRequired"), null) ;
+			refreshStatus() ;
+			return ;
+		}
+
+		runScriptAsync( scriptName, callback) ;
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * スクリプトを非同期実行します。<br><br>
+	 *
+	 * <p>メソッド名称： スクリプト非同期実行</p>
+	 *
+	 * @param scriptName	スクリプト名
+	 * @param callback	コールバック
+	 */
+	//--------------------------------------------------------------------------
+	private void runScriptAsync(String scriptName, ResultCallback callback) {
 		Path scriptPath = rootPath.resolve( "scripts").resolve( scriptName) ;
 
 		// スクリプトが存在しない場合
@@ -1769,7 +2018,7 @@ public class TinyWinNfsSwtManager {
 				"-ExecutionPolicy",
 				"Bypass",
 				"-File",
-				scriptPath.toString()), result -> refreshStatus()) ;
+				scriptPath.toString()), callback) ;
 	}
 
 	//--------------------------------------------------------------------------
@@ -1931,6 +2180,54 @@ public class TinyWinNfsSwtManager {
 	 */
 	//--------------------------------------------------------------------------
 	private Path detectInstalledServiceRootPath() {
+		Path executablePath = detectInstalledServiceExecutablePath() ;
+
+		// 実行ファイルが取得できない場合
+		if( executablePath == null) {
+			return null ;
+		}
+
+		Path winswDirectory = executablePath.getParent() ;
+
+		// WinSWフォルダが取得できない場合
+		if( winswDirectory == null) {
+			return null ;
+		}
+
+		Path serviceDirectory = winswDirectory.getParent() ;
+
+		// serviceフォルダが取得できない場合
+		if( serviceDirectory == null) {
+			return null ;
+		}
+
+		Path serviceRoot = serviceDirectory.getParent() ;
+
+		// ルートフォルダが取得できない場合
+		if( serviceRoot == null) {
+			return null ;
+		}
+
+		Path configFile = serviceRoot.resolve( "conf").resolve( "nfs-server.properties") ;
+
+		// 設定ファイルが存在する場合
+		if( Files.exists( configFile)) {
+			return serviceRoot.toAbsolutePath().normalize() ;
+		}
+
+		return null ;
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * 登録済みサービスの実行ファイルパスを検出します。<br><br>
+	 *
+	 * <p>メソッド名称： 登録済みサービス実行ファイルパス検出</p>
+	 *
+	 * @return 実行ファイルパス
+	 */
+	//--------------------------------------------------------------------------
+	private Path detectInstalledServiceExecutablePath() {
 		try {
 			ProcessBuilder builder = new ProcessBuilder(
 					"powershell.exe",
@@ -1961,40 +2258,7 @@ public class TinyWinNfsSwtManager {
 				return null ;
 			}
 
-			Path executablePath = extractExecutablePath( pathName) ;
-
-			// 実行ファイルが取得できない場合
-			if( executablePath == null) {
-				return null ;
-			}
-
-			Path winswDirectory = executablePath.getParent() ;
-
-			// WinSWフォルダが取得できない場合
-			if( winswDirectory == null) {
-				return null ;
-			}
-
-			Path serviceDirectory = winswDirectory.getParent() ;
-
-			// serviceフォルダが取得できない場合
-			if( serviceDirectory == null) {
-				return null ;
-			}
-
-			Path serviceRoot = serviceDirectory.getParent() ;
-
-			// ルートフォルダが取得できない場合
-			if( serviceRoot == null) {
-				return null ;
-			}
-
-			Path configFile = serviceRoot.resolve( "conf").resolve( "nfs-server.properties") ;
-
-			// 設定ファイルが存在する場合
-			if( Files.exists( configFile)) {
-				return serviceRoot.toAbsolutePath().normalize() ;
-			}
+			return extractExecutablePath( pathName) ;
 		} catch( IOException ioex) {
 			// サービス登録先を取得できない場合
 		} catch( InterruptedException iex) {
@@ -2204,6 +2468,9 @@ public class TinyWinNfsSwtManager {
 		/** 書込可否 */
 		private final boolean			writable ;
 
+		/** 許可クライアント */
+		private final String				allowedClients ;
+
 		//----------------------------------------------------------------------
 		/**
 		 * インスタンスを生成します。<br><br>
@@ -2212,13 +2479,15 @@ public class TinyWinNfsSwtManager {
 		 *
 		 * @param name		公開名
 		 * @param path		公開パス
-		 * @param writable	書込可否
+		 * @param writable			書込可否
+		 * @param allowedClients	許可クライアント
 		 */
 		//----------------------------------------------------------------------
-		ShareEntry(String name, String path, boolean writable) {
+		ShareEntry(String name, String path, boolean writable, String allowedClients) {
 			this.name = name == null ? "" : name.trim() ;
 			this.path = path == null ? "" : path.trim() ;
 			this.writable = writable ;
+			this.allowedClients = allowedClients == null ? "" : allowedClients.trim() ;
 		}
 
 		//----------------------------------------------------------------------
@@ -2258,6 +2527,19 @@ public class TinyWinNfsSwtManager {
 		//----------------------------------------------------------------------
 		boolean isWritable() {
 			return writable ;
+		}
+
+		//----------------------------------------------------------------------
+		/**
+		 * 許可クライアントを取得します。<br><br>
+		 *
+		 * <p>メソッド名称： 許可クライアント取得</p>
+		 *
+		 * @return 許可クライアント
+		 */
+		//----------------------------------------------------------------------
+		String getAllowedClients() {
+			return allowedClients ;
 		}
 	}
 

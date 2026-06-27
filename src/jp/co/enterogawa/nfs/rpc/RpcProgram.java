@@ -64,4 +64,27 @@ public interface RpcProgram {
 	 */
 	//--------------------------------------------------------------------------
 	int handle(RpcCall call, XdrWriter response) throws IOException ;
+
+	//--------------------------------------------------------------------------
+	/**
+	 * RPC呼出を処理します。<br><br>
+	 *
+	 * <p>メソッド名称： RPC呼出処理</p>
+	 *
+	 * @param call		RPC呼出
+	 * @param context	要求コンテキスト
+	 * @param response	応答本文
+	 * @return ACCEPTステータス
+	 * @throws IOException 処理異常
+	 */
+	//--------------------------------------------------------------------------
+	default int handle(RpcCall call, RpcRequestContext context, XdrWriter response) throws IOException {
+		RpcRequestContext previous = RpcRequestContext.setCurrent( context) ;
+
+		try {
+			return handle( call, response) ;
+		} finally {
+			RpcRequestContext.restore( previous) ;
+		}
+	}
 }

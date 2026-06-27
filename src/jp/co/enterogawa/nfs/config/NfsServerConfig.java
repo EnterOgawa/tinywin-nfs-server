@@ -111,13 +111,14 @@ public class NfsServerConfig {
 				String name = properties.getProperty( prefix + "name") ;
 				String path = properties.getProperty( prefix + "path") ;
 				boolean writable = Boolean.parseBoolean( properties.getProperty( prefix + "writable", "true")) ;
+				List<String> allowedClients = getAllowedClients( properties, prefix + "allowed.clients") ;
 
 				// 公開定義が不足している場合
 				if( name == null || name.isBlank() || path == null || path.isBlank()) {
 					throw new IllegalArgumentException( prefix + "name and " + prefix + "path are required.") ;
 				}
 
-				result.add( new NfsExport( name, Path.of( path.trim()), writable)) ;
+				result.add( new NfsExport( name, Path.of( path.trim()), writable, allowedClients)) ;
 			}
 
 			return List.copyOf( result) ;
@@ -126,7 +127,8 @@ public class NfsServerConfig {
 		String name = properties.getProperty( "export.name", "/export") ;
 		String path = properties.getProperty( "export.path", "export") ;
 		boolean writable = Boolean.parseBoolean( properties.getProperty( "export.writable", "true")) ;
-		result.add( new NfsExport( name, Path.of( path.trim()), writable)) ;
+		List<String> allowedClients = getAllowedClients( properties, "export.allowed.clients") ;
+		result.add( new NfsExport( name, Path.of( path.trim()), writable, allowedClients)) ;
 		return List.copyOf( result) ;
 	}
 
@@ -225,6 +227,48 @@ public class NfsServerConfig {
 
 	//--------------------------------------------------------------------------
 	/**
+	 * 許可クライアントを取得します。<br><br>
+	 *
+	 * <p>メソッド名称： 許可クライアント取得</p>
+	 *
+	 * @param properties	設定値
+	 * @param key		キー
+	 * @return 許可クライアント
+	 */
+	//--------------------------------------------------------------------------
+	private static List<String> getAllowedClients(Properties properties, String key) {
+		String value = properties.getProperty( key) ;
+
+		// 設定がない場合
+		if( value == null || value.isBlank()) {
+			return List.of() ;
+		}
+
+		List<String> result = new ArrayList<String>() ;
+		String[] entries = value.split( "," ) ;
+
+		// 許可クライアントを分割して検証する
+		for( String entry : entries) {
+			String address = entry.trim() ;
+
+			// 空要素の場合
+			if( address.isEmpty()) {
+				continue ;
+			}
+
+			// IPv4アドレスではない場合
+			if( !isExactIpv4Address( address)) {
+				throw new IllegalArgumentException( key + " contains invalid IPv4 address: " + address) ;
+			}
+
+			result.add( address) ;
+		}
+
+		return List.copyOf( result) ;
+	}
+
+	//--------------------------------------------------------------------------
+	/**
 	 * 設定値を検証します。<br><br>
 	 *
 	 * <p>メソッド名称： 設定値検証</p>
@@ -245,10 +289,7 @@ public class NfsServerConfig {
 
 		// 公開定義を検証する
 		for( NfsExport export : exports) {
-			// 公開名が絶対パス形式ではない場合
-			if( export.getName() == null || !export.getName().startsWith( "/")) {
-				throw new IllegalArgumentException( "export name must start with '/': " + export.getName()) ;
-			}
+			validateExportName( export.getName()) ;
 
 			// 公開名が重複している場合
 			if( !names.add( export.getName())) {
@@ -285,6 +326,118 @@ public class NfsServerConfig {
 		if( readSize <= 0) {
 			throw new IllegalArgumentException( "read.size must be greater than zero.") ;
 		}
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * 公開名を検証します。<br><br>
+	 *
+	 * <p>メソッド名称： 公開名検証</p>
+	 *
+	 * @param name	公開名
+	 */
+	//--------------------------------------------------------------------------
+	private void validateExportName(String name) {
+		// 公開名が絶対パス形式ではない場合
+		if( name == null || name.isBlank() || !name.startsWith( "/")) {
+			throw new IllegalArgumentException( "export name must start with '/': " + name) ;
+		}
+
+		// 公開名がルートのみの場合
+		if( "/".equals( name)) {
+			throw new IllegalArgumentException( "export name must not be root only.") ;
+		}
+
+		// 公開名が不正な文字を含む場合
+		if( name.contains( "\\" ) || name.contains( "//") || containsWhitespace( name) || hasParentSegment( name)) {
+			throw new IllegalArgumentException( "export name is invalid: " + name) ;
+		}
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * 空白文字の有無を確認します。<br><br>
+	 *
+	 * <p>メソッド名称： 空白文字有無確認</p>
+	 *
+	 * @param value	値
+	 * @return true:あり false:なし
+	 */
+	//--------------------------------------------------------------------------
+	private boolean containsWhitespace(String value) {
+		// 文字列の空白文字を確認する
+		for( int i = 0; i < value.length(); i++) {
+			// 空白文字の場合
+			if( Character.isWhitespace( value.charAt( i))) {
+				return true ;
+			}
+		}
+
+		return false ;
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * 親ディレクトリセグメント有無を確認します。<br><br>
+	 *
+	 * <p>メソッド名称： 親ディレクトリセグメント有無確認</p>
+	 *
+	 * @param value	値
+	 * @return true:あり false:なし
+	 */
+	//--------------------------------------------------------------------------
+	private boolean hasParentSegment(String value) {
+		String[] segments = value.split( "/" ) ;
+
+		// パスセグメントを検証する
+		for( String segment : segments) {
+			// 親ディレクトリセグメントの場合
+			if( "..".equals( segment)) {
+				return true ;
+			}
+		}
+
+		return false ;
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * IPv4アドレスを確認します。<br><br>
+	 *
+	 * <p>メソッド名称： IPv4アドレス確認</p>
+	 *
+	 * @param value	値
+	 * @return true:IPv4 false:IPv4以外
+	 */
+	//--------------------------------------------------------------------------
+	private static boolean isExactIpv4Address(String value) {
+		String[] parts = value.split( "\\.", -1) ;
+
+		// 4オクテットではない場合
+		if( parts.length != 4) {
+			return false ;
+		}
+
+		// 各オクテットを確認する
+		for( String part : parts) {
+			// 空オクテットの場合
+			if( part.isEmpty()) {
+				return false ;
+			}
+
+			try {
+				int octet = Integer.parseInt( part) ;
+
+				// 範囲外の場合
+				if( octet < 0 || octet > 255) {
+					return false ;
+				}
+			} catch( NumberFormatException nfex) {
+				return false ;
+			}
+		}
+
+		return true ;
 	}
 
 	//--------------------------------------------------------------------------

@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.3.0 - 2026-06-27
+
+- Added per-export IPv4 client allow-lists for MOUNT and NFS requests.
+- Hardened export validation for invalid names, unreadable folders, and writable exports pointing at non-writable folders.
+- Improved manager service feedback with explicit Save + Restart results, administrator checks, service executable path, and config path display.
+- Improved request diagnostics with client address, XID, program, version, procedure, status, and path where available.
+- Suppressed successful NFS READ request-level logs unless debug logging is enabled.
+
 ## 1.2.0 - 2026-06-27
 
 - Added a Windows Client for NFS integration test that mounts TinyWinNFS through the native Windows NFS client.

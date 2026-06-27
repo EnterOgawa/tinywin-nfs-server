@@ -75,6 +75,7 @@ Each shared folder has:
 - Export name, for example `/export`
 - Windows folder path
 - Writable flag
+- Allowed clients, as a comma-separated exact IPv4 list
 
 Use `Add`, `Apply`, and `Remove` to manage multiple shared folders.
 The selected shared folder is used to generate the client mount command:
@@ -127,3 +128,33 @@ mount_nfs <server-host>:/export /mnt
 
 After changing shared folders, use `Save + Restart` or restart the service from the `Service` tab.
 The service reads `conf/nfs-server.properties` only when it starts.
+
+## Client Restrictions
+
+Leave `Allowed clients` empty to allow all clients.
+
+To restrict an export to specific hosts, enter exact IPv4 addresses separated by commas:
+
+```text
+192.168.1.30,127.0.0.1
+```
+
+The setting is saved per export:
+
+```properties
+exports.1.allowed.clients=192.168.1.30,127.0.0.1
+```
+
+Rejected MOUNT and NFS requests are logged with the client address, XID, status, and target path where available.
+
+## Service Feedback
+
+The Service tab shows:
+
+- Service ID and legacy IDs
+- Application root
+- Active config file
+- Registered service executable path
+
+`Save + Restart` logs save success separately from restart success.
+Service install, start, stop, restart, uninstall, and firewall operations require Administrator privileges.

@@ -20,6 +20,7 @@ import jp.co.enterogawa.nfs.program.NfsV2Program;
 import jp.co.enterogawa.nfs.program.PortmapV2Program;
 import jp.co.enterogawa.nfs.rpc.RpcCall;
 import jp.co.enterogawa.nfs.rpc.RpcConstants;
+import jp.co.enterogawa.nfs.rpc.RpcRequestContext;
 import jp.co.enterogawa.nfs.xdr.XdrReader;
 import jp.co.enterogawa.nfs.xdr.XdrWriter;
 
@@ -81,6 +82,8 @@ public class AllTests {
 		runTest( "Mount MNT", this::testMount) ;
 		runTest( "Mount MNT v2", this::testMountV2) ;
 		runTest( "Multiple exports", this::testMultipleExports) ;
+		runTest( "Config validation", this::testConfigValidation) ;
+		runTest( "Client access restrictions", this::testClientAccessRestrictions) ;
 		runTest( "NFSv2 procedures", this::testNfsV2Procedures) ;
 		runTest( "NFSv2 filename charset", this::testNfsV2FilenameCharset) ;
 		runTest( "File handle persistence", this::testFileHandlePersistence) ;
@@ -283,6 +286,120 @@ public class AllTests {
 
 	//--------------------------------------------------------------------------
 	/**
+	 * 設定値検証を確認します。<br><br>
+	 *
+	 * <p>メソッド名称： 設定値検証確認</p>
+	 *
+	 * @throws Exception テスト異常
+	 */
+	//--------------------------------------------------------------------------
+	private void testConfigValidation() throws Exception {
+		Path root = Path.of( "work", "tmp", "test-config-validation").toAbsolutePath().normalize() ;
+		deleteDirectory( root) ;
+		Files.createDirectories( root) ;
+
+		try {
+			Path validConfig = writeConfig(
+					"test-valid-config.properties",
+					root,
+					"/export",
+					"127.0.0.1,192.168.1.30") ;
+			NfsServerConfig config = NfsServerConfig.load( validConfig) ;
+
+			assertEquals( "allowed client count", 2, config.getExports().get( 0).getAllowedClients().size()) ;
+			assertTrue( "allowed client", config.getExports().get( 0).allowsClient( "127.0.0.1")) ;
+			assertFalse( "denied client", config.getExports().get( 0).allowsClient( "192.0.2.10")) ;
+
+			Path invalidNameConfig = writeConfig(
+					"test-invalid-name-config.properties",
+					root,
+					"export",
+					"" ) ;
+			assertThrows( "invalid export name", () -> NfsServerConfig.load( invalidNameConfig)) ;
+
+			Path invalidClientConfig = writeConfig(
+					"test-invalid-client-config.properties",
+					root,
+					"/export",
+					"999.0.0.1") ;
+			assertThrows( "invalid allowed client", () -> NfsServerConfig.load( invalidClientConfig)) ;
+		} finally {
+			deleteDirectory( root) ;
+		}
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * クライアントアクセス制限を確認します。<br><br>
+	 *
+	 * <p>メソッド名称： クライアントアクセス制限確認</p>
+	 *
+	 * @throws Exception テスト異常
+	 */
+	//--------------------------------------------------------------------------
+	private void testClientAccessRestrictions() throws Exception {
+		Path root = Path.of( "work", "tmp", "test-access-restrictions").toAbsolutePath().normalize() ;
+		Path data = Path.of( "work", "tmp", "test-access-data").toAbsolutePath().normalize() ;
+		deleteDirectory( root) ;
+		deleteDirectory( data) ;
+		System.setProperty( "tinywin.nfs.data", data.toString()) ;
+		Files.createDirectories( root) ;
+		Files.writeString( root.resolve( "hello.txt"), "hello qnx", StandardCharsets.UTF_8) ;
+		Path configPath = writeConfig(
+				"test-access-restrictions.properties",
+				root,
+				"/export",
+				"127.0.0.1") ;
+		NfsServerConfig config = NfsServerConfig.load( configPath) ;
+		FileHandleTable handleTable = new FileHandleTable( config.getExports()) ;
+		MountV1Program mountProgram = new MountV1Program( config, handleTable) ;
+		NfsV2Program nfsProgram = new NfsV2Program( config, handleTable) ;
+
+		try {
+			XdrWriter deniedMountArguments = new XdrWriter() ;
+			deniedMountArguments.writeString( "/export") ;
+			XdrWriter deniedMountResponse = handleWithClient(
+					mountProgram,
+					RpcConstants.PROGRAM_MOUNT,
+					1,
+					1,
+					deniedMountArguments,
+					"192.0.2.10") ;
+
+			assertEquals( "denied mount status", NfsStatus.ACCES, new XdrReader( deniedMountResponse.toByteArray()).readInt()) ;
+
+			FileHandle rootHandle = mountExportWithClient( mountProgram, "/export", "127.0.0.1") ;
+			XdrWriter deniedGetAttrArguments = new XdrWriter() ;
+			deniedGetAttrArguments.writeFixedOpaque( rootHandle.getValue()) ;
+			XdrWriter deniedGetAttrResponse = handleWithClient(
+					nfsProgram,
+					RpcConstants.PROGRAM_NFS,
+					2,
+					1,
+					deniedGetAttrArguments,
+					"192.0.2.10") ;
+
+			assertEquals( "denied getattr status", NfsStatus.ACCES, new XdrReader( deniedGetAttrResponse.toByteArray()).readInt()) ;
+
+			XdrWriter allowedGetAttrArguments = new XdrWriter() ;
+			allowedGetAttrArguments.writeFixedOpaque( rootHandle.getValue()) ;
+			XdrWriter allowedGetAttrResponse = handleWithClient(
+					nfsProgram,
+					RpcConstants.PROGRAM_NFS,
+					2,
+					1,
+					allowedGetAttrArguments,
+					"127.0.0.1") ;
+
+			assertEquals( "allowed getattr status", NfsStatus.OK, new XdrReader( allowedGetAttrResponse.toByteArray()).readInt()) ;
+		} finally {
+			deleteDirectory( root) ;
+			deleteDirectory( data) ;
+		}
+	}
+
+	//--------------------------------------------------------------------------
+	/**
 	 * NFSv2手続きテストを行います。<br><br>
 	 *
 	 * <p>メソッド名称： NFSv2手続きテスト</p>
@@ -444,6 +561,29 @@ public class AllTests {
 		XdrWriter arguments = new XdrWriter() ;
 		arguments.writeString( name) ;
 		XdrWriter response = handle( program, RpcConstants.PROGRAM_MOUNT, 1, 1, arguments) ;
+		XdrReader reader = new XdrReader( response.toByteArray()) ;
+
+		assertEquals( "mount status " + name, 0, reader.readInt()) ;
+		return new FileHandle( reader.readFixedOpaque( FileHandle.LENGTH)) ;
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * 指定クライアントでexportをMOUNTします。<br><br>
+	 *
+	 * <p>メソッド名称： 指定クライアントexport MOUNT</p>
+	 *
+	 * @param program		MOUNTプログラム
+	 * @param name			export名
+	 * @param clientAddress	クライアントアドレス
+	 * @return ルートファイルハンドル
+	 * @throws IOException 処理異常
+	 */
+	//--------------------------------------------------------------------------
+	private FileHandle mountExportWithClient(MountV1Program program, String name, String clientAddress) throws IOException {
+		XdrWriter arguments = new XdrWriter() ;
+		arguments.writeString( name) ;
+		XdrWriter response = handleWithClient( program, RpcConstants.PROGRAM_MOUNT, 1, 1, arguments, clientAddress) ;
 		XdrReader reader = new XdrReader( response.toByteArray()) ;
 
 		assertEquals( "mount status " + name, 0, reader.readInt()) ;
@@ -1109,9 +1249,37 @@ public class AllTests {
 	 */
 	//--------------------------------------------------------------------------
 	private XdrWriter handle(jp.co.enterogawa.nfs.rpc.RpcProgram program, int programNumber, int version, int procedure, XdrWriter arguments) throws IOException {
+		return handleWithClient( program, programNumber, version, procedure, arguments, "127.0.0.1") ;
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * 指定クライアントでRPC呼出を処理します。<br><br>
+	 *
+	 * <p>メソッド名称： 指定クライアントRPC呼出処理</p>
+	 *
+	 * @param program		RPCプログラム
+	 * @param programNumber	Program番号
+	 * @param version		Version
+	 * @param procedure		Procedure
+	 * @param arguments		引数
+	 * @param clientAddress	クライアントアドレス
+	 * @return 応答
+	 * @throws IOException 処理異常
+	 */
+	//--------------------------------------------------------------------------
+	private XdrWriter handleWithClient(jp.co.enterogawa.nfs.rpc.RpcProgram program, int programNumber, int version, int procedure, XdrWriter arguments, String clientAddress) throws IOException {
 		RpcCall call = createCall( programNumber, version, procedure, arguments) ;
 		XdrWriter response = new XdrWriter() ;
-		int status = program.handle( call, response) ;
+		RpcRequestContext context = new RpcRequestContext(
+				clientAddress,
+				12345,
+				"test",
+				XID,
+				programNumber,
+				version,
+				procedure) ;
+		int status = program.handle( call, context, response) ;
 
 		assertEquals( "accept status", RpcConstants.ACCEPT_SUCCESS, status) ;
 		return response ;
@@ -1197,6 +1365,46 @@ public class AllTests {
 		Files.writeString( configPath, configText, StandardCharsets.UTF_8) ;
 		NfsServerConfig config = NfsServerConfig.load( configPath) ;
 		return new TestContext( root, config, new FileHandleTable( config.getExports())) ;
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * 設定ファイルを書き込みます。<br><br>
+	 *
+	 * <p>メソッド名称： 設定ファイル書込</p>
+	 *
+	 * @param fileName			ファイル名
+	 * @param root				公開ルート
+	 * @param exportName		公開名
+	 * @param allowedClients	許可クライアント
+	 * @return 設定ファイル
+	 * @throws IOException 書込異常
+	 */
+	//--------------------------------------------------------------------------
+	private Path writeConfig(String fileName, Path root, String exportName, String allowedClients) throws IOException {
+		Path configPath = Path.of( "work", "tmp", fileName).toAbsolutePath().normalize() ;
+		String configText = ""
+				+ "portmap.port=" + TEST_PORTMAP_PORT + "\n"
+				+ "nfs.port=" + TEST_NFS_PORT + "\n"
+				+ "mount.port=" + TEST_MOUNT_PORT + "\n"
+				+ "export.name=" + exportName + "\n"
+				+ "export.path=" + root.toString().replace( "\\", "\\\\") + "\n"
+				+ "export.writable=true\n"
+				+ "export.allowed.clients=" + allowedClients + "\n"
+				+ "exports.count=1\n"
+				+ "exports.1.name=" + exportName + "\n"
+				+ "exports.1.path=" + root.toString().replace( "\\", "\\\\") + "\n"
+				+ "exports.1.writable=true\n"
+				+ "exports.1.allowed.clients=" + allowedClients + "\n"
+				+ "uid=0\n"
+				+ "gid=0\n"
+				+ "file.mode=0644\n"
+				+ "directory.mode=0755\n"
+				+ "block.size=4096\n"
+				+ "read.size=8192\n"
+				+ "filename.charset=UTF-8\n" ;
+		Files.writeString( configPath, configText, StandardCharsets.UTF_8) ;
+		return configPath ;
 	}
 
 	//--------------------------------------------------------------------------
@@ -1373,6 +1581,44 @@ public class AllTests {
 		if( !actual) {
 			throw new AssertionError( name + " expected true.") ;
 		}
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * false値を検証します。<br><br>
+	 *
+	 * <p>メソッド名称： false値検証</p>
+	 *
+	 * @param name		名称
+	 * @param actual	実値
+	 */
+	//--------------------------------------------------------------------------
+	private void assertFalse(String name, boolean actual) {
+		// 条件がtrueの場合
+		if( actual) {
+			throw new AssertionError( name + " expected false.") ;
+		}
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * 例外発生を検証します。<br><br>
+	 *
+	 * <p>メソッド名称： 例外発生検証</p>
+	 *
+	 * @param name		名称
+	 * @param runnable	処理
+	 * @throws Exception 想定外異常
+	 */
+	//--------------------------------------------------------------------------
+	private void assertThrows(String name, TestRunnable runnable) throws Exception {
+		try {
+			runnable.run() ;
+		} catch( IllegalArgumentException iaex) {
+			return ;
+		}
+
+		throw new AssertionError( name + " expected IllegalArgumentException.") ;
 	}
 
 	//--------------------------------------------------------------------------

@@ -8,6 +8,8 @@ import jp.co.enterogawa.nfs.export.FileHandleTable;
 import jp.co.enterogawa.nfs.rpc.RpcCall;
 import jp.co.enterogawa.nfs.rpc.RpcConstants;
 import jp.co.enterogawa.nfs.rpc.RpcProgram;
+import jp.co.enterogawa.nfs.rpc.RpcRequestContext;
+import jp.co.enterogawa.nfs.util.ServerLog;
 import jp.co.enterogawa.nfs.xdr.XdrWriter;
 
 //------------------------------------------------------------------------------
@@ -169,14 +171,52 @@ public class MountV1Program implements RpcProgram {
 
 		// 公開名が一致しない場合
 		if( export == null) {
-			System.out.println( "MOUNT MNT path=" + path + " status=" + MNT_EACCES) ;
+			logMount( path, MNT_EACCES, "unknown-export") ;
 			response.writeInt( MNT_EACCES) ;
 			return ;
 		}
 
-		System.out.println( "MOUNT MNT path=" + path + " status=" + MNT_OK) ;
+		// クライアントが許可されていない場合
+		if( !export.allowsClient( RpcRequestContext.current().getClientAddress())) {
+			logMount( path, MNT_EACCES, "client-denied") ;
+			response.writeInt( MNT_EACCES) ;
+			return ;
+		}
+
+		logMount( path, MNT_OK, "" ) ;
 		response.writeInt( MNT_OK) ;
 		response.writeFixedOpaque( handleTable.getRootHandle( export.getName()).getValue()) ;
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * MOUNTログを出力します。<br><br>
+	 *
+	 * <p>メソッド名称： MOUNTログ出力</p>
+	 *
+	 * @param path		公開名
+	 * @param status	ステータス
+	 * @param detail	詳細
+	 */
+	//--------------------------------------------------------------------------
+	private void logMount(String path, int status, String detail) {
+		RpcRequestContext context = RpcRequestContext.current() ;
+		StringBuilder message = new StringBuilder() ;
+		message.append( "MOUNT MNT" )
+				.append( " client=" ).append( context.getClientAddress() )
+				.append( " xid=" ).append( context.formatXid() )
+				.append( " program=" ).append( context.getProgram() )
+				.append( " version=" ).append( context.getVersion() )
+				.append( " procedure=" ).append( context.getProcedure() )
+				.append( " status=" ).append( status )
+				.append( " export=" ).append( path ) ;
+
+		// 詳細が存在する場合
+		if( detail != null && !detail.isBlank()) {
+			message.append( " " ).append( detail) ;
+		}
+
+		ServerLog.info( message.toString()) ;
 	}
 
 	//--------------------------------------------------------------------------

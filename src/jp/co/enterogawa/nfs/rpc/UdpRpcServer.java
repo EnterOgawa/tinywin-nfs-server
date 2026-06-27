@@ -158,6 +158,14 @@ public class UdpRpcServer {
 	private byte[] createResponse(DatagramPacket packet, int xid) {
 		try {
 			RpcCall call = RpcCall.read( packet.getData(), packet.getLength()) ;
+			RpcRequestContext context = new RpcRequestContext(
+					packet.getAddress().getHostAddress(),
+					packet.getPort(),
+					name,
+					call.getXid(),
+					call.getProgram(),
+					call.getVersion(),
+					call.getProcedure()) ;
 			XdrWriter body = new XdrWriter() ;
 			int acceptStatus = RpcConstants.ACCEPT_SUCCESS ;
 
@@ -170,39 +178,90 @@ public class UdpRpcServer {
 				acceptStatus = RpcConstants.ACCEPT_PROG_UNAVAIL ;
 			}
 			else {
-				acceptStatus = program.handle( call, body) ;
+				acceptStatus = program.handle( call, context, body) ;
 			}
 
 			byte[] bodyBytes = body.toByteArray() ;
-			String resultStatus = "" ;
+			Integer resultStatus = null ;
 
 			// NFS/MOUNTの結果ステータスが存在する場合
 			if( acceptStatus == RpcConstants.ACCEPT_SUCCESS && bodyBytes.length >= Integer.BYTES) {
-				resultStatus = " status=" + ByteBuffer.wrap( bodyBytes).getInt() ;
+				resultStatus = ByteBuffer.wrap( bodyBytes).getInt() ;
 			}
 
-			ServerLog.info(
-					"RPC "
-					+ packet.getAddress().getHostAddress()
-					+ ":" + packet.getPort()
-					+ " server=" + name
-					+ " program=" + call.getProgram()
-					+ " version=" + call.getVersion()
-					+ " procedure=" + call.getProcedure()
-					+ " accept=" + acceptStatus
-					+ resultStatus) ;
+			// 通常READ成功ログを抑制できる場合
+			if( shouldLogRequest( call, acceptStatus, resultStatus)) {
+				ServerLog.info(
+						"RPC"
+						+ " client=" + context.getClientAddress() + ":" + context.getClientPort()
+						+ " server=" + name
+						+ " xid=" + context.formatXid()
+						+ " program=" + call.getProgram()
+						+ " version=" + call.getVersion()
+						+ " procedure=" + call.getProcedure()
+						+ " accept=" + acceptStatus
+						+ formatResultStatus( resultStatus)) ;
+			}
+
 			return RpcReplyWriter.accepted( call.getXid(), acceptStatus, bodyBytes) ;
 		} catch( Exception ex) {
 			ServerLog.info(
-					"RPC "
-					+ packet.getAddress().getHostAddress()
-					+ ":" + packet.getPort()
+					"RPC"
+					+ " client=" + packet.getAddress().getHostAddress() + ":" + packet.getPort()
 					+ " server=" + name
+					+ " xid=" + String.format( "0x%08x", xid)
 					+ " parse-error="
 					+ ex.getClass().getSimpleName()
 					+ ":" + ex.getMessage()) ;
 			ex.printStackTrace() ;
 			return RpcReplyWriter.accepted( xid, RpcConstants.ACCEPT_GARBAGE_ARGS, new byte[0]) ;
 		}
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * 要求ログ出力要否を判定します。<br><br>
+	 *
+	 * <p>メソッド名称： 要求ログ出力要否判定</p>
+	 *
+	 * @param call			RPC呼出
+	 * @param acceptStatus	ACCEPTステータス
+	 * @param resultStatus	結果ステータス
+	 * @return true:出力 false:抑制
+	 */
+	//--------------------------------------------------------------------------
+	private boolean shouldLogRequest(RpcCall call, int acceptStatus, Integer resultStatus) {
+		// デバッグログが有効な場合
+		if( ServerLog.isDebugEnabled()) {
+			return true ;
+		}
+
+		boolean successfulRead = call.getProgram() == RpcConstants.PROGRAM_NFS
+				&& call.getVersion() == 2
+				&& call.getProcedure() == 6
+				&& acceptStatus == RpcConstants.ACCEPT_SUCCESS
+				&& resultStatus != null
+				&& resultStatus.intValue() == 0 ;
+
+		return !successfulRead ;
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * 結果ステータスを整形します。<br><br>
+	 *
+	 * <p>メソッド名称： 結果ステータス整形</p>
+	 *
+	 * @param resultStatus	結果ステータス
+	 * @return 結果ステータス文字列
+	 */
+	//--------------------------------------------------------------------------
+	private String formatResultStatus(Integer resultStatus) {
+		// 結果ステータスが存在しない場合
+		if( resultStatus == null) {
+			return "" ;
+		}
+
+		return " status=" + resultStatus ;
 	}
 }

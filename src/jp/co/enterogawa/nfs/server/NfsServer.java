@@ -134,6 +134,11 @@ public class NfsServer {
 			if( !Files.isDirectory( export.getPath(), LinkOption.NOFOLLOW_LINKS)) {
 				throw new IllegalStateException( "Export path is not a directory: " + export.getPath()) ;
 			}
+
+			// 書込可能設定だがフォルダへ書き込めない場合
+			if( export.isWritable() && !Files.isWritable( export.getPath())) {
+				throw new IllegalStateException( "Export path is not writable: " + export.getPath()) ;
+			}
 		}
 	}
 }
