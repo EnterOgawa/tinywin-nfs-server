@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.2.0 - 2026-06-27
+
+- Added a Windows Client for NFS integration test that mounts TinyWinNFS through the native Windows NFS client.
+- Added a Windows-client test configuration profile for anonymous writable mounts.
+- Documented Windows Client for NFS verification and release checklist steps.
+- Included the Windows Client for NFS smoke test script in the packaged manager image.
+
 ## 1.1.0 - 2026-06-27
 
 - Added NFSv2 `WRITECACHE` compatibility no-op.
