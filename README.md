@@ -1,10 +1,12 @@
 # TinyWinNFS Server
 
-Java 21 で実装する、Windows 向けのユーザー空間 NFS サーバーです。
+Java 21 で実装した、Windows 向けのユーザー空間 NFS サーバーです。
 
-現在は NFSv2 / NFSv3 / MOUNT v1-v3 / AUTH_SYS / UDP / 複数 export の read-write 対応を提供します。QNX 4.25 は重要な検証対象ですが、製品自体は QNX 専用ではありません。
+v1.5.0 時点では、NFSv2 / NFSv3 の通常ファイル・ディレクトリ操作、MOUNT v1-v3、AUTH_SYS、UDP transport、複数 export の read-write 共有に対応しています。
 
-完成目標は NFSv2 / NFSv3 / MOUNT v1-v3 / AUTH_SYS / UDP / TCP / 複数 export の read-write 対応です。
+QNX 4.25 は NFSv2/UDP、Windows Client for NFS は NFSv3/UDP で検証しています。製品自体は QNX 専用ではありません。
+
+NFSv3 MKNOD、NLM/file locking、TCP transport、NFSv4 は現在の対応範囲外です。
 
 ## 画面
 
@@ -87,9 +89,9 @@ v1.5.0以降は、サービス経由の上書き、truncate、rename上書き、
 
 ## 対応範囲
 
-- 対応: NFSv2, NFSv3, MOUNT v1-v3, AUTH_SYS, UDP, read-write, 複数 export
-- 検証対象: QNX 4.25, Windows Client for NFS
-- 未対応: NLM/file locking, TCP transport, NFSv4
+- 対応済み: NFSv2/NFSv3 の通常ファイル・ディレクトリ操作, MOUNT v1-v3, AUTH_SYS, UDP, read-write, 複数 export
+- 主な検証対象: QNX 4.25 は NFSv2/UDP, Windows Client for NFS は NFSv3/UDP
+- 対応範囲外: NFSv3 MKNOD, NLM/file locking, TCP transport, NFSv4
 
 ## 注意
 
