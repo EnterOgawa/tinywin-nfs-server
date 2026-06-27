@@ -11,7 +11,10 @@ import jp.co.enterogawa.nfs.config.NfsServerConfig;
 import jp.co.enterogawa.nfs.export.FileHandleTable;
 import jp.co.enterogawa.nfs.program.MountV1Program;
 import jp.co.enterogawa.nfs.program.NfsV2Program;
+import jp.co.enterogawa.nfs.program.NfsV3Program;
 import jp.co.enterogawa.nfs.program.PortmapV2Program;
+import jp.co.enterogawa.nfs.rpc.RpcConstants;
+import jp.co.enterogawa.nfs.rpc.RpcProgramRouter;
 import jp.co.enterogawa.nfs.rpc.UdpRpcServer;
 
 //------------------------------------------------------------------------------
@@ -58,7 +61,9 @@ public class NfsServer {
 		servers.add( new UdpRpcServer(
 				"nfs-v2",
 				config.getNfsPort(),
-				new NfsV2Program( config, handleTable))) ;
+				new RpcProgramRouter( RpcConstants.PROGRAM_NFS)
+						.add( new NfsV2Program( config, handleTable))
+						.add( new NfsV3Program( config, handleTable)))) ;
 	}
 
 	//--------------------------------------------------------------------------

@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.4.0 - Unreleased
+
+- Added NFSv3 over UDP alongside the existing NFSv2 implementation.
+- Added MOUNT v3 responses with opaque file handles and AUTH_NONE/AUTH_SYS flavors.
+- Added portmap registrations for NFSv3 and MOUNT v3 over UDP.
+- Added NFSv3 read-write, metadata, directory, filesystem info, and commit procedure coverage.
+- Extended Windows Client for NFS verification to assert observed MOUNT v3 and NFSv3 RPCs.
+
 ## 1.3.0 - 2026-06-27
 
 - Added per-export IPv4 client allow-lists for MOUNT and NFS requests.

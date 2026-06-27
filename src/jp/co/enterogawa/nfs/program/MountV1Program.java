@@ -113,7 +113,7 @@ public class MountV1Program implements RpcProgram {
 	//--------------------------------------------------------------------------
 	@Override
 	public boolean supportsVersion(int version) {
-		return version == 1 || version == 2 ;
+		return version == 1 || version == 2 || version == 3 ;
 	}
 
 	//--------------------------------------------------------------------------
@@ -185,6 +185,16 @@ public class MountV1Program implements RpcProgram {
 
 		logMount( path, MNT_OK, "" ) ;
 		response.writeInt( MNT_OK) ;
+
+		// MOUNT v3の場合
+		if( call.getVersion() == 3) {
+			response.writeOpaque( handleTable.getRootHandle( export.getName()).getValue()) ;
+			response.writeInt( 2) ;
+			response.writeInt( RpcConstants.AUTH_NONE) ;
+			response.writeInt( RpcConstants.AUTH_SYS) ;
+			return ;
+		}
+
 		response.writeFixedOpaque( handleTable.getRootHandle( export.getName()).getValue()) ;
 	}
 

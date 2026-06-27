@@ -48,6 +48,12 @@ public final class NfsStatus {
 	/** ディレクトリが空ではない */
 	public static final int				NOTEMPTY = 66 ;
 
+	/** Stale file handle */
+	public static final int				STALE = 70 ;
+
+	/** Not supported */
+	public static final int				NOTSUPP = 10004 ;
+
 	//--------------------------------------------------------------------------
 	/**
 	 * インスタンス化を禁止します。<br><br>

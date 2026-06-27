@@ -138,16 +138,16 @@ public class PortmapV2Program implements RpcProgram {
 
 		// UDP要求の場合
 		if( protocol == RpcConstants.IPPROTO_UDP) {
-			// NFSv2要求の場合
-			if( program == RpcConstants.PROGRAM_NFS && version == 2) {
+			// NFS要求の場合
+			if( program == RpcConstants.PROGRAM_NFS && (version == 2 || version == 3)) {
 				port = nfsPort ;
 			}
-			// MOUNT v1要求の場合
-			else if( program == RpcConstants.PROGRAM_MOUNT && (version == 1 || version == 2)) {
+			// MOUNT要求の場合
+			else if( program == RpcConstants.PROGRAM_MOUNT && (version == 1 || version == 2 || version == 3)) {
 				port = mountPort ;
 			}
 			// Portmap v2要求の場合
-		else if( program == RpcConstants.PROGRAM_PORTMAP && version == VERSION) {
+			else if( program == RpcConstants.PROGRAM_PORTMAP && version == VERSION) {
 				port = portmapPort ;
 			}
 		}
@@ -176,8 +176,10 @@ public class PortmapV2Program implements RpcProgram {
 	private void handleDump(XdrWriter response) {
 		writeMapping( response, RpcConstants.PROGRAM_PORTMAP, VERSION, RpcConstants.IPPROTO_UDP, portmapPort) ;
 		writeMapping( response, RpcConstants.PROGRAM_NFS, 2, RpcConstants.IPPROTO_UDP, nfsPort) ;
+		writeMapping( response, RpcConstants.PROGRAM_NFS, 3, RpcConstants.IPPROTO_UDP, nfsPort) ;
 		writeMapping( response, RpcConstants.PROGRAM_MOUNT, 1, RpcConstants.IPPROTO_UDP, mountPort) ;
 		writeMapping( response, RpcConstants.PROGRAM_MOUNT, 2, RpcConstants.IPPROTO_UDP, mountPort) ;
+		writeMapping( response, RpcConstants.PROGRAM_MOUNT, 3, RpcConstants.IPPROTO_UDP, mountPort) ;
 		response.writeBoolean( false) ;
 	}
 

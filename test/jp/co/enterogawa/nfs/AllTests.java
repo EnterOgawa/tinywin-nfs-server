@@ -17,6 +17,7 @@ import jp.co.enterogawa.nfs.export.FileHandleTable;
 import jp.co.enterogawa.nfs.program.MountV1Program;
 import jp.co.enterogawa.nfs.program.NfsStatus;
 import jp.co.enterogawa.nfs.program.NfsV2Program;
+import jp.co.enterogawa.nfs.program.NfsV3Program;
 import jp.co.enterogawa.nfs.program.PortmapV2Program;
 import jp.co.enterogawa.nfs.rpc.RpcCall;
 import jp.co.enterogawa.nfs.rpc.RpcConstants;
@@ -85,6 +86,7 @@ public class AllTests {
 		runTest( "Config validation", this::testConfigValidation) ;
 		runTest( "Client access restrictions", this::testClientAccessRestrictions) ;
 		runTest( "NFSv2 procedures", this::testNfsV2Procedures) ;
+		runTest( "NFSv3 procedures", this::testNfsV3Procedures) ;
 		runTest( "NFSv2 filename charset", this::testNfsV2FilenameCharset) ;
 		runTest( "File handle persistence", this::testFileHandlePersistence) ;
 		System.out.println( "TEST PASSED: " + runCount + " tests") ;
@@ -432,6 +434,408 @@ public class AllTests {
 		assertLongSymlinkTarget( program, rootHandle) ;
 		assertJapaneseCreate( program, rootHandle, context.getRoot()) ;
 		context.close() ;
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * NFSv3手続きテストを行います。<br><br>
+	 *
+	 * <p>メソッド名称： NFSv3手続きテスト</p>
+	 *
+	 * @throws Exception テスト異常
+	 */
+	//--------------------------------------------------------------------------
+	private void testNfsV3Procedures() throws Exception {
+		TestContext context = createContext() ;
+		MountV1Program mountProgram = new MountV1Program( context.getConfig(), context.getHandleTable()) ;
+		NfsV3Program program = new NfsV3Program( context.getConfig(), context.getHandleTable()) ;
+		PortmapV2Program portmap = new PortmapV2Program( TEST_PORTMAP_PORT, TEST_NFS_PORT, TEST_MOUNT_PORT) ;
+
+		try {
+			FileHandle rootHandle = mountExportV3( mountProgram, portmap) ;
+			FileHandle fileHandle = assertLookupFileV3( program, rootHandle) ;
+			assertGetAttrV3( program, rootHandle) ;
+			assertAccessV3( program, rootHandle) ;
+			assertReadFileV3( program, fileHandle) ;
+			assertWriteAndCommitV3( program, fileHandle, context.getRoot()) ;
+			assertSetAttrV3( program, fileHandle, context.getRoot()) ;
+			assertCreateRemoveV3( program, rootHandle, context.getRoot()) ;
+			assertMkdirRmdirV3( program, rootHandle, context.getRoot()) ;
+			assertRenameV3( program, rootHandle, context.getRoot()) ;
+			assertReadDirPlusV3( program, rootHandle) ;
+			assertFsInfoV3( program, rootHandle) ;
+		} finally {
+			context.close() ;
+		}
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * MOUNT v3で公開をマウントします。<br><br>
+	 *
+	 * <p>メソッド名称： MOUNT v3公開マウント</p>
+	 *
+	 * @param mountProgram	MOUNTプログラム
+	 * @param portmap		Portmapプログラム
+	 * @return ルートファイルハンドル
+	 * @throws IOException 処理異常
+	 */
+	//--------------------------------------------------------------------------
+	private FileHandle mountExportV3(MountV1Program mountProgram, PortmapV2Program portmap) throws IOException {
+		XdrWriter nfsPortArguments = new XdrWriter() ;
+		nfsPortArguments.writeInt( RpcConstants.PROGRAM_NFS) ;
+		nfsPortArguments.writeInt( 3) ;
+		nfsPortArguments.writeInt( RpcConstants.IPPROTO_UDP) ;
+		nfsPortArguments.writeInt( 0) ;
+		XdrReader nfsPortReader = new XdrReader( handle( portmap, RpcConstants.PROGRAM_PORTMAP, 2, 3, nfsPortArguments).toByteArray()) ;
+
+		assertEquals( "nfs v3 port", TEST_NFS_PORT, nfsPortReader.readInt()) ;
+
+		XdrWriter mountPortArguments = new XdrWriter() ;
+		mountPortArguments.writeInt( RpcConstants.PROGRAM_MOUNT) ;
+		mountPortArguments.writeInt( 3) ;
+		mountPortArguments.writeInt( RpcConstants.IPPROTO_UDP) ;
+		mountPortArguments.writeInt( 0) ;
+		XdrReader mountPortReader = new XdrReader( handle( portmap, RpcConstants.PROGRAM_PORTMAP, 2, 3, mountPortArguments).toByteArray()) ;
+
+		assertEquals( "mount v3 port", TEST_MOUNT_PORT, mountPortReader.readInt()) ;
+
+		XdrWriter arguments = new XdrWriter() ;
+		arguments.writeString( "/export") ;
+		XdrWriter response = handle( mountProgram, RpcConstants.PROGRAM_MOUNT, 3, 1, arguments) ;
+		XdrReader reader = new XdrReader( response.toByteArray()) ;
+
+		assertEquals( "mount v3 status", 0, reader.readInt()) ;
+		FileHandle handle = new FileHandle( reader.readOpaque()) ;
+		assertEquals( "mount v3 auth flavor count", 2, reader.readInt()) ;
+		assertEquals( "mount v3 auth none", RpcConstants.AUTH_NONE, reader.readInt()) ;
+		assertEquals( "mount v3 auth sys", RpcConstants.AUTH_SYS, reader.readInt()) ;
+		return handle ;
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * NFSv3 LOOKUPを確認します。<br><br>
+	 *
+	 * <p>メソッド名称： NFSv3 LOOKUP確認</p>
+	 *
+	 * @param program		NFSv3プログラム
+	 * @param rootHandle	ルートハンドル
+	 * @return ファイルハンドル
+	 * @throws IOException 処理異常
+	 */
+	//--------------------------------------------------------------------------
+	private FileHandle assertLookupFileV3(NfsV3Program program, FileHandle rootHandle) throws IOException {
+		XdrWriter arguments = new XdrWriter() ;
+		writeDiropargsV3( arguments, rootHandle, "hello.txt") ;
+		XdrReader reader = new XdrReader( handle( program, RpcConstants.PROGRAM_NFS, 3, 3, arguments).toByteArray()) ;
+
+		assertEquals( "v3 lookup status", NfsStatus.OK, reader.readInt()) ;
+		FileHandle handle = new FileHandle( reader.readOpaque()) ;
+		skipPostOpAttrV3( reader) ;
+		skipPostOpAttrV3( reader) ;
+		return handle ;
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * NFSv3 GETATTRを確認します。<br><br>
+	 *
+	 * <p>メソッド名称： NFSv3 GETATTR確認</p>
+	 *
+	 * @param program	NFSv3プログラム
+	 * @param handle	ファイルハンドル
+	 * @throws IOException 処理異常
+	 */
+	//--------------------------------------------------------------------------
+	private void assertGetAttrV3(NfsV3Program program, FileHandle handle) throws IOException {
+		XdrWriter arguments = new XdrWriter() ;
+		arguments.writeOpaque( handle.getValue()) ;
+		XdrReader reader = new XdrReader( handle( program, RpcConstants.PROGRAM_NFS, 3, 1, arguments).toByteArray()) ;
+
+		assertEquals( "v3 getattr status", NfsStatus.OK, reader.readInt()) ;
+		skipAttributesV3( reader) ;
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * NFSv3 ACCESSを確認します。<br><br>
+	 *
+	 * <p>メソッド名称： NFSv3 ACCESS確認</p>
+	 *
+	 * @param program	NFSv3プログラム
+	 * @param handle	ファイルハンドル
+	 * @throws IOException 処理異常
+	 */
+	//--------------------------------------------------------------------------
+	private void assertAccessV3(NfsV3Program program, FileHandle handle) throws IOException {
+		XdrWriter arguments = new XdrWriter() ;
+		arguments.writeOpaque( handle.getValue()) ;
+		arguments.writeInt( 0x003f) ;
+		XdrReader reader = new XdrReader( handle( program, RpcConstants.PROGRAM_NFS, 3, 4, arguments).toByteArray()) ;
+
+		assertEquals( "v3 access status", NfsStatus.OK, reader.readInt()) ;
+		skipPostOpAttrV3( reader) ;
+		assertTrue( "v3 access read", (reader.readInt() & 0x0001) != 0) ;
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * NFSv3 READを確認します。<br><br>
+	 *
+	 * <p>メソッド名称： NFSv3 READ確認</p>
+	 *
+	 * @param program	NFSv3プログラム
+	 * @param handle	ファイルハンドル
+	 * @throws IOException 処理異常
+	 */
+	//--------------------------------------------------------------------------
+	private void assertReadFileV3(NfsV3Program program, FileHandle handle) throws IOException {
+		XdrWriter arguments = new XdrWriter() ;
+		arguments.writeOpaque( handle.getValue()) ;
+		arguments.writeLong( 0L) ;
+		arguments.writeInt( 8192) ;
+		XdrReader reader = new XdrReader( handle( program, RpcConstants.PROGRAM_NFS, 3, 6, arguments).toByteArray()) ;
+
+		assertEquals( "v3 read status", NfsStatus.OK, reader.readInt()) ;
+		skipPostOpAttrV3( reader) ;
+		assertEquals( "v3 read count", "hello qnx".length(), reader.readInt()) ;
+		assertTrue( "v3 read eof", reader.readBoolean()) ;
+		assertEquals( "v3 read content", "hello qnx", new String( reader.readOpaque(), StandardCharsets.UTF_8)) ;
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * NFSv3 WRITE/COMMITを確認します。<br><br>
+	 *
+	 * <p>メソッド名称： NFSv3 WRITE/COMMIT確認</p>
+	 *
+	 * @param program	NFSv3プログラム
+	 * @param handle	ファイルハンドル
+	 * @param root		公開ルート
+	 * @throws IOException 処理異常
+	 */
+	//--------------------------------------------------------------------------
+	private void assertWriteAndCommitV3(NfsV3Program program, FileHandle handle, Path root) throws IOException {
+		byte[] data = "v3 edit".getBytes( StandardCharsets.UTF_8) ;
+		XdrWriter writeArguments = new XdrWriter() ;
+		writeArguments.writeOpaque( handle.getValue()) ;
+		writeArguments.writeLong( 0L) ;
+		writeArguments.writeInt( data.length) ;
+		writeArguments.writeInt( 2) ;
+		writeArguments.writeOpaque( data) ;
+		XdrReader writeReader = new XdrReader( handle( program, RpcConstants.PROGRAM_NFS, 3, 7, writeArguments).toByteArray()) ;
+
+		assertEquals( "v3 write status", NfsStatus.OK, writeReader.readInt()) ;
+		skipWccDataV3( writeReader) ;
+		assertEquals( "v3 write count", data.length, writeReader.readInt()) ;
+		assertEquals( "v3 write committed", 2, writeReader.readInt()) ;
+		assertEquals( "v3 write verifier", 8, writeReader.readFixedOpaque( 8).length) ;
+		assertEquals( "v3 write content", "v3 editnx", Files.readString( root.resolve( "hello.txt"), StandardCharsets.UTF_8)) ;
+
+		XdrWriter commitArguments = new XdrWriter() ;
+		commitArguments.writeOpaque( handle.getValue()) ;
+		commitArguments.writeLong( 0L) ;
+		commitArguments.writeInt( data.length) ;
+		XdrReader commitReader = new XdrReader( handle( program, RpcConstants.PROGRAM_NFS, 3, 21, commitArguments).toByteArray()) ;
+
+		assertEquals( "v3 commit status", NfsStatus.OK, commitReader.readInt()) ;
+		skipWccDataV3( commitReader) ;
+		assertEquals( "v3 commit verifier", 8, commitReader.readFixedOpaque( 8).length) ;
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * NFSv3 SETATTRを確認します。<br><br>
+	 *
+	 * <p>メソッド名称： NFSv3 SETATTR確認</p>
+	 *
+	 * @param program	NFSv3プログラム
+	 * @param handle	ファイルハンドル
+	 * @param root		公開ルート
+	 * @throws IOException 処理異常
+	 */
+	//--------------------------------------------------------------------------
+	private void assertSetAttrV3(NfsV3Program program, FileHandle handle, Path root) throws IOException {
+		XdrWriter arguments = new XdrWriter() ;
+		arguments.writeOpaque( handle.getValue()) ;
+		writeSattr3Size( arguments, 4L) ;
+		arguments.writeBoolean( false) ;
+		XdrReader reader = new XdrReader( handle( program, RpcConstants.PROGRAM_NFS, 3, 2, arguments).toByteArray()) ;
+
+		assertEquals( "v3 setattr status", NfsStatus.OK, reader.readInt()) ;
+		skipWccDataV3( reader) ;
+		assertEquals( "v3 setattr content", "v3 e", Files.readString( root.resolve( "hello.txt"), StandardCharsets.UTF_8)) ;
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * NFSv3 CREATE/REMOVEを確認します。<br><br>
+	 *
+	 * <p>メソッド名称： NFSv3 CREATE/REMOVE確認</p>
+	 *
+	 * @param program		NFSv3プログラム
+	 * @param rootHandle	ルートハンドル
+	 * @param root			公開ルート
+	 * @throws IOException 処理異常
+	 */
+	//--------------------------------------------------------------------------
+	private void assertCreateRemoveV3(NfsV3Program program, FileHandle rootHandle, Path root) throws IOException {
+		XdrWriter createArguments = new XdrWriter() ;
+		writeDiropargsV3( createArguments, rootHandle, "v3-created.txt") ;
+		createArguments.writeInt( 0) ;
+		writeSattr3Unset( createArguments) ;
+		XdrReader createReader = new XdrReader( handle( program, RpcConstants.PROGRAM_NFS, 3, 8, createArguments).toByteArray()) ;
+
+		assertEquals( "v3 create status", NfsStatus.OK, createReader.readInt()) ;
+		assertTrue( "v3 create handle follows", createReader.readBoolean()) ;
+		assertEquals( "v3 create handle", FileHandle.LENGTH, createReader.readOpaque().length) ;
+		skipPostOpAttrV3( createReader) ;
+		skipWccDataV3( createReader) ;
+		assertTrue( "v3 create exists", Files.exists( root.resolve( "v3-created.txt"), LinkOption.NOFOLLOW_LINKS)) ;
+
+		XdrWriter removeArguments = new XdrWriter() ;
+		writeDiropargsV3( removeArguments, rootHandle, "v3-created.txt") ;
+		XdrReader removeReader = new XdrReader( handle( program, RpcConstants.PROGRAM_NFS, 3, 12, removeArguments).toByteArray()) ;
+
+		assertEquals( "v3 remove status", NfsStatus.OK, removeReader.readInt()) ;
+		skipWccDataV3( removeReader) ;
+		assertTrue( "v3 remove missing", !Files.exists( root.resolve( "v3-created.txt"), LinkOption.NOFOLLOW_LINKS)) ;
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * NFSv3 MKDIR/RMDIRを確認します。<br><br>
+	 *
+	 * <p>メソッド名称： NFSv3 MKDIR/RMDIR確認</p>
+	 *
+	 * @param program		NFSv3プログラム
+	 * @param rootHandle	ルートハンドル
+	 * @param root			公開ルート
+	 * @throws IOException 処理異常
+	 */
+	//--------------------------------------------------------------------------
+	private void assertMkdirRmdirV3(NfsV3Program program, FileHandle rootHandle, Path root) throws IOException {
+		XdrWriter mkdirArguments = new XdrWriter() ;
+		writeDiropargsV3( mkdirArguments, rootHandle, "v3-dir") ;
+		writeSattr3Unset( mkdirArguments) ;
+		XdrReader mkdirReader = new XdrReader( handle( program, RpcConstants.PROGRAM_NFS, 3, 9, mkdirArguments).toByteArray()) ;
+
+		assertEquals( "v3 mkdir status", NfsStatus.OK, mkdirReader.readInt()) ;
+		assertTrue( "v3 mkdir handle follows", mkdirReader.readBoolean()) ;
+		mkdirReader.readOpaque() ;
+		skipPostOpAttrV3( mkdirReader) ;
+		skipWccDataV3( mkdirReader) ;
+		assertTrue( "v3 mkdir exists", Files.isDirectory( root.resolve( "v3-dir"), LinkOption.NOFOLLOW_LINKS)) ;
+
+		XdrWriter rmdirArguments = new XdrWriter() ;
+		writeDiropargsV3( rmdirArguments, rootHandle, "v3-dir") ;
+		XdrReader rmdirReader = new XdrReader( handle( program, RpcConstants.PROGRAM_NFS, 3, 13, rmdirArguments).toByteArray()) ;
+
+		assertEquals( "v3 rmdir status", NfsStatus.OK, rmdirReader.readInt()) ;
+		skipWccDataV3( rmdirReader) ;
+		assertTrue( "v3 rmdir missing", !Files.exists( root.resolve( "v3-dir"), LinkOption.NOFOLLOW_LINKS)) ;
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * NFSv3 RENAMEを確認します。<br><br>
+	 *
+	 * <p>メソッド名称： NFSv3 RENAME確認</p>
+	 *
+	 * @param program		NFSv3プログラム
+	 * @param rootHandle	ルートハンドル
+	 * @param root			公開ルート
+	 * @throws IOException 処理異常
+	 */
+	//--------------------------------------------------------------------------
+	private void assertRenameV3(NfsV3Program program, FileHandle rootHandle, Path root) throws IOException {
+		Files.writeString( root.resolve( "v3-rename-source.txt"), "rename", StandardCharsets.UTF_8) ;
+		XdrWriter arguments = new XdrWriter() ;
+		writeDiropargsV3( arguments, rootHandle, "v3-rename-source.txt") ;
+		writeDiropargsV3( arguments, rootHandle, "v3-rename-target.txt") ;
+		XdrReader reader = new XdrReader( handle( program, RpcConstants.PROGRAM_NFS, 3, 14, arguments).toByteArray()) ;
+
+		assertEquals( "v3 rename status", NfsStatus.OK, reader.readInt()) ;
+		skipWccDataV3( reader) ;
+		skipWccDataV3( reader) ;
+		assertTrue( "v3 rename source missing", !Files.exists( root.resolve( "v3-rename-source.txt"), LinkOption.NOFOLLOW_LINKS)) ;
+		assertEquals( "v3 rename target", "rename", Files.readString( root.resolve( "v3-rename-target.txt"), StandardCharsets.UTF_8)) ;
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * NFSv3 READDIRPLUSを確認します。<br><br>
+	 *
+	 * <p>メソッド名称： NFSv3 READDIRPLUS確認</p>
+	 *
+	 * @param program		NFSv3プログラム
+	 * @param rootHandle	ルートハンドル
+	 * @throws IOException 処理異常
+	 */
+	//--------------------------------------------------------------------------
+	private void assertReadDirPlusV3(NfsV3Program program, FileHandle rootHandle) throws IOException {
+		XdrWriter arguments = new XdrWriter() ;
+		arguments.writeOpaque( rootHandle.getValue()) ;
+		arguments.writeLong( 0L) ;
+		arguments.writeFixedOpaque( new byte[8]) ;
+		arguments.writeInt( 4096) ;
+		arguments.writeInt( 8192) ;
+		XdrReader reader = new XdrReader( handle( program, RpcConstants.PROGRAM_NFS, 3, 17, arguments).toByteArray()) ;
+		List<String> names = new ArrayList<String>() ;
+
+		assertEquals( "v3 readdirplus status", NfsStatus.OK, reader.readInt()) ;
+		skipPostOpAttrV3( reader) ;
+		reader.readFixedOpaque( 8) ;
+
+		while( reader.readBoolean()) {
+			reader.readLong() ;
+			names.add( reader.readString()) ;
+			reader.readLong() ;
+			skipPostOpAttrV3( reader) ;
+			assertTrue( "v3 readdirplus handle follows", reader.readBoolean()) ;
+			reader.readOpaque() ;
+		}
+
+		assertTrue( "v3 readdirplus eof", reader.readBoolean()) ;
+		assertTrue( "v3 readdirplus file", names.contains( "hello.txt")) ;
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * NFSv3 FSINFO/FSSTAT/PATHCONFを確認します。<br><br>
+	 *
+	 * <p>メソッド名称： NFSv3 FSINFO/FSSTAT/PATHCONF確認</p>
+	 *
+	 * @param program		NFSv3プログラム
+	 * @param rootHandle	ルートハンドル
+	 * @throws IOException 処理異常
+	 */
+	//--------------------------------------------------------------------------
+	private void assertFsInfoV3(NfsV3Program program, FileHandle rootHandle) throws IOException {
+		XdrWriter fsInfoArguments = new XdrWriter() ;
+		fsInfoArguments.writeOpaque( rootHandle.getValue()) ;
+		XdrReader fsInfoReader = new XdrReader( handle( program, RpcConstants.PROGRAM_NFS, 3, 19, fsInfoArguments).toByteArray()) ;
+
+		assertEquals( "v3 fsinfo status", NfsStatus.OK, fsInfoReader.readInt()) ;
+		skipPostOpAttrV3( fsInfoReader) ;
+		assertTrue( "v3 fsinfo rtmax", fsInfoReader.readInt() > 0) ;
+
+		XdrWriter fsStatArguments = new XdrWriter() ;
+		fsStatArguments.writeOpaque( rootHandle.getValue()) ;
+		XdrReader fsStatReader = new XdrReader( handle( program, RpcConstants.PROGRAM_NFS, 3, 18, fsStatArguments).toByteArray()) ;
+
+		assertEquals( "v3 fsstat status", NfsStatus.OK, fsStatReader.readInt()) ;
+		skipPostOpAttrV3( fsStatReader) ;
+		assertTrue( "v3 fsstat total", fsStatReader.readLong() > 0L) ;
+
+		XdrWriter pathConfArguments = new XdrWriter() ;
+		pathConfArguments.writeOpaque( rootHandle.getValue()) ;
+		XdrReader pathConfReader = new XdrReader( handle( program, RpcConstants.PROGRAM_NFS, 3, 20, pathConfArguments).toByteArray()) ;
+
+		assertEquals( "v3 pathconf status", NfsStatus.OK, pathConfReader.readInt()) ;
+		skipPostOpAttrV3( pathConfReader) ;
+		assertTrue( "v3 pathconf name max", pathConfReader.readInt() > 0) ;
 	}
 
 	//--------------------------------------------------------------------------
@@ -1451,6 +1855,75 @@ public class AllTests {
 
 	//--------------------------------------------------------------------------
 	/**
+	 * NFSv3 post_op_attrを読み飛ばします。<br><br>
+	 *
+	 * <p>メソッド名称： NFSv3 post_op_attr読飛</p>
+	 *
+	 * @param reader	XDR読込
+	 */
+	//--------------------------------------------------------------------------
+	private void skipPostOpAttrV3(XdrReader reader) {
+		// 属性が存在しない場合
+		if( !reader.readBoolean()) {
+			return ;
+		}
+
+		skipAttributesV3( reader) ;
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * NFSv3 wcc_dataを読み飛ばします。<br><br>
+	 *
+	 * <p>メソッド名称： NFSv3 wcc_data読飛</p>
+	 *
+	 * @param reader	XDR読込
+	 */
+	//--------------------------------------------------------------------------
+	private void skipWccDataV3(XdrReader reader) {
+		// pre_op_attrが存在する場合
+		if( reader.readBoolean()) {
+			reader.readLong() ;
+			reader.readUnsignedInt() ;
+			reader.readUnsignedInt() ;
+			reader.readUnsignedInt() ;
+			reader.readUnsignedInt() ;
+		}
+
+		skipPostOpAttrV3( reader) ;
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * NFSv3 fattr3を読み飛ばします。<br><br>
+	 *
+	 * <p>メソッド名称： NFSv3 fattr3読飛</p>
+	 *
+	 * @param reader	XDR読込
+	 */
+	//--------------------------------------------------------------------------
+	private void skipAttributesV3(XdrReader reader) {
+		reader.readInt() ;
+		reader.readInt() ;
+		reader.readInt() ;
+		reader.readInt() ;
+		reader.readInt() ;
+		reader.readLong() ;
+		reader.readLong() ;
+		reader.readInt() ;
+		reader.readInt() ;
+		reader.readLong() ;
+		reader.readLong() ;
+		reader.readUnsignedInt() ;
+		reader.readUnsignedInt() ;
+		reader.readUnsignedInt() ;
+		reader.readUnsignedInt() ;
+		reader.readUnsignedInt() ;
+		reader.readUnsignedInt() ;
+	}
+
+	//--------------------------------------------------------------------------
+	/**
 	 * diropargsを書き込みます。<br><br>
 	 *
 	 * <p>メソッド名称： diropargs書込</p>
@@ -1462,6 +1935,22 @@ public class AllTests {
 	//--------------------------------------------------------------------------
 	private void writeDiropargs(XdrWriter writer, FileHandle directory, String name) {
 		writer.writeFixedOpaque( directory.getValue()) ;
+		writer.writeString( name) ;
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * NFSv3 diropargsを書き込みます。<br><br>
+	 *
+	 * <p>メソッド名称： NFSv3 diropargs書込</p>
+	 *
+	 * @param writer		書込
+	 * @param directory		ディレクトリハンドル
+	 * @param name			名前
+	 */
+	//--------------------------------------------------------------------------
+	private void writeDiropargsV3(XdrWriter writer, FileHandle directory, String name) {
+		writer.writeOpaque( directory.getValue()) ;
 		writer.writeString( name) ;
 	}
 
@@ -1500,6 +1989,44 @@ public class AllTests {
 		writer.writeInt( -1) ;
 		writer.writeInt( -1) ;
 		writer.writeInt( -1) ;
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * NFSv3未指定sattrを書き込みます。<br><br>
+	 *
+	 * <p>メソッド名称： NFSv3未指定sattr書込</p>
+	 *
+	 * @param writer	書込
+	 */
+	//--------------------------------------------------------------------------
+	private void writeSattr3Unset(XdrWriter writer) {
+		writer.writeBoolean( false) ;
+		writer.writeBoolean( false) ;
+		writer.writeBoolean( false) ;
+		writer.writeBoolean( false) ;
+		writer.writeInt( 0) ;
+		writer.writeInt( 0) ;
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * NFSv3サイズ指定sattrを書き込みます。<br><br>
+	 *
+	 * <p>メソッド名称： NFSv3サイズ指定sattr書込</p>
+	 *
+	 * @param writer	書込
+	 * @param size		サイズ
+	 */
+	//--------------------------------------------------------------------------
+	private void writeSattr3Size(XdrWriter writer, long size) {
+		writer.writeBoolean( false) ;
+		writer.writeBoolean( false) ;
+		writer.writeBoolean( false) ;
+		writer.writeBoolean( true) ;
+		writer.writeLong( size) ;
+		writer.writeInt( 0) ;
+		writer.writeInt( 0) ;
 	}
 
 	//--------------------------------------------------------------------------

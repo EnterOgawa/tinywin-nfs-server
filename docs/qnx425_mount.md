@@ -77,4 +77,4 @@ Implemented NFSv2 procedures:
 NFS lock manager support is intentionally out of the current scope.
 Filename encoding defaults to UTF-8 and can be changed with `filename.charset` if a legacy client requires another Java Charset.
 
-NFSv3, TCP transport, and lock manager are planned follow-up work.
+TCP transport and lock manager are planned follow-up work. NFSv3 is implemented for newer clients, while QNX 4.25 remains validated through the NFSv2 path.

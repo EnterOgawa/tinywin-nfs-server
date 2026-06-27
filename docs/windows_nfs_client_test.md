@@ -1,6 +1,8 @@
 # Windows Client for NFS mount test
 
-Windows Client for NFS is the primary local integration test for v1.2.0. It verifies that TinyWinNFS can be mounted by a native Windows NFS client without WSL or Hyper-V.
+Windows Client for NFS is the primary local integration test for v1.2.0 and later. It verifies that TinyWinNFS can be mounted by a native Windows NFS client without WSL or Hyper-V.
+
+For v1.4.0, this test also verifies that the server observed MOUNT v3 and NFSv3 RPC requests in its log.
 
 QNX 4.25 on VMware remains the legacy-client compatibility reference. WSL checks are optional only.
 
@@ -32,6 +34,7 @@ The script:
 - creates a temporary export under `work\tmp`;
 - starts TinyWinNFS with a Windows-client test configuration;
 - mounts `\\127.0.0.1\export` to `Z:`;
+- verifies that MOUNT v3 and NFSv3 requests reached the server;
 - verifies create, read, update, rename, delete;
 - verifies directory create/delete;
 - verifies a Japanese filename using `lang=shift-jis`;
@@ -41,6 +44,7 @@ Expected result:
 
 ```text
 PASS: Windows Client for NFS mount
+PASS: Windows Client for NFS v3 RPC
 PASS: Windows Client for NFS create/read/update/rename/delete
 PASS: Windows Client for NFS directory create/delete
 PASS: Windows Client for NFS Japanese filename
@@ -65,6 +69,13 @@ The equivalent mount command is:
 
 ```cmd
 mount -o anon,nolock,rsize=8,wsize=8,lang=shift-jis \\127.0.0.1\export Z:
+```
+
+Windows `mount.exe` does not expose a portable NFS version option in its help output. Confirm v3 usage through the TinyWinNFS log. A successful v1.4.0 test includes entries containing:
+
+```text
+program=100005 version=3
+program=100003 version=3
 ```
 
 Unmount:

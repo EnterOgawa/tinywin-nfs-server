@@ -14,6 +14,7 @@ $workRoot = Join-Path $root "work\tmp\windows-nfs-client-test"
 $exportRoot = Join-Path $workRoot "export"
 $dataRoot = Join-Path $workRoot "data"
 $configPath = Join-Path $workRoot "nfs-server.properties"
+$logPath = Join-Path $workRoot "nfs-server.log"
 $mountExe = Join-Path $env:SystemRoot "System32\mount.exe"
 $umountExe = Join-Path $env:SystemRoot "System32\umount.exe"
 $driveName = $DriveLetter.TrimEnd(":")
@@ -163,6 +164,22 @@ function Invoke-WindowsNfsChecks {
 	}
 }
 
+function Assert-NfsV3Log {
+	if( !(Test-Path -LiteralPath $logPath)) {
+		throw "server log was not created: $logPath"
+	}
+
+	$logText = Get-Content -LiteralPath $logPath -Raw
+
+	if( $logText -notmatch "program=100005 version=3") {
+		throw "MOUNT v3 request was not observed in server log."
+	}
+
+	if( $logText -notmatch "program=100003 version=3") {
+		throw "NFSv3 request was not observed in server log."
+	}
+}
+
 try {
 	Assert-CommandPath -Path $java -Name "java.exe"
 	Assert-CommandPath -Path $mountExe -Name "mount.exe"
@@ -198,6 +215,7 @@ try {
 	$arguments = @(
 		"-Dfile.encoding=UTF-8",
 		"-Dtinywin.nfs.data=$dataRoot",
+		"-Dtinywin.nfs.log=$logPath",
 		"-cp",
 		$bin,
 		"jp.co.enterogawa.nfs.NfsServerMain",
@@ -207,8 +225,10 @@ try {
 	Wait-UdpPorts -Ports @(111, 2049, 20048)
 	Invoke-Mount
 	Invoke-WindowsNfsChecks
+	Assert-NfsV3Log
 
 	Write-Host "PASS: Windows Client for NFS mount"
+	Write-Host "PASS: Windows Client for NFS v3 RPC"
 	Write-Host "PASS: Windows Client for NFS create/read/update/rename/delete"
 	Write-Host "PASS: Windows Client for NFS directory create/delete"
 	Write-Host "PASS: Windows Client for NFS Japanese filename"

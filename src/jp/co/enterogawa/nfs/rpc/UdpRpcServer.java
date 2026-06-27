@@ -237,7 +237,7 @@ public class UdpRpcServer {
 		}
 
 		boolean successfulRead = call.getProgram() == RpcConstants.PROGRAM_NFS
-				&& call.getVersion() == 2
+				&& (call.getVersion() == 2 || call.getVersion() == 3)
 				&& call.getProcedure() == 6
 				&& acceptStatus == RpcConstants.ACCEPT_SUCCESS
 				&& resultStatus != null
