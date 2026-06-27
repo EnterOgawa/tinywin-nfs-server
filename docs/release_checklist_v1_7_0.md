@@ -80,6 +80,8 @@ Before creating the release tag:
 - Confirm unsupported items remain explicit: NFSv3 `MKNOD`, NLM/file locking, and NFSv4.
 - Confirm QNX 4.25 remains documented as NFSv2/UDP validation.
 - Confirm Windows Client for NFS remains documented as NFSv3 UDP/TCP validation.
+- Confirm the installed runtime contains `runtime\conf\security\java.security`.
+- Confirm `TinyWinNfsManager.exe` starts from the installed folder without `Failed to launch JVM`.
 
 ## Release metadata
 

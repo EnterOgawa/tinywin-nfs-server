@@ -35,7 +35,17 @@ Name: "installservice"; Description: "Windowsサービスをインストール�
 Name: "firewallrules"; Description: "Windows Firewallルールを追加する"; GroupDescription: "サービス:"
 
 [Files]
-Source: "{#SourceDir}\*"; DestDir: "{app}"; Excludes: "conf\*"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "{#SourceDir}\LICENSE"; DestDir: "{app}"; Flags: ignoreversion
+Source: "{#SourceDir}\THIRD_PARTY_NOTICES.md"; DestDir: "{app}"; Flags: ignoreversion
+Source: "{#SourceDir}\TinyWinNfsManager-Admin.cmd"; DestDir: "{app}"; Flags: ignoreversion
+Source: "{#SourceDir}\TinyWinNfsManager.exe"; DestDir: "{app}"; Flags: ignoreversion
+Source: "{#SourceDir}\app\*"; DestDir: "{app}\app"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "{#SourceDir}\assets\*"; DestDir: "{app}\assets"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "{#SourceDir}\docs\*"; DestDir: "{app}\docs"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "{#SourceDir}\export\*"; DestDir: "{app}\export"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "{#SourceDir}\runtime\*"; DestDir: "{app}\runtime"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "{#SourceDir}\scripts\*"; DestDir: "{app}\scripts"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "{#SourceDir}\service\*"; DestDir: "{app}\service"; Flags: ignoreversion recursesubdirs createallsubdirs
 Source: "{#SourceDir}\conf\*"; DestDir: "{app}\conf"; Flags: ignoreversion recursesubdirs createallsubdirs onlyifdoesntexist
 
 [Icons]
