@@ -1,6 +1,6 @@
 # 変更履歴
 
-## 1.13.0 - 未リリース
+## 1.13.0 - 2026-06-28
 
 - Windows Client for NFS の UDP/TCP 検証をまとめて実行する `test-windows-nfs-client-matrix.ps1` を追加しました。
 - Windows Client for NFS 検証レポートに、`NfsClnt`、ポート、ドライブ、NFSv3ログ、匿名UID/GIDに関する復旧案を出力するようにしました。
