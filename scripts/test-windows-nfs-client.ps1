@@ -123,6 +123,37 @@ function Set-NfsClientProtocol {
 	}
 }
 
+function Wait-DriveReleased {
+	param(
+		[int]$TimeoutSeconds = 15
+	)
+
+	$deadline = (Get-Date).AddSeconds($TimeoutSeconds)
+
+	while( (Get-Date) -lt $deadline) {
+		if( !(Get-PSDrive -Name $driveName -ErrorAction SilentlyContinue)) {
+			return
+		}
+
+		Start-Sleep -Milliseconds 500
+	}
+
+	throw "Drive $drivePath was not released."
+}
+
+function Invoke-Umount {
+	if( $script:mounted) {
+		& $umountExe $drivePath | Out-Null
+
+		if( $LASTEXITCODE -ne 0) {
+			throw "Windows NFS umount failed: $LASTEXITCODE"
+		}
+
+		$script:mounted = $false
+		Wait-DriveReleased
+	}
+}
+
 function Remove-TestPath {
 	param(
 		[string]$Path
@@ -314,6 +345,7 @@ try {
 	Wait-TcpPorts -Ports @(111, 2049, 20048)
 	$originalProtocol = Get-NfsClientProtocol
 	Set-NfsClientProtocol -Protocol $Transport
+	Start-Sleep -Seconds 2
 	Invoke-Mount
 	Invoke-WindowsNfsChecks
 	Assert-NfsV3Log
@@ -326,23 +358,43 @@ try {
 	Write-Host "PASS: Windows Client for NFS Japanese filename"
 	Write-Host "WINDOWS NFS CLIENT TEST PASSED"
 } finally {
-	if( $mounted) {
-		& $umountExe $drivePath | Out-Null
+	$cleanupErrors = @()
+
+	try {
+		Invoke-Umount
+	} catch {
+		$cleanupErrors += $_.Exception.Message
 	}
 
-	if( $serverProcess -ne $null) {
-		$running = Get-Process -Id $serverProcess.Id -ErrorAction SilentlyContinue
+	try {
+		if( $serverProcess -ne $null) {
+			$running = Get-Process -Id $serverProcess.Id -ErrorAction SilentlyContinue
 
-		if( $running -ne $null) {
-			Stop-Process -Id $serverProcess.Id -Force
+			if( $running -ne $null) {
+				Stop-Process -Id $serverProcess.Id -Force
+			}
 		}
+	} catch {
+		$cleanupErrors += $_.Exception.Message
 	}
 
-	if( $originalProtocol -ne $null) {
-		Set-NfsClientProtocol -Protocol $originalProtocol
+	try {
+		if( $originalProtocol -ne $null) {
+			Set-NfsClientProtocol -Protocol $originalProtocol
+		}
+	} catch {
+		$cleanupErrors += $_.Exception.Message
 	}
 
-	if( !$KeepWork) {
-		Remove-TestPath -Path $workRoot
+	try {
+		if( !$KeepWork) {
+			Remove-TestPath -Path $workRoot
+		}
+	} catch {
+		$cleanupErrors += $_.Exception.Message
+	}
+
+	if( $cleanupErrors.Count -gt 0) {
+		throw "Cleanup failed: $($cleanupErrors -join '; ')"
 	}
 }
