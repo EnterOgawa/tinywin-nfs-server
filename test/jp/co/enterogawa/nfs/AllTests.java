@@ -17,6 +17,9 @@ import java.util.List;
 
 import jp.co.enterogawa.nfs.config.NfsServerConfig;
 import jp.co.enterogawa.nfs.config.ConfigBackup;
+import jp.co.enterogawa.nfs.diagnostic.NfsDiagnostics;
+import jp.co.enterogawa.nfs.diagnostic.NfsDiagnostics.CaseCollision;
+import jp.co.enterogawa.nfs.diagnostic.NfsDiagnostics.DiagnosticReport;
 import jp.co.enterogawa.nfs.export.FileHandle;
 import jp.co.enterogawa.nfs.export.FileHandleTable;
 import jp.co.enterogawa.nfs.program.MountV1Program;
@@ -93,6 +96,7 @@ public class AllTests {
 		runTest( "Config validation", this::testConfigValidation) ;
 		runTest( "Config relative export base", this::testConfigRelativeExportBase) ;
 		runTest( "Config backup", this::testConfigBackup) ;
+		runTest( "Operational diagnostics", this::testOperationalDiagnostics) ;
 		runTest( "Client access restrictions", this::testClientAccessRestrictions) ;
 		runTest( "NFSv2 procedures", this::testNfsV2Procedures) ;
 		runTest( "NFSv3 procedures", this::testNfsV3Procedures) ;
@@ -573,6 +577,50 @@ public class AllTests {
 						.count() ;
 				assertEquals( "backup count", 10L, backupCount) ;
 			}
+		} finally {
+			deleteDirectory( root) ;
+		}
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * 運用診断を確認します。<br><br>
+	 *
+	 * <p>メソッド名称： 運用診断確認</p>
+	 *
+	 * @throws Exception テスト異常
+	 */
+	//--------------------------------------------------------------------------
+	private void testOperationalDiagnostics() throws Exception {
+		Path root = Path.of( "work", "tmp", "test-operational-diagnostics").toAbsolutePath().normalize() ;
+		deleteDirectory( root) ;
+		Files.createDirectories( root.resolve( "nested")) ;
+		Files.writeString( root.resolve( "hello.txt"), "hello", StandardCharsets.UTF_8) ;
+		Files.writeString( root.resolve( "nested").resolve( "child.txt"), "child", StandardCharsets.UTF_8) ;
+
+		try {
+			List<CaseCollision> collisions = NfsDiagnostics.detectCaseCollisions( List.of(
+					"SKS/inc/File.h",
+					"SKS/inc/file.h",
+					"SKS/inc/Other.h")) ;
+
+			assertEquals( "case collision count", 1, collisions.size()) ;
+			assertEquals( "case collision normalized path", "sks/inc/file.h", collisions.get( 0).getNormalizedPath()) ;
+
+			Path configPath = writeConfig(
+					"test-operational-diagnostics.properties",
+					root,
+					"/export",
+					"" ) ;
+			NfsServerConfig config = NfsServerConfig.load( configPath) ;
+			DiagnosticReport report = NfsDiagnostics.collect( config) ;
+			String text = report.formatText() ;
+
+			assertEquals( "diagnostic export count", 1, report.getExportReports().size()) ;
+			assertEquals( "diagnostic file count", 2L, report.getExportReports().get( 0).getFileCount()) ;
+			assertEquals( "diagnostic directory count", 1L, report.getExportReports().get( 0).getDirectoryCount()) ;
+			assertTrue( "diagnostic bytes", report.getExportReports().get( 0).getTotalBytes() > 0L) ;
+			assertTrue( "diagnostic allowed clients", text.contains( "CONFIG_ALLOWED_CLIENTS_ANY")) ;
 		} finally {
 			deleteDirectory( root) ;
 		}

@@ -54,6 +54,9 @@ import org.eclipse.swt.widgets.Text;
 import jp.co.enterogawa.nfs.config.ConfigBackup;
 import jp.co.enterogawa.nfs.config.NfsServerConfig;
 import jp.co.enterogawa.nfs.config.TinyWinNfsPaths;
+import jp.co.enterogawa.nfs.diagnostic.NfsDiagnostics;
+import jp.co.enterogawa.nfs.diagnostic.NfsDiagnostics.DiagnosticMessage;
+import jp.co.enterogawa.nfs.diagnostic.NfsDiagnostics.DiagnosticReport;
 import jp.co.enterogawa.nfs.export.FileHandle;
 import jp.co.enterogawa.nfs.rpc.RpcConstants;
 import jp.co.enterogawa.nfs.xdr.XdrReader;
@@ -79,6 +82,9 @@ public class TinyWinNfsSwtManager {
 
 	/** 製品名 */
 	private static final String			PRODUCT_NAME = "TinyWinNFS Server" ;
+
+	/** 製品バージョン */
+	private static final String			PRODUCT_VERSION = "1.10.0" ;
 
 	/** アイコンファイル名 */
 	private static final String			ICON_FILE_NAME = "tinywin-nfs-server.png" ;
@@ -1465,6 +1471,7 @@ public class TinyWinNfsSwtManager {
 			Path backupPath = writeValidatedConfig( configDirectory, lines) ;
 			updateMountCommand() ;
 			appendLog( text( "log.configurationSaved")) ;
+			appendConfigurationWarnings() ;
 
 			// バックアップを作成した場合
 			if( backupPath != null) {
@@ -1504,6 +1511,32 @@ public class TinyWinNfsSwtManager {
 			return backupPath ;
 		} finally {
 			Files.deleteIfExists( temporaryPath) ;
+		}
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * 設定警告をログへ出力します。<br><br>
+	 *
+	 * <p>メソッド名称： 設定警告ログ出力</p>
+	 */
+	//--------------------------------------------------------------------------
+	private void appendConfigurationWarnings() {
+		try {
+			NfsServerConfig config = NfsServerConfig.load( configPath) ;
+			List<DiagnosticMessage> messages = NfsDiagnostics.inspectConfiguration( config) ;
+
+			// 診断メッセージをログへ出力する
+			for( DiagnosticMessage message : messages) {
+				// 情報メッセージの場合
+				if( "INFO".equals( message.getSeverity())) {
+					continue ;
+				}
+
+				appendLog( format( "log.configurationDiagnostic", message.formatText())) ;
+			}
+		} catch( Exception ex) {
+			appendLog( format( "log.configurationDiagnostic", ex.getMessage())) ;
 		}
 	}
 
@@ -2092,7 +2125,10 @@ public class TinyWinNfsSwtManager {
 	//--------------------------------------------------------------------------
 	private void createDiagnosticPackage() {
 		updateServiceInfoText() ;
-		String summary = buildDiagnosticSummary() ;
+		String serviceText = serviceInfoText == null || serviceInfoText.isDisposed() ? "" : serviceInfoText.getText() ;
+		String serviceStatus = statusValueLabel.getText() ;
+		String exportSummary = buildExportSummary() ;
+		boolean administrator = isAdministrator() ;
 		Path logPath = TinyWinNfsPaths.getLogPath( rootPath) ;
 		Path backupPath = configPath.getParent().resolve( "backups") ;
 		Path winswLogPath = getWinswLogPath() ;
@@ -2100,7 +2136,8 @@ public class TinyWinNfsSwtManager {
 
 		new Thread( () -> {
 			try {
-				Path packagePath = writeDiagnosticPackage( summary, logPath, backupPath, winswLogPath) ;
+				DiagnosticText diagnosticText = buildDiagnosticText( serviceStatus, serviceText, exportSummary, administrator) ;
+				Path packagePath = writeDiagnosticPackage( diagnosticText, logPath, backupPath, winswLogPath) ;
 				runOnUi( () -> {
 					appendLog( format( "log.diagnosticPackageCreated", packagePath)) ;
 					openPath( packagePath) ;
@@ -2120,22 +2157,79 @@ public class TinyWinNfsSwtManager {
 	 *
 	 * <p>メソッド名称： 診断概要作成</p>
 	 *
+	 * @param serviceStatus	サービス状態
+	 * @param serviceText	サービス情報
+	 * @param exportSummary	export概要
+	 * @param administrator	管理者権限有無
 	 * @return 診断概要
 	 */
 	//--------------------------------------------------------------------------
-	private String buildDiagnosticSummary() {
+	private String buildDiagnosticSummary(String serviceStatus, String serviceText, String exportSummary, boolean administrator) {
 		StringBuilder builder = new StringBuilder() ;
 		builder.append( PRODUCT_NAME).append( " diagnostics" ).append( System.lineSeparator()) ;
 		builder.append( "created=" ).append( LocalDateTime.now()).append( System.lineSeparator()) ;
-		builder.append( "administrator=" ).append( isAdministrator()).append( System.lineSeparator()) ;
-		builder.append( "serviceStatus=" ).append( statusValueLabel.getText()).append( System.lineSeparator()) ;
+		builder.append( "productVersion=" ).append( resolveProductVersion()).append( System.lineSeparator()) ;
+		builder.append( "javaVersion=" ).append( System.getProperty( "java.version", "unknown")).append( System.lineSeparator()) ;
+		builder.append( "javaVendor=" ).append( System.getProperty( "java.vendor", "unknown")).append( System.lineSeparator()) ;
+		builder.append( "osName=" ).append( System.getProperty( "os.name", "unknown")).append( System.lineSeparator()) ;
+		builder.append( "osVersion=" ).append( System.getProperty( "os.version", "unknown")).append( System.lineSeparator()) ;
+		builder.append( "osArch=" ).append( System.getProperty( "os.arch", "unknown")).append( System.lineSeparator()) ;
+		builder.append( "userName=" ).append( System.getProperty( "user.name", "unknown")).append( System.lineSeparator()) ;
+		builder.append( "administrator=" ).append( administrator).append( System.lineSeparator()) ;
+		builder.append( "serviceStatus=" ).append( serviceStatus).append( System.lineSeparator()) ;
 		builder.append( System.lineSeparator()) ;
 		builder.append( "Service information" ).append( System.lineSeparator()) ;
-		builder.append( serviceInfoText == null || serviceInfoText.isDisposed() ? "" : serviceInfoText.getText()).append( System.lineSeparator()) ;
+		builder.append( serviceText).append( System.lineSeparator()) ;
 		builder.append( System.lineSeparator()) ;
 		builder.append( "Exports" ).append( System.lineSeparator()) ;
-		builder.append( buildExportSummary()) ;
+		builder.append( exportSummary) ;
 		return builder.toString() ;
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * 製品バージョンを解決します。<br><br>
+	 *
+	 * <p>メソッド名称： 製品バージョン解決</p>
+	 *
+	 * @return 製品バージョン
+	 */
+	//--------------------------------------------------------------------------
+	private String resolveProductVersion() {
+		Package packageInfo = TinyWinNfsSwtManager.class.getPackage() ;
+
+		// Package情報が存在する場合
+		if( packageInfo != null && packageInfo.getImplementationVersion() != null) {
+			return packageInfo.getImplementationVersion() ;
+		}
+
+		return PRODUCT_VERSION ;
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * 診断テキストを作成します。<br><br>
+	 *
+	 * <p>メソッド名称： 診断テキスト作成</p>
+	 *
+	 * @param serviceStatus	サービス状態
+	 * @param serviceText	サービス情報
+	 * @param exportSummary	export概要
+	 * @param administrator	管理者権限有無
+	 * @return 診断テキスト
+	 */
+	//--------------------------------------------------------------------------
+	private DiagnosticText buildDiagnosticText(String serviceStatus, String serviceText, String exportSummary, boolean administrator) {
+		String summary = buildDiagnosticSummary( serviceStatus, serviceText, exportSummary, administrator) ;
+
+		try {
+			NfsServerConfig config = NfsServerConfig.load( configPath) ;
+			DiagnosticReport report = NfsDiagnostics.collect( config) ;
+			return new DiagnosticText( summary + System.lineSeparator() + report.formatText(), report.formatText()) ;
+		} catch( Exception ex) {
+			String failure = "Diagnostic report failed: " + ex.getClass().getSimpleName() + ": " + ex.getMessage() + System.lineSeparator() ;
+			return new DiagnosticText( summary + System.lineSeparator() + failure, failure) ;
+		}
 	}
 
 	//--------------------------------------------------------------------------
@@ -2144,22 +2238,23 @@ public class TinyWinNfsSwtManager {
 	 *
 	 * <p>メソッド名称： 診断パッケージ書込</p>
 	 *
-	 * @param summary		概要
-	 * @param logPath		ログパス
-	 * @param backupPath	バックアップパス
-	 * @param winswLogPath	WinSWログパス
+	 * @param diagnosticText	診断テキスト
+	 * @param logPath			ログパス
+	 * @param backupPath		バックアップパス
+	 * @param winswLogPath		WinSWログパス
 	 * @return 診断パッケージ
 	 * @throws IOException 書込異常
 	 */
 	//--------------------------------------------------------------------------
-	private Path writeDiagnosticPackage(String summary, Path logPath, Path backupPath, Path winswLogPath) throws IOException {
+	private Path writeDiagnosticPackage(DiagnosticText diagnosticText, Path logPath, Path backupPath, Path winswLogPath) throws IOException {
 		Path diagnosticDirectory = dataRootPath.resolve( "diagnostics") ;
 		Files.createDirectories( diagnosticDirectory) ;
 		String timestamp = DateTimeFormatter.ofPattern( "yyyyMMdd-HHmmss").format( LocalDateTime.now()) ;
 		Path packagePath = diagnosticDirectory.resolve( "tinywin-nfs-diagnostics-" + timestamp + ".zip") ;
 
 		try( ZipOutputStream zip = new ZipOutputStream( Files.newOutputStream( packagePath))) {
-			addTextEntry( zip, "summary.txt", summary) ;
+			addTextEntry( zip, "summary.txt", diagnosticText.getSummary()) ;
+			addTextEntry( zip, "diagnostics/report.txt", diagnosticText.getReport()) ;
 			addFileEntryIfExists( zip, "conf/nfs-server.properties", configPath) ;
 			addDirectoryEntries( zip, "conf/backups", backupPath, ".properties") ;
 			addFileEntryIfExists( zip, "logs/nfs-server.log", logPath) ;
@@ -3164,6 +3259,66 @@ public class TinyWinNfsSwtManager {
 		dialog.setText( text( "dialog.error") ) ;
 		dialog.setMessage( detail) ;
 		dialog.open() ;
+	}
+
+	//------------------------------------------------------------------------------
+	/**
+	 * 診断テキストクラスです。<br><br>
+	 *
+	 * <p>クラス名称： 診断テキスト</p>
+	 *
+	 * @author Shunji Ogawa
+	 * @version 01.00.00
+	 */
+	//------------------------------------------------------------------------------
+	private static class DiagnosticText {
+		//	内部定義	--------------------------------------------------------
+		/** 概要 */
+		private final String				summary ;
+
+		/** レポート */
+		private final String				report ;
+
+		//----------------------------------------------------------------------
+		/**
+		 * インスタンスを生成します。<br><br>
+		 *
+		 * <p>メソッド名称： コンストラクタ</p>
+		 *
+		 * @param summary	概要
+		 * @param report	レポート
+		 */
+		//----------------------------------------------------------------------
+		DiagnosticText(String summary, String report) {
+			this.summary = summary ;
+			this.report = report ;
+		}
+
+		//----------------------------------------------------------------------
+		/**
+		 * 概要を取得します。<br><br>
+		 *
+		 * <p>メソッド名称： 概要取得</p>
+		 *
+		 * @return 概要
+		 */
+		//----------------------------------------------------------------------
+		String getSummary() {
+			return summary ;
+		}
+
+		//----------------------------------------------------------------------
+		/**
+		 * レポートを取得します。<br><br>
+		 *
+		 * <p>メソッド名称： レポート取得</p>
+		 *
+		 * @return レポート
+		 */
+		//----------------------------------------------------------------------
+		String getReport() {
+			return report ;
+		}
 	}
 
 	//------------------------------------------------------------------------------

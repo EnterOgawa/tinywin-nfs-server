@@ -206,7 +206,8 @@ tinywin-nfs-diagnostics-YYYYMMDD-HHMMSS.zip
 
 含まれる情報:
 
-- `summary.txt`: サービス状態、データルート、設定ファイル、ポート状態、Windows Client for NFS 状態、共有定義概要
+- `summary.txt`: サービス状態、Java/OS/ユーザー情報、データルート、設定ファイル、ポート状態、Windows Client for NFS 状態、共有定義概要、診断概要
+- `diagnostics/report.txt`: 設定診断、export診断、大文字小文字衝突、ファイル数、ディレクトリ数、総サイズ
 - `conf/nfs-server.properties`: 現在の設定ファイル
 - `conf/backups`: 設定バックアップ
 - `logs/nfs-server.log`: TinyWinNFS サーバーログ
@@ -214,6 +215,17 @@ tinywin-nfs-diagnostics-YYYYMMDD-HHMMSS.zip
 
 export 配下の共有ファイル本体は含めません。
 問題調査時は、このZIPと発生時刻、クライアント種別、mount コマンドを合わせて確認します。
+
+### export診断
+
+診断では、各exportについて以下を確認します。
+
+- exportパスの存在、ディレクトリ種別、読込可否、書込可否
+- ファイル数、ディレクトリ数、総バイト数
+- 大文字小文字を無視した相対パス衝突
+
+通常のWindowsフォルダでは、`File.h` と `file.h` のような名前を同じディレクトリに共存させられません。
+QNXなど大文字小文字を区別するクライアントからコピーする場合、診断結果に衝突が出たパスは事前に名前を整理してください。
 
 ## 設定バックアップ
 
