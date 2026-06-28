@@ -36,6 +36,12 @@ public class UdpRpcServer implements RpcServer {
 	/** RPC呼出処理 */
 	private final RpcCallHandler			handler ;
 
+	/** ワーカー数 */
+	private final int					workerCount ;
+
+	/** ワーカーキューサイズ */
+	private final int					queueSize ;
+
 	/** 実行状態 */
 	private volatile boolean				running ;
 
@@ -60,9 +66,33 @@ public class UdpRpcServer implements RpcServer {
 	 */
 	//--------------------------------------------------------------------------
 	public UdpRpcServer(String name, int port, RpcProgram program) {
+		this(
+				name,
+				port,
+				program,
+				Math.max( 1, Integer.getInteger( "tinywin.nfs.udp.workers", defaultWorkerCount()).intValue()),
+				1024) ;
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * インスタンスを生成します。<br><br>
+	 *
+	 * <p>メソッド名称： コンストラクタ</p>
+	 *
+	 * @param name			サーバー名
+	 * @param port			ポート
+	 * @param program		RPCプログラム
+	 * @param workerCount	ワーカー数
+	 * @param queueSize		キューサイズ
+	 */
+	//--------------------------------------------------------------------------
+	public UdpRpcServer(String name, int port, RpcProgram program, int workerCount, int queueSize) {
 		this.name = name ;
 		this.port = port ;
 		handler = new RpcCallHandler( name, program) ;
+		this.workerCount = Math.max( 1, workerCount) ;
+		this.queueSize = Math.max( 1, queueSize) ;
 	}
 
 	//--------------------------------------------------------------------------
@@ -212,14 +242,13 @@ public class UdpRpcServer implements RpcServer {
 	 */
 	//--------------------------------------------------------------------------
 	private ThreadPoolExecutor createWorkerPool() {
-		int workers = Math.max( 1, Integer.getInteger( "tinywin.nfs.udp.workers", defaultWorkerCount()).intValue()) ;
 		AtomicInteger sequence = new AtomicInteger( 1) ;
 		ThreadPoolExecutor executor = new ThreadPoolExecutor(
-				workers,
-				workers,
+				workerCount,
+				workerCount,
 				0L,
 				TimeUnit.MILLISECONDS,
-				new ArrayBlockingQueue<Runnable>( 1024),
+				new ArrayBlockingQueue<Runnable>( queueSize),
 				runnable -> {
 					Thread worker = new Thread( runnable, name + "-worker-" + sequence.getAndIncrement()) ;
 					worker.setDaemon( true) ;
@@ -239,7 +268,7 @@ public class UdpRpcServer implements RpcServer {
 	 * @return デフォルトワーカー数
 	 */
 	//--------------------------------------------------------------------------
-	private int defaultWorkerCount() {
+	private static int defaultWorkerCount() {
 		return Math.min( 8, Math.max( 2, Runtime.getRuntime().availableProcessors())) ;
 	}
 

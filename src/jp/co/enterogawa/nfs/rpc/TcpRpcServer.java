@@ -14,6 +14,7 @@ import java.net.SocketException;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
 
 //------------------------------------------------------------------------------
 /**
@@ -36,8 +37,8 @@ public class TcpRpcServer implements RpcServer {
 	/** 最大RPC recordサイズ */
 	private static final int				MAX_RECORD_SIZE = 16 * 1024 * 1024 ;
 
-	/** クライアントタイムアウト */
-	private static final int				CLIENT_TIMEOUT_MILLIS = 30000 ;
+	/** デフォルトクライアントタイムアウト */
+	private static final int				DEFAULT_CLIENT_TIMEOUT_MILLIS = 30000 ;
 
 	//	内部定義	------------------------------------------------------------
 	/** サーバー名 */
@@ -48,6 +49,9 @@ public class TcpRpcServer implements RpcServer {
 
 	/** RPC呼出処理 */
 	private final RpcCallHandler			handler ;
+
+	/** クライアントタイムアウト */
+	private final int					clientTimeoutMillis ;
 
 	/** 実行状態 */
 	private volatile boolean				running ;
@@ -61,6 +65,9 @@ public class TcpRpcServer implements RpcServer {
 	/** 接続中ソケット */
 	private final Set<Socket>			connections = Collections.synchronizedSet( new HashSet<Socket>()) ;
 
+	/** クライアントスレッド連番 */
+	private final AtomicInteger			clientSequence = new AtomicInteger( 1) ;
+
 	//--------------------------------------------------------------------------
 	/**
 	 * インスタンスを生成します。<br><br>
@@ -73,9 +80,26 @@ public class TcpRpcServer implements RpcServer {
 	 */
 	//--------------------------------------------------------------------------
 	public TcpRpcServer(String name, int port, RpcProgram program) {
+		this( name, port, program, DEFAULT_CLIENT_TIMEOUT_MILLIS) ;
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * インスタンスを生成します。<br><br>
+	 *
+	 * <p>メソッド名称： コンストラクタ</p>
+	 *
+	 * @param name					サーバー名
+	 * @param port					ポート
+	 * @param program				RPCプログラム
+	 * @param clientTimeoutMillis	クライアントタイムアウト
+	 */
+	//--------------------------------------------------------------------------
+	public TcpRpcServer(String name, int port, RpcProgram program, int clientTimeoutMillis) {
 		this.name = name ;
 		this.port = port ;
 		handler = new RpcCallHandler( name, program) ;
+		this.clientTimeoutMillis = Math.max( 1, clientTimeoutMillis) ;
 	}
 
 	//--------------------------------------------------------------------------
@@ -171,7 +195,7 @@ public class TcpRpcServer implements RpcServer {
 	 */
 	//--------------------------------------------------------------------------
 	private void startClientThread(Socket client) {
-		Thread clientThread = new Thread( () -> handleClient( client), name + "-client") ;
+		Thread clientThread = new Thread( () -> handleClient( client), name + "-client-" + clientSequence.getAndIncrement()) ;
 		clientThread.setDaemon( true) ;
 		clientThread.start() ;
 	}
@@ -189,7 +213,7 @@ public class TcpRpcServer implements RpcServer {
 		connections.add( client) ;
 
 		try( Socket socket = client) {
-			socket.setSoTimeout( CLIENT_TIMEOUT_MILLIS) ;
+			socket.setSoTimeout( clientTimeoutMillis) ;
 			InputStream input = socket.getInputStream() ;
 			OutputStream output = socket.getOutputStream() ;
 

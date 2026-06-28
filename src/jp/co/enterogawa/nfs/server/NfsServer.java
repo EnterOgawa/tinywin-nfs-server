@@ -68,27 +68,36 @@ public class NfsServer {
 		servers.add( new UdpRpcServer(
 				"nfs-portmap-udp",
 				config.getPortmapPort(),
-				portmapProgram)) ;
+				portmapProgram,
+				config.getRpcUdpWorkers(),
+				config.getRpcUdpQueueSize())) ;
 		servers.add( new TcpRpcServer(
 				"nfs-portmap-tcp",
 				config.getPortmapPort(),
-				portmapProgram)) ;
+				portmapProgram,
+				config.getRpcTcpTimeoutMillis())) ;
 		servers.add( new UdpRpcServer(
 				"nfs-mount-udp",
 				config.getMountPort(),
-				mountProgram)) ;
+				mountProgram,
+				config.getRpcUdpWorkers(),
+				config.getRpcUdpQueueSize())) ;
 		servers.add( new TcpRpcServer(
 				"nfs-mount-tcp",
 				config.getMountPort(),
-				mountProgram)) ;
+				mountProgram,
+				config.getRpcTcpTimeoutMillis())) ;
 		servers.add( new UdpRpcServer(
 				"nfs-udp",
 				config.getNfsPort(),
-				nfsProgram)) ;
+				nfsProgram,
+				config.getRpcUdpWorkers(),
+				config.getRpcUdpQueueSize())) ;
 		servers.add( new TcpRpcServer(
 				"nfs-tcp",
 				config.getNfsPort(),
-				nfsProgram)) ;
+				nfsProgram,
+				config.getRpcTcpTimeoutMillis())) ;
 	}
 
 	//--------------------------------------------------------------------------

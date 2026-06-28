@@ -22,6 +22,7 @@ import jp.co.enterogawa.nfs.diagnostic.NfsDiagnostics.CaseCollision;
 import jp.co.enterogawa.nfs.diagnostic.NfsDiagnostics.DiagnosticReport;
 import jp.co.enterogawa.nfs.export.FileHandle;
 import jp.co.enterogawa.nfs.export.FileHandleTable;
+import jp.co.enterogawa.nfs.io.WriteFileCache;
 import jp.co.enterogawa.nfs.program.MountV1Program;
 import jp.co.enterogawa.nfs.program.NfsStatus;
 import jp.co.enterogawa.nfs.program.NfsV2Program;
@@ -99,7 +100,9 @@ public class AllTests {
 		runTest( "Operational diagnostics", this::testOperationalDiagnostics) ;
 		runTest( "Client access restrictions", this::testClientAccessRestrictions) ;
 		runTest( "NFSv2 procedures", this::testNfsV2Procedures) ;
+		runTest( "NFSv2 large READDIR", this::testNfsV2LargeReadDir) ;
 		runTest( "NFSv3 procedures", this::testNfsV3Procedures) ;
+		runTest( "Write cache flush", this::testWriteCacheFlush) ;
 		runTest( "NFSv2 filename charset", this::testNfsV2FilenameCharset) ;
 		runTest( "File handle persistence", this::testFileHandlePersistence) ;
 		System.out.println( "TEST PASSED: " + runCount + " tests") ;
@@ -458,6 +461,9 @@ public class AllTests {
 			assertEquals( "allowed client count", 2, config.getExports().get( 0).getAllowedClients().size()) ;
 			assertTrue( "allowed client", config.getExports().get( 0).allowsClient( "127.0.0.1")) ;
 			assertFalse( "denied client", config.getExports().get( 0).allowsClient( "192.0.2.10")) ;
+			assertTrue( "rpc udp workers", config.getRpcUdpWorkers() > 0) ;
+			assertEquals( "rpc udp queue size", 1024, config.getRpcUdpQueueSize()) ;
+			assertEquals( "rpc tcp timeout", 30000, config.getRpcTcpTimeoutMillis()) ;
 
 			Path invalidNameConfig = writeConfig(
 					"test-invalid-name-config.properties",
@@ -491,6 +497,28 @@ public class AllTests {
 					Files.readString( invalidPathconfConfig, StandardCharsets.UTF_8) + "pathconf.name.max=300\n",
 					StandardCharsets.UTF_8) ;
 			assertThrows( "invalid pathconf name max", () -> NfsServerConfig.load( invalidPathconfConfig)) ;
+
+			Path invalidUdpWorkersConfig = writeConfig(
+					"test-invalid-udp-workers-config.properties",
+					root,
+					"/export",
+					"" ) ;
+			Files.writeString(
+					invalidUdpWorkersConfig,
+					Files.readString( invalidUdpWorkersConfig, StandardCharsets.UTF_8) + "rpc.udp.workers=0\n",
+					StandardCharsets.UTF_8) ;
+			assertThrows( "invalid udp workers", () -> NfsServerConfig.load( invalidUdpWorkersConfig)) ;
+
+			Path invalidTcpTimeoutConfig = writeConfig(
+					"test-invalid-tcp-timeout-config.properties",
+					root,
+					"/export",
+					"" ) ;
+			Files.writeString(
+					invalidTcpTimeoutConfig,
+					Files.readString( invalidTcpTimeoutConfig, StandardCharsets.UTF_8) + "rpc.tcp.timeout.millis=0\n",
+					StandardCharsets.UTF_8) ;
+			assertThrows( "invalid tcp timeout", () -> NfsServerConfig.load( invalidTcpTimeoutConfig)) ;
 		} finally {
 			deleteDirectory( root) ;
 		}
@@ -742,6 +770,52 @@ public class AllTests {
 
 	//--------------------------------------------------------------------------
 	/**
+	 * NFSv2大量READDIRを確認します。<br><br>
+	 *
+	 * <p>メソッド名称： NFSv2大量READDIR確認</p>
+	 *
+	 * @throws Exception テスト異常
+	 */
+	//--------------------------------------------------------------------------
+	private void testNfsV2LargeReadDir() throws Exception {
+		TestContext context = createContext() ;
+		NfsV2Program program = new NfsV2Program( context.getConfig(), context.getHandleTable()) ;
+
+		try {
+			FileHandle rootHandle = context.getHandleTable().getRootHandle() ;
+
+			for( int i = 0; i < 180; i++) {
+				Files.writeString( context.getRoot().resolve( String.format( "bulk-%03d.txt", i)), "bulk-" + i, StandardCharsets.UTF_8) ;
+			}
+
+			int cookie = 0 ;
+			boolean eof = false ;
+			List<String> names = new ArrayList<String>() ;
+
+			for( int page = 0; page < 40 && !eof; page++) {
+				ReadDirPage current = readDirPage( program, rootHandle, cookie, 512) ;
+				assertTrue( "large readdir page not empty", current.isEof() || !current.getNames().isEmpty()) ;
+				names.addAll( current.getNames()) ;
+				eof = current.isEof() ;
+
+				// 途中ページの場合
+				if( !eof) {
+					cookie = current.getLastCookie() ;
+				}
+			}
+
+			assertTrue( "large readdir eof", eof) ;
+			assertEquals( "large readdir no duplicate", names.size(), new HashSet<String>( names).size()) ;
+			assertTrue( "large readdir first bulk", names.contains( "bulk-000.txt")) ;
+			assertTrue( "large readdir last bulk", names.contains( "bulk-179.txt")) ;
+		} finally {
+			program.close() ;
+			context.close() ;
+		}
+	}
+
+	//--------------------------------------------------------------------------
+	/**
 	 * NFSv3手続きテストを行います。<br><br>
 	 *
 	 * <p>メソッド名称： NFSv3手続きテスト</p>
@@ -790,6 +864,51 @@ public class AllTests {
 		} finally {
 			asyncProgram.close() ;
 			asyncContext.close() ;
+		}
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * 書込キャッシュflushを確認します。<br><br>
+	 *
+	 * <p>メソッド名称： 書込キャッシュflush確認</p>
+	 *
+	 * @throws Exception テスト異常
+	 */
+	//--------------------------------------------------------------------------
+	private void testWriteCacheFlush() throws Exception {
+		Path root = Path.of( "work", "tmp", "test-write-cache-flush").toAbsolutePath().normalize() ;
+		deleteDirectory( root) ;
+		Files.createDirectories( root) ;
+
+		try {
+			Path configPath = writeConfig(
+					"test-write-cache-flush.properties",
+					root,
+					"/export",
+					"" ) ;
+			Files.writeString(
+					configPath,
+					Files.readString( configPath, StandardCharsets.UTF_8)
+							+ "write.sync=false\n"
+							+ "write.cache.enabled=true\n"
+							+ "write.cache.max.open=1\n"
+							+ "write.cache.idle.millis=3000\n",
+					StandardCharsets.UTF_8) ;
+			NfsServerConfig config = NfsServerConfig.load( configPath) ;
+			Path first = root.resolve( "cache-first.txt") ;
+			Path second = root.resolve( "cache-second.txt") ;
+
+			try( WriteFileCache cache = new WriteFileCache( config)) {
+				cache.write( first, 0, "first".getBytes( StandardCharsets.UTF_8), 5, false) ;
+				cache.write( second, 0, "second".getBytes( StandardCharsets.UTF_8), 6, false) ;
+				assertEquals( "write cache evicted first", "first", Files.readString( first, StandardCharsets.UTF_8)) ;
+				cache.sync( second) ;
+			}
+
+			assertEquals( "write cache closed second", "second", Files.readString( second, StandardCharsets.UTF_8)) ;
+		} finally {
+			deleteDirectory( root) ;
 		}
 	}
 

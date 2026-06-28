@@ -134,6 +134,8 @@ sudo mount -t nfs -o vers=3,proto=tcp <server-host>:<server-mount-name> <client-
 - UID/GID、ファイル mode、ディレクトリ mode、ブロックサイズ、read size、同期書込、書込キャッシュ、ファイル名文字コード
 - NFSv3 `FSINFO` / `PATHCONF` で返す write size、ディレクトリ推奨サイズ、最大ファイルサイズ、時刻精度、PATHCONF 上限値
 
+`rpc.udp.workers`、`rpc.udp.queue.size`、`rpc.tcp.timeout.millis` は負荷調整用の設定ファイル項目です。通常は変更不要です。調整する場合は `nfs-server.properties` を直接編集し、サービスを再起動してください。
+
 `permission.identity=auto` が既定です。管理ツールには詳細設定の予備値として UID/GID を残しています。
 自動モードでは、サーバーは現在の NFS クライアントが送信した AUTH_SYS UID/GID をファイル属性に返します。
 クライアントに関係なく設定済み UID/GID を必ず返したい場合のみ、`permission.identity=fixed` を使用します。

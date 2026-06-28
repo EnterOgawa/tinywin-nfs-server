@@ -33,6 +33,15 @@ public class NfsServerConfig {
 	/** デフォルトMOUNTポート */
 	private static final int				DEFAULT_MOUNT_PORT = 20048 ;
 
+	/** デフォルトUDPワーカー数 */
+	private static final int				DEFAULT_RPC_UDP_WORKERS = 8 ;
+
+	/** デフォルトUDPワーカーキューサイズ */
+	private static final int				DEFAULT_RPC_UDP_QUEUE_SIZE = 1024 ;
+
+	/** デフォルトTCPクライアントタイムアウト */
+	private static final int				DEFAULT_RPC_TCP_TIMEOUT_MILLIS = 30000 ;
+
 	//	内部定義	------------------------------------------------------------
 	/** Portmapポート */
 	private final int					portmapPort ;
@@ -42,6 +51,15 @@ public class NfsServerConfig {
 
 	/** MOUNTポート */
 	private final int					mountPort ;
+
+	/** UDPワーカー数 */
+	private final int					rpcUdpWorkers ;
+
+	/** UDPワーカーキューサイズ */
+	private final int					rpcUdpQueueSize ;
+
+	/** TCPクライアントタイムアウト */
+	private final int					rpcTcpTimeoutMillis ;
 
 	/** 公開定義 */
 	private final List<NfsExport>		exports ;
@@ -117,6 +135,9 @@ public class NfsServerConfig {
 		portmapPort = getInt( properties, "portmap.port", DEFAULT_PORTMAP_PORT) ;
 		nfsPort = getInt( properties, "nfs.port", DEFAULT_NFS_PORT) ;
 		mountPort = getInt( properties, "mount.port", DEFAULT_MOUNT_PORT) ;
+		rpcUdpWorkers = getInt( properties, "rpc.udp.workers", DEFAULT_RPC_UDP_WORKERS) ;
+		rpcUdpQueueSize = getInt( properties, "rpc.udp.queue.size", DEFAULT_RPC_UDP_QUEUE_SIZE) ;
+		rpcTcpTimeoutMillis = getInt( properties, "rpc.tcp.timeout.millis", DEFAULT_RPC_TCP_TIMEOUT_MILLIS) ;
 		exports = loadExports( properties, configBasePath) ;
 		uid = getInt( properties, "uid", 0) ;
 		gid = getInt( properties, "gid", 0) ;
@@ -387,6 +408,21 @@ public class NfsServerConfig {
 		validatePort( "portmap.port", portmapPort) ;
 		validatePort( "nfs.port", nfsPort) ;
 		validatePort( "mount.port", mountPort) ;
+
+		// UDPワーカー数が不正な場合
+		if( rpcUdpWorkers <= 0) {
+			throw new IllegalArgumentException( "rpc.udp.workers must be greater than zero.") ;
+		}
+
+		// UDPキューサイズが不正な場合
+		if( rpcUdpQueueSize <= 0) {
+			throw new IllegalArgumentException( "rpc.udp.queue.size must be greater than zero.") ;
+		}
+
+		// TCPタイムアウトが不正な場合
+		if( rpcTcpTimeoutMillis <= 0) {
+			throw new IllegalArgumentException( "rpc.tcp.timeout.millis must be greater than zero.") ;
+		}
 
 		// 公開定義が存在しない場合
 		if( exports.isEmpty()) {
@@ -682,6 +718,45 @@ public class NfsServerConfig {
 	//--------------------------------------------------------------------------
 	public int getMountPort() {
 		return mountPort ;
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * UDPワーカー数を取得します。<br><br>
+	 *
+	 * <p>メソッド名称： UDPワーカー数取得</p>
+	 *
+	 * @return UDPワーカー数
+	 */
+	//--------------------------------------------------------------------------
+	public int getRpcUdpWorkers() {
+		return rpcUdpWorkers ;
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * UDPワーカーキューサイズを取得します。<br><br>
+	 *
+	 * <p>メソッド名称： UDPワーカーキューサイズ取得</p>
+	 *
+	 * @return UDPワーカーキューサイズ
+	 */
+	//--------------------------------------------------------------------------
+	public int getRpcUdpQueueSize() {
+		return rpcUdpQueueSize ;
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * TCPクライアントタイムアウトを取得します。<br><br>
+	 *
+	 * <p>メソッド名称： TCPクライアントタイムアウト取得</p>
+	 *
+	 * @return TCPクライアントタイムアウト
+	 */
+	//--------------------------------------------------------------------------
+	public int getRpcTcpTimeoutMillis() {
+		return rpcTcpTimeoutMillis ;
 	}
 
 	//--------------------------------------------------------------------------

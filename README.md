@@ -6,7 +6,7 @@ QNX 4.25 を重要な検証対象にしていますが、製品自体は QNX 専
 
 ## 対応範囲
 
-| 項目 | v1.11.0 の状態 |
+| 項目 | v1.12.0 の状態 |
 |---|---|
 | NFS | NFSv2 / NFSv3 |
 | MOUNT | MOUNT v1-v3 |
@@ -18,6 +18,7 @@ QNX 4.25 を重要な検証対象にしていますが、製品自体は QNX 専
 | NFSv3互換情報 | `FSINFO` / `FSSTAT` / `PATHCONF` の主要値を設定・Windows容量情報から応答 |
 | 運用診断 | export状態、設定警告、大文字小文字衝突、環境・サービス情報を診断パッケージに出力 |
 | 管理ツール | 診断ビュー、サーバーログ検索、設定インポート/エクスポート、クライアント別mount支援 |
+| 性能/負荷検証 | ローカルRPCベンチマーク、長時間負荷ループ、大量READDIR回帰テスト |
 | 検証対象 | QNX 4.25: NFSv2/UDP、Windows Client for NFS: NFSv3/UDP と NFSv3/TCP |
 | 対応外 | NFSv3 `MKNOD` などの特殊デバイスノード作成、NLM/file locking、NFSv4 |
 
@@ -66,6 +67,16 @@ C:\develop\tools\eclipse202503\eclipse\jdk-21.0.8+9
 ```powershell
 .\scripts\test.ps1
 ```
+
+### ローカルRPCベンチマーク
+
+ネットワークポートやWindowsサービスを使わず、NFSv2手続きをプロセス内で呼び出して、作成、書込、LOOKUP、READDIR、rename、削除を測定します。
+
+```powershell
+.\scripts\benchmark-local-rpc.ps1 -Files 1000 -Directories 10 -Depth 1
+```
+
+結果は `work\analysis\v1.12.0-benchmark` に Markdown と CSV で保存します。
 
 ### 管理ツール作成
 
@@ -162,6 +173,9 @@ exports.2.allowed.clients=192.168.1.30
 | `portmap.port` | `111` | Portmap の UDP/TCP ポート |
 | `nfs.port` | `2049` | NFS の UDP/TCP ポート |
 | `mount.port` | `20048` | MOUNT の UDP/TCP ポート |
+| `rpc.udp.workers` | `8` | UDP RPC 要求を処理するワーカー数 |
+| `rpc.udp.queue.size` | `1024` | UDP RPC ワーカーへ渡す待ち行列サイズ |
+| `rpc.tcp.timeout.millis` | `30000` | TCP RPC クライアント接続の読み取りタイムアウト |
 | `client.server.host` | `windows-host` | 管理ツールが表示する mount コマンド用のホスト名 |
 | `client.mount.point` | `/mnt` | 管理ツールが表示する mount コマンド用のクライアント側マウント先 |
 | `client.mount.profile` | `0` | 管理ツールの mount 表示。`0`: QNX、`1`: Windows Client for NFS、`2`: Linux/WSL |
@@ -195,6 +209,8 @@ exports.2.allowed.clients=192.168.1.30
 | `write.cache.max.open` | `64` | 書込キャッシュで保持する最大オープン数 |
 | `write.cache.idle.millis` | `3000` | アイドル状態の書込ファイルを保持する時間 |
 
+性能設定の調整時は、通常の単体テストに加えて [docs/performance_testing.md](docs/performance_testing.md) のローカルRPCベンチマークを実行してください。
+
 ## マウント例
 
 QNX 4.25:
@@ -218,6 +234,7 @@ mount -o anon \\127.0.0.1\export Z:
 | WSL/Linux | [docs/wsl_mount_test.md](docs/wsl_mount_test.md) |
 | NFS手続きカバレッジ | [docs/nfs_procedure_coverage.md](docs/nfs_procedure_coverage.md) |
 | Windowsファイルシステム制約 | [docs/windows_filesystem_constraints.md](docs/windows_filesystem_constraints.md) |
+| 性能/負荷確認 | [docs/performance_testing.md](docs/performance_testing.md) |
 
 ## テスト
 

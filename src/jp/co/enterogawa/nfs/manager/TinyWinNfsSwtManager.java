@@ -86,7 +86,7 @@ public class TinyWinNfsSwtManager {
 	private static final String			PRODUCT_NAME = "TinyWinNFS Server" ;
 
 	/** 製品バージョン */
-	private static final String			PRODUCT_VERSION = "1.11.0" ;
+	private static final String			PRODUCT_VERSION = "1.12.0" ;
 
 	/** ログ読込最大バイト数 */
 	private static final long			MAX_LOG_READ_BYTES = 1024L * 1024L ;
@@ -223,6 +223,15 @@ public class TinyWinNfsSwtManager {
 
 	/** MOUNTポート */
 	private Text						mountPortText ;
+
+	/** UDPワーカー数 */
+	private Text						rpcUdpWorkersText ;
+
+	/** UDPワーカーキューサイズ */
+	private Text						rpcUdpQueueSizeText ;
+
+	/** TCPタイムアウト */
+	private Text						rpcTcpTimeoutMillisText ;
 
 	/** UID */
 	private Text						uidText ;
@@ -575,6 +584,9 @@ public class TinyWinNfsSwtManager {
 		portmapPortText = addField( networkGroup, text( "label.portmapUdpPort")) ;
 		nfsPortText = addField( networkGroup, text( "label.nfsUdpPort")) ;
 		mountPortText = addField( networkGroup, text( "label.mountUdpPort")) ;
+		rpcUdpWorkersText = addField( networkGroup, text( "label.rpcUdpWorkers")) ;
+		rpcUdpQueueSizeText = addField( networkGroup, text( "label.rpcUdpQueueSize")) ;
+		rpcTcpTimeoutMillisText = addField( networkGroup, text( "label.rpcTcpTimeoutMillis")) ;
 
 		Group permissionGroup = createGroup( panel, text( "group.fileAttributes"), 3) ;
 		uidText = addField( permissionGroup, text( "label.uid")) ;
@@ -1602,6 +1614,9 @@ public class TinyWinNfsSwtManager {
 		portmapPortText.setText( properties.getProperty( "portmap.port", "111")) ;
 		nfsPortText.setText( properties.getProperty( "nfs.port", "2049")) ;
 		mountPortText.setText( properties.getProperty( "mount.port", "20048")) ;
+		rpcUdpWorkersText.setText( properties.getProperty( "rpc.udp.workers", "8")) ;
+		rpcUdpQueueSizeText.setText( properties.getProperty( "rpc.udp.queue.size", "1024")) ;
+		rpcTcpTimeoutMillisText.setText( properties.getProperty( "rpc.tcp.timeout.millis", "30000")) ;
 		uidText.setText( properties.getProperty( "uid", "0")) ;
 		gidText.setText( properties.getProperty( "gid", "0")) ;
 		fileModeText.setText( properties.getProperty( "file.mode", "0644")) ;
@@ -1709,6 +1724,9 @@ public class TinyWinNfsSwtManager {
 		lines.add( "portmap.port=" + portmapPortText.getText().trim()) ;
 		lines.add( "nfs.port=" + nfsPortText.getText().trim()) ;
 		lines.add( "mount.port=" + mountPortText.getText().trim()) ;
+		lines.add( "rpc.udp.workers=" + rpcUdpWorkersText.getText().trim()) ;
+		lines.add( "rpc.udp.queue.size=" + rpcUdpQueueSizeText.getText().trim()) ;
+		lines.add( "rpc.tcp.timeout.millis=" + rpcTcpTimeoutMillisText.getText().trim()) ;
 		lines.add( "" ) ;
 		lines.add( "export.name=" + firstShare.getName()) ;
 		lines.add( "export.path=" + escapePath( firstShare.getPath()) ) ;
@@ -2075,6 +2093,9 @@ public class TinyWinNfsSwtManager {
 		validatePort( text( "label.portmapUdpPort"), portmapPortText.getText()) ;
 		validatePort( text( "label.nfsUdpPort"), nfsPortText.getText()) ;
 		validatePort( text( "label.mountUdpPort"), mountPortText.getText()) ;
+		validatePositiveInt( text( "label.rpcUdpWorkers"), rpcUdpWorkersText.getText()) ;
+		validatePositiveInt( text( "label.rpcUdpQueueSize"), rpcUdpQueueSizeText.getText()) ;
+		validatePositiveInt( text( "label.rpcTcpTimeoutMillis"), rpcTcpTimeoutMillisText.getText()) ;
 		validatePositiveInt( text( "label.blockSize"), blockSizeText.getText()) ;
 		validatePositiveInt( text( "label.readSize"), readSizeText.getText()) ;
 		validatePositiveInt( text( "label.writeSize"), writeSizeText.getText()) ;

@@ -1,6 +1,6 @@
 # NFS 手続きカバレッジ
 
-この表は TinyWinNFS Server v1.9.0 開発版時点の実装状況です。
+この表は TinyWinNFS Server v1.12.0 開発版時点の実装状況です。
 
 ## 区分
 
