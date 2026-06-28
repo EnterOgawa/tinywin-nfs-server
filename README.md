@@ -6,7 +6,7 @@ QNX 4.25 を重要な検証対象にしていますが、製品自体は QNX 専
 
 ## 対応範囲
 
-| 項目 | v1.7.1 時点の状態 |
+| 項目 | v1.8.0 の状態 |
 |---|---|
 | NFS | NFSv2 / NFSv3 |
 | MOUNT | MOUNT v1-v3 |
@@ -32,10 +32,12 @@ v1.7.1 以降、アプリ本体と可変データを分離しています。
 | 設定ファイル | `C:\ProgramData\EnterOgawa\TinyWinNFS Server\conf\nfs-server.properties` |
 | 既定 export | `C:\ProgramData\EnterOgawa\TinyWinNFS Server\export` |
 | TinyWinNFS ログ | `C:\ProgramData\EnterOgawa\TinyWinNFS Server\logs\nfs-server.log` |
+| 設定バックアップ | `C:\ProgramData\EnterOgawa\TinyWinNFS Server\conf\backups` |
 | WinSW サービスログ | `C:\Program Files\EnterOgawa\TinyWinNFS Server\service\winsw` |
 | 同梱デフォルト設定 | `C:\Program Files\EnterOgawa\TinyWinNFS Server\defaults\conf` |
 
 旧バージョンの `C:\Program Files\EnterOgawa\TinyWinNFS Server\conf\nfs-server.properties` が存在し、かつ `ProgramData` 側の設定がまだない場合は、初回インストール/起動時に `ProgramData` 側へ移行します。
+設定保存時と旧設定移行時には、既存設定を `conf\backups` 配下へ最大 10 世代保存します。
 
 ## クイックスタート
 
@@ -211,9 +213,11 @@ mount -o anon \\127.0.0.1\export Z:
 | サービス UDP スモークテスト | `.\scripts\smoke-service.ps1` |
 | サービス TCP スモークテスト | `.\scripts\smoke-service.ps1 -Transport TCP` |
 | ファイル整合性確認 | `.\scripts\smoke-service.ps1 -VerifyFileIntegrity` |
+| 大量ツリー整合性確認 | `.\scripts\smoke-service.ps1 -VerifyLargeTreeIntegrity` |
 | 再起動後ハンドル確認 | `.\scripts\smoke-service.ps1 -RestartHandlePersistence` |
 | Windows Client for NFS 結合テスト | `.\scripts\test-windows-nfs-client.ps1` |
 | Windows Client for NFS TCP 結合テスト | `.\scripts\test-windows-nfs-client.ps1 -Transport TCP` |
+| Windows Client for NFS protocol 事前設定済み確認 | `.\scripts\test-windows-nfs-client.ps1 -Transport TCP -SkipProtocolChange` |
 | 長時間稼働確認 | `.\scripts\test-service-stability.ps1 -DurationMinutes 60 -IntervalSeconds 15 -RestartEveryIterations 10` |
 
 このリポジトリでは環境依存を避けるため、サーバー起動を伴う確認は手動確認対象です。

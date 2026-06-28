@@ -4,6 +4,7 @@ param(
 	[string]$ExportName = "export",
 	[ValidateSet("UDP", "TCP")]
 	[string]$Transport = "UDP",
+	[switch]$SkipProtocolChange,
 	[switch]$KeepWork
 )
 
@@ -121,6 +122,74 @@ function Set-NfsClientProtocol {
 	if( $LASTEXITCODE -ne 0) {
 		throw "nfsadmin client config protocol=$Protocol failed: $LASTEXITCODE"
 	}
+}
+
+function Get-ServiceStatusText {
+	param(
+		[string]$Name
+	)
+
+	$service = Get-Service -Name $Name -ErrorAction SilentlyContinue
+
+	if( $service -eq $null) {
+		return "Not installed"
+	}
+
+	return $service.Status.ToString()
+}
+
+function Assert-NfsClientReady {
+	$status = Get-ServiceStatusText -Name "NfsClnt"
+
+	if( $status -eq "Not installed") {
+		throw "Client for NFS is not installed. Enable Windows Client for NFS, then run this test again."
+	}
+
+	if( $status -ne "Running") {
+		$message = @"
+Client for NFS service is not running: $status
+Do not stop or restart NfsClnt from this test script.
+Try restarting Windows, then verify with:
+  Get-Service NfsClnt
+  nfsadmin client
+"@
+		throw ($message.Trim())
+	}
+
+	try {
+		$output = & $nfsAdminExe client 2>&1
+
+		if( $LASTEXITCODE -ne 0) {
+			throw ($output -join [Environment]::NewLine)
+		}
+	} catch {
+		throw "nfsadmin client failed. Windows Client for NFS may be in an unusable state. Restart Windows and run the test again. Detail: $($_.Exception.Message)"
+	}
+}
+
+function Assert-DriveAvailable {
+	if( Get-PSDrive -Name $driveName -ErrorAction SilentlyContinue) {
+		throw "Drive $drivePath is already in use. Unmount it first with: umount $drivePath"
+	}
+}
+
+function Use-TestProtocol {
+	if( $SkipProtocolChange) {
+		Write-Host "INFO: Skipping Windows Client for NFS protocol change. Current protocol: $(Get-NfsClientProtocol)"
+		return
+	}
+
+	$currentProtocol = Get-NfsClientProtocol
+
+	if( $currentProtocol -eq $Transport) {
+		Write-Host "INFO: Windows Client for NFS protocol is already $Transport"
+		return
+	}
+
+	Write-Host "INFO: Changing Windows Client for NFS protocol from $currentProtocol to $Transport"
+	Set-NfsClientProtocol -Protocol $Transport
+	Start-Sleep -Seconds 2
+	Write-Host "INFO: Windows Client for NFS protocol is now $(Get-NfsClientProtocol)"
 }
 
 function Wait-DriveReleased {
@@ -305,21 +374,16 @@ try {
 		throw "Client for NFS is not installed."
 	}
 
-	if( $nfsClient.Status -ne "Running") {
-		throw "Client for NFS service is not running: $($nfsClient.Status)"
-	}
-
-	if( Get-PSDrive -Name $driveName -ErrorAction SilentlyContinue) {
-		throw "Drive $drivePath is already in use."
-	}
+	Assert-NfsClientReady
+	Assert-DriveAvailable
 
 	foreach( $port in @(111, 2049, 20048)) {
 		if( Get-NetUDPEndpoint -LocalPort $port -ErrorAction SilentlyContinue) {
-			throw "UDP port $port is already in use."
+			throw "UDP port $port is already in use. Stop TinyWinNFS service or any other NFS server before running this test."
 		}
 
 		if( Get-NetTCPConnection -LocalPort $port -State Listen -ErrorAction SilentlyContinue) {
-			throw "TCP port $port is already in use."
+			throw "TCP port $port is already in use. Stop TinyWinNFS service or any other NFS server before running this test."
 		}
 	}
 
@@ -344,8 +408,7 @@ try {
 	Wait-UdpPorts -Ports @(111, 2049, 20048)
 	Wait-TcpPorts -Ports @(111, 2049, 20048)
 	$originalProtocol = Get-NfsClientProtocol
-	Set-NfsClientProtocol -Protocol $Transport
-	Start-Sleep -Seconds 2
+	Use-TestProtocol
 	Invoke-Mount
 	Invoke-WindowsNfsChecks
 	Assert-NfsV3Log
@@ -379,7 +442,7 @@ try {
 	}
 
 	try {
-		if( $originalProtocol -ne $null) {
+		if( $originalProtocol -ne $null -and !$SkipProtocolChange) {
 			Set-NfsClientProtocol -Protocol $originalProtocol
 		}
 	} catch {

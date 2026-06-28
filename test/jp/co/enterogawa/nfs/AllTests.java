@@ -16,6 +16,7 @@ import java.util.HashSet;
 import java.util.List;
 
 import jp.co.enterogawa.nfs.config.NfsServerConfig;
+import jp.co.enterogawa.nfs.config.ConfigBackup;
 import jp.co.enterogawa.nfs.export.FileHandle;
 import jp.co.enterogawa.nfs.export.FileHandleTable;
 import jp.co.enterogawa.nfs.program.MountV1Program;
@@ -91,6 +92,7 @@ public class AllTests {
 		runTest( "Multiple exports", this::testMultipleExports) ;
 		runTest( "Config validation", this::testConfigValidation) ;
 		runTest( "Config relative export base", this::testConfigRelativeExportBase) ;
+		runTest( "Config backup", this::testConfigBackup) ;
 		runTest( "Client access restrictions", this::testClientAccessRestrictions) ;
 		runTest( "NFSv2 procedures", this::testNfsV2Procedures) ;
 		runTest( "NFSv3 procedures", this::testNfsV3Procedures) ;
@@ -519,6 +521,49 @@ public class AllTests {
 			assertEquals( "relative export path", exportRoot.toString(), config.getExports().get( 0).getPath().toString()) ;
 		} finally {
 			deleteDirectory( dataRoot) ;
+		}
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * 設定バックアップを確認します。<br><br>
+	 *
+	 * <p>メソッド名称： 設定バックアップ確認</p>
+	 *
+	 * @throws Exception テスト異常
+	 */
+	//--------------------------------------------------------------------------
+	private void testConfigBackup() throws Exception {
+		Path root = Path.of( "work", "tmp", "test-config-backup").toAbsolutePath().normalize() ;
+		Path configDirectory = root.resolve( "conf") ;
+		Path configPath = configDirectory.resolve( "nfs-server.properties") ;
+
+		deleteDirectory( root) ;
+		Files.createDirectories( configDirectory) ;
+
+		try {
+			Files.writeString( configPath, "version=0", StandardCharsets.UTF_8) ;
+			Path firstBackup = ConfigBackup.backupIfExists( configPath) ;
+
+			assertTrue( "first backup exists", Files.exists( firstBackup)) ;
+			assertEquals( "first backup content", "version=0", Files.readString( firstBackup, StandardCharsets.UTF_8)) ;
+
+			// バックアップ保持世代を超える回数の保存を行う
+			for( int i = 1; i <= 12; i++) {
+				Files.writeString( configPath, "version=" + i, StandardCharsets.UTF_8) ;
+				ConfigBackup.backupIfExists( configPath) ;
+			}
+
+			Path backupDirectory = configDirectory.resolve( "backups") ;
+
+			try( var stream = Files.list( backupDirectory)) {
+				long backupCount = stream
+						.filter( path -> path.getFileName().toString().startsWith( "nfs-server-" ) )
+						.count() ;
+				assertEquals( "backup count", 10L, backupCount) ;
+			}
+		} finally {
+			deleteDirectory( root) ;
 		}
 	}
 

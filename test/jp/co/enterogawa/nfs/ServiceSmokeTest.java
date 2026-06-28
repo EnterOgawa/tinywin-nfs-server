@@ -10,6 +10,8 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Base64;
+import java.util.Comparator;
+import java.util.List;
 
 import jp.co.enterogawa.nfs.config.NfsServerConfig;
 import jp.co.enterogawa.nfs.export.FileHandle;
@@ -89,6 +91,12 @@ public class ServiceSmokeTest {
 
 			if( args.length == 2 && "verify-file-integrity".equals( args[0])) {
 				test.verifyFileIntegrity( Path.of( args[1])) ;
+				return ;
+			}
+
+			// 大量ディレクトリ整合性確認の場合
+			if( args.length == 2 && "verify-large-tree-integrity".equals( args[0])) {
+				test.verifyLargeTreeIntegrity( Path.of( args[1])) ;
 				return ;
 			}
 
@@ -211,6 +219,50 @@ public class ServiceSmokeTest {
 
 		removeFile( rootHandle, fileName) ;
 		System.out.println( "PASS: service file integrity") ;
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * 大量ディレクトリ整合性を確認します。<br><br>
+	 *
+	 * <p>メソッド名称： 大量ディレクトリ整合性確認</p>
+	 *
+	 * @param configPath	設定ファイル
+	 * @throws Exception 確認異常
+	 */
+	//--------------------------------------------------------------------------
+	private void verifyLargeTreeIntegrity(Path configPath) throws Exception {
+		NfsServerConfig config = NfsServerConfig.load( configPath.toAbsolutePath().normalize()) ;
+		Path exportRoot = config.getExportPath() ;
+		String directoryName = "service-large-" + Long.toHexString( System.currentTimeMillis()) ;
+		Path directoryPath = exportRoot.resolve( directoryName).toAbsolutePath().normalize() ;
+		byte[] rootHandle = mountExport() ;
+
+		deleteDirectory( directoryPath) ;
+
+		try {
+			byte[] directoryHandle = createDirectory( rootHandle, directoryName) ;
+			byte[] nestedHandle = createDirectory( directoryHandle, "nested") ;
+			assertLargeTreeFile( directoryHandle, directoryPath, "empty.txt", "" ) ;
+			assertLargeTreeFile( directoryHandle, directoryPath, "small.txt", "small-content") ;
+			assertLargeTreeFile( directoryHandle, directoryPath, "long-name-file-0123456789.txt", createContent( 2048)) ;
+			assertLargeTreeFile( nestedHandle, directoryPath.resolve( "nested"), "nested.bin", createContent( 16384)) ;
+			removeFile( nestedHandle, "nested.bin") ;
+			removeDirectory( directoryHandle, "nested") ;
+			removeFile( directoryHandle, "empty.txt") ;
+			removeFile( directoryHandle, "small.txt") ;
+			removeFile( directoryHandle, "long-name-file-0123456789.txt") ;
+			removeDirectory( rootHandle, directoryName) ;
+
+			// ディレクトリが残っている場合
+			if( Files.exists( directoryPath)) {
+				throw new AssertionError( "Large tree directory remains: " + directoryPath) ;
+			}
+
+			System.out.println( "PASS: service large tree integrity") ;
+		} finally {
+			deleteDirectory( directoryPath) ;
+		}
 	}
 
 	//--------------------------------------------------------------------------
@@ -366,10 +418,11 @@ public class ServiceSmokeTest {
 	 *
 	 * @param rootHandle	ルートファイルハンドル
 	 * @param directoryName	ディレクトリ名
+	 * @return ディレクトリハンドル
 	 * @throws Exception 作成異常
 	 */
 	//--------------------------------------------------------------------------
-	private void createDirectory(byte[] rootHandle, String directoryName) throws Exception {
+	private byte[] createDirectory(byte[] rootHandle, String directoryName) throws Exception {
 		XdrWriter arguments = new XdrWriter() ;
 		writeDiropargs( arguments, rootHandle, directoryName) ;
 		writeSattrUnset( arguments) ;
@@ -380,6 +433,10 @@ public class ServiceSmokeTest {
 		if( status != NfsStatus.OK) {
 			throw new AssertionError( "MKDIR failed: " + status) ;
 		}
+
+		byte[] handle = reader.readFixedOpaque( FileHandle.LENGTH) ;
+		skipAttributes( reader) ;
+		return handle ;
 	}
 
 	//--------------------------------------------------------------------------
@@ -617,6 +674,53 @@ public class ServiceSmokeTest {
 
 	//--------------------------------------------------------------------------
 	/**
+	 * 大量ディレクトリ内ファイルを確認します。<br><br>
+	 *
+	 * <p>メソッド名称： 大量ディレクトリ内ファイル確認</p>
+	 *
+	 * @param directoryHandle	ディレクトリハンドル
+	 * @param directoryPath		ディレクトリパス
+	 * @param fileName			ファイル名
+	 * @param content			内容
+	 * @throws Exception 確認異常
+	 */
+	//--------------------------------------------------------------------------
+	private void assertLargeTreeFile(byte[] directoryHandle, Path directoryPath, String fileName, String content) throws Exception {
+		byte[] fileHandle = createFile( directoryHandle, fileName) ;
+		writeFileAtOffset( fileHandle, 0, content) ;
+		assertDiskContent( directoryPath.resolve( fileName), content) ;
+
+		// 軽量なファイルはNFS READでも内容を確認する
+		if( content.length() <= 1024) {
+			assertReadFile( fileHandle, content) ;
+		}
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * ディレクトリを削除します。<br><br>
+	 *
+	 * <p>メソッド名称： ディレクトリ削除</p>
+	 *
+	 * @param rootHandle		親ディレクトリハンドル
+	 * @param directoryName	ディレクトリ名
+	 * @throws Exception 削除異常
+	 */
+	//--------------------------------------------------------------------------
+	private void removeDirectory(byte[] rootHandle, String directoryName) throws Exception {
+		XdrWriter arguments = new XdrWriter() ;
+		writeDiropargs( arguments, rootHandle, directoryName) ;
+		XdrReader reader = call( NFS_PORT, RpcConstants.PROGRAM_NFS, 2, 15, arguments) ;
+		int status = reader.readInt() ;
+
+		// RMDIRが失敗した場合
+		if( status != NfsStatus.OK) {
+			throw new AssertionError( "RMDIR failed: " + status) ;
+		}
+	}
+
+	//--------------------------------------------------------------------------
+	/**
 	 * サーバー側実ファイルの内容を確認します。<br><br>
 	 *
 	 * <p>メソッド名称： サーバー側実ファイル内容確認</p>
@@ -628,6 +732,53 @@ public class ServiceSmokeTest {
 	//--------------------------------------------------------------------------
 	private void assertDiskContent(Path path, String expected) throws Exception {
 		assertEquals( "server disk content", expected, Files.readString( path, StandardCharsets.UTF_8)) ;
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * 内容文字列を作成します。<br><br>
+	 *
+	 * <p>メソッド名称： 内容文字列作成</p>
+	 *
+	 * @param length	長さ
+	 * @return 内容
+	 */
+	//--------------------------------------------------------------------------
+	private String createContent(int length) {
+		StringBuilder builder = new StringBuilder( length) ;
+
+		// 指定長まで決定的な内容を生成する
+		for( int i = 0; i < length; i++) {
+			builder.append( (char)( 'A' + (i % 26))) ;
+		}
+
+		return builder.toString() ;
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * ディレクトリを削除します。<br><br>
+	 *
+	 * <p>メソッド名称： ディレクトリ削除</p>
+	 *
+	 * @param path	パス
+	 * @throws Exception 削除異常
+	 */
+	//--------------------------------------------------------------------------
+	private void deleteDirectory(Path path) throws Exception {
+		// ディレクトリが存在しない場合
+		if( !Files.exists( path)) {
+			return ;
+		}
+
+		try( var stream = Files.walk( path)) {
+			List<Path> paths = stream.sorted( Comparator.reverseOrder()).toList() ;
+
+			// 子から順に削除する
+			for( Path target : paths) {
+				Files.deleteIfExists( target) ;
+			}
+		}
 	}
 
 	//--------------------------------------------------------------------------

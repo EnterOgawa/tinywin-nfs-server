@@ -1,5 +1,15 @@
 # 変更履歴
 
+## 1.8.0 - 2026-06-28
+
+- Windows Client for NFS 検証スクリプトの前提条件チェックを強化し、`NfsClnt` が利用不能な状態では復旧案を表示して中断するようにしました。
+- Windows Client for NFS 検証で、protocol 設定変更を行わない `-SkipProtocolChange` を追加しました。
+- 管理ツールのサービス表示に、データルート、設定ファイル、既定 export、ログフォルダ、ポート状態、Windows Client for NFS 状態、設定バックアップフォルダを表示するようにしました。
+- 管理ツールから TinyWinNFS ログと WinSW ログフォルダを開けるようにしました。
+- 設定保存前と旧設定移行時に、設定ファイルを `conf\backups` 配下へ最大 10 世代バックアップするようにしました。
+- `smoke-service.ps1 -VerifyLargeTreeIntegrity` を追加し、ディレクトリ階層と複数サイズのファイル整合性を任意で確認できるようにしました。
+- QNX 4.25 実機回帰確認、Windows Client for NFS 注意点、リリース前のユーザー動作確認ゲートをドキュメント化しました。
+
 ## 1.7.1 - 2026-06-28
 
 - インストール後の実行時設定、既定 export、サーバーログの配置先を `ProgramData\EnterOgawa\TinyWinNFS Server` に移動しました。

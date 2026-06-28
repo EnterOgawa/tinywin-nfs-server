@@ -177,6 +177,30 @@ exports.1.allowed.clients=192.168.1.30,127.0.0.1
 - 有効な設定ファイル
 - 有効なログファイル
 - 登録済みサービス実行ファイルパス
+- データルート、設定ファイル、既定 export、ログフォルダの存在と書込可否
+- Portmap、NFS、MOUNT の UDP/TCP ポート状態
+- Windows Client for NFS の `NfsClnt` 状態
+- 設定バックアップフォルダ
 
 `保存して再起動` は、保存成功と再起動成功を分けてログ表示します。
 サービスのインストール、開始、停止、再起動、アンインストール、ファイアウォール操作には管理者権限が必要です。
+
+`ログを開く` は TinyWinNFS サーバーログの場所を開きます。
+`WinSWログ` はサービスラッパーのログフォルダを開きます。
+
+## 設定バックアップ
+
+管理ツールで設定を保存する場合、既存の `nfs-server.properties` があれば保存前にバックアップします。
+
+```text
+C:\ProgramData\EnterOgawa\TinyWinNFS Server\conf\backups
+```
+
+バックアップ名は以下の形式です。
+
+```text
+nfs-server-YYYYMMDD-HHMMSS-SSS.properties
+```
+
+保持世代は最大 10 件です。
+旧 `Program Files` 配下の設定を `ProgramData` へ移行する場合も、移行元設定を `legacy-nfs-server-...properties` としてバックアップします。

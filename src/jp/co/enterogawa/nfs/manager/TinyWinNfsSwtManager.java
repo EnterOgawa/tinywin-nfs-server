@@ -6,6 +6,8 @@ import java.io.InputStreamReader;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.net.ServerSocket;
 import java.net.URISyntaxException;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
@@ -47,6 +49,7 @@ import org.eclipse.swt.widgets.TableColumn;
 import org.eclipse.swt.widgets.TableItem;
 import org.eclipse.swt.widgets.Text;
 
+import jp.co.enterogawa.nfs.config.ConfigBackup;
 import jp.co.enterogawa.nfs.config.NfsServerConfig;
 import jp.co.enterogawa.nfs.config.TinyWinNfsPaths;
 import jp.co.enterogawa.nfs.export.FileHandle;
@@ -499,7 +502,7 @@ public class TinyWinNfsSwtManager {
 
 		Composite buttons = new Composite( panel, SWT.NONE) ;
 		buttons.setLayoutData( new GridData( SWT.FILL, SWT.TOP, true, false)) ;
-		buttons.setLayout( createGridLayout( 8, false, 6, 6)) ;
+		buttons.setLayout( createGridLayout( 10, false, 6, 6)) ;
 		createButton( buttons, text( "button.install"), event -> runPrivilegedScriptAsync( "install-service.ps1")) ;
 		createButton( buttons, text( "button.start"), event -> runPrivilegedScriptAsync( "start-service.ps1")) ;
 		createButton( buttons, text( "button.stop"), event -> runPrivilegedScriptAsync( "stop-service.ps1")) ;
@@ -508,6 +511,8 @@ public class TinyWinNfsSwtManager {
 		createButton( buttons, text( "button.firewall"), event -> runPrivilegedScriptAsync( "add-firewall-rules.ps1")) ;
 		createButton( buttons, text( "button.smokeTest"), event -> runSmokeTestAsync()) ;
 		createButton( buttons, text( "button.status"), event -> refreshStatus()) ;
+		createButton( buttons, text( "button.openLog"), event -> openPath( TinyWinNfsPaths.getLogPath( rootPath))) ;
+		createButton( buttons, text( "button.openWinswLog"), event -> openPath( getWinswLogPath())) ;
 
 		serviceInfoText = createText( panel, SWT.BORDER | SWT.MULTI | SWT.READ_ONLY | SWT.WRAP | SWT.V_SCROLL) ;
 		serviceInfoText.setLayoutData( new GridData( SWT.FILL, SWT.FILL, true, true)) ;
@@ -756,6 +761,7 @@ public class TinyWinNfsSwtManager {
 
 		try {
 			Files.createDirectories( configPath.getParent()) ;
+			ConfigBackup.backupIfExists( legacyConfigPath, configPath.getParent(), "legacy-nfs-server") ;
 			Files.copy( legacyConfigPath, configPath) ;
 		} catch( IOException ioex) {
 			// 保存時に権限エラーとして通知する
@@ -1415,9 +1421,15 @@ public class TinyWinNfsSwtManager {
 			lines.add( "write.cache.max.open=" + writeCacheMaxOpenText.getText().trim()) ;
 			lines.add( "write.cache.idle.millis=" + writeCacheIdleMillisText.getText().trim()) ;
 			lines.add( "filename.charset=" + filenameCharsetText.getText().trim()) ;
-			writeValidatedConfig( configDirectory, lines) ;
+			Path backupPath = writeValidatedConfig( configDirectory, lines) ;
 			updateMountCommand() ;
 			appendLog( text( "log.configurationSaved")) ;
+
+			// バックアップを作成した場合
+			if( backupPath != null) {
+				appendLog( format( "log.configurationBackupCreated", backupPath)) ;
+			}
+
 			return true ;
 		} catch( AccessDeniedException adex) {
 			showConfigurationSaveAdminRequired() ;
@@ -1440,13 +1452,15 @@ public class TinyWinNfsSwtManager {
 	 * @throws IOException 書込異常
 	 */
 	//--------------------------------------------------------------------------
-	private void writeValidatedConfig(Path configDirectory, List<String> lines) throws IOException {
+	private Path writeValidatedConfig(Path configDirectory, List<String> lines) throws IOException {
 		Path temporaryPath = Files.createTempFile( configDirectory, "nfs-server-", ".properties") ;
 
 		try {
 			Files.write( temporaryPath, lines, StandardCharsets.UTF_8) ;
 			NfsServerConfig.load( temporaryPath) ;
+			Path backupPath = ConfigBackup.backupIfExists( configPath) ;
 			moveConfigIntoPlace( temporaryPath) ;
+			return backupPath ;
 		} finally {
 			Files.deleteIfExists( temporaryPath) ;
 		}
@@ -1927,6 +1941,8 @@ public class TinyWinNfsSwtManager {
 
 		Path serviceExecutable = detectInstalledServiceExecutablePath() ;
 		String executableText = serviceExecutable == null ? text( "status.notInstalled") : serviceExecutable.toString() ;
+		Path logPath = TinyWinNfsPaths.getLogPath( rootPath) ;
+		Path defaultExportPath = defaultExportPath() ;
 		serviceInfoText.setText( format(
 				"service.info",
 				SERVICE_NAME,
@@ -1935,7 +1951,212 @@ public class TinyWinNfsSwtManager {
 				dataRootPath,
 				configPath,
 				executableText,
-				TinyWinNfsPaths.getLogPath( rootPath))) ;
+				logPath,
+				describePathStatus( dataRootPath, true),
+				describePathStatus( configPath, false),
+				describePathStatus( defaultExportPath, true),
+				describePathStatus( logPath.getParent(), true),
+				describePortStatus( portmapPortText),
+				describePortStatus( nfsPortText),
+				describePortStatus( mountPortText),
+				getWindowsNfsClientStatus(),
+				configPath.getParent().resolve( "backups"))) ;
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * パス状態を表示します。<br><br>
+	 *
+	 * <p>メソッド名称： パス状態表示</p>
+	 *
+	 * @param path				パス
+	 * @param directoryRequired	true:ディレクトリ必須 false:ファイル
+	 * @return 表示文字列
+	 */
+	//--------------------------------------------------------------------------
+	private String describePathStatus(Path path, boolean directoryRequired) {
+		// パスが存在する場合
+		if( Files.exists( path)) {
+			// ディレクトリ必須でディレクトリではない場合
+			if( directoryRequired && !Files.isDirectory( path)) {
+				return text( "diagnostic.notDirectory") ;
+			}
+
+			return Files.isWritable( path) ? text( "diagnostic.existsWritable") : text( "diagnostic.existsReadOnly") ;
+		}
+
+		Path parent = directoryRequired ? path.getParent() : path.toAbsolutePath().normalize().getParent() ;
+
+		// 親パスが書込可能な場合
+		if( parent != null && Files.exists( parent) && Files.isWritable( parent)) {
+			return text( "diagnostic.missingParentWritable") ;
+		}
+
+		return text( "diagnostic.missingParentNotWritable") ;
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * ポート状態を表示します。<br><br>
+	 *
+	 * <p>メソッド名称： ポート状態表示</p>
+	 *
+	 * @param portText	ポートText
+	 * @return 表示文字列
+	 */
+	//--------------------------------------------------------------------------
+	private String describePortStatus(Text portText) {
+		// ポートTextが存在しない場合
+		if( portText == null || portText.isDisposed()) {
+			return text( "status.unknown") ;
+		}
+
+		try {
+			int port = Integer.parseInt( portText.getText().trim()) ;
+			return format( "diagnostic.portStatus", describeUdpPortStatus( port), describeTcpPortStatus( port)) ;
+		} catch( NumberFormatException nfex) {
+			return text( "status.unknown") ;
+		}
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * UDPポート状態を表示します。<br><br>
+	 *
+	 * <p>メソッド名称： UDPポート状態表示</p>
+	 *
+	 * @param port	ポート
+	 * @return 表示文字列
+	 */
+	//--------------------------------------------------------------------------
+	private String describeUdpPortStatus(int port) {
+		try( DatagramSocket socket = new DatagramSocket( null)) {
+			socket.setReuseAddress( false) ;
+			socket.bind( new InetSocketAddress( InetAddress.getByName( "0.0.0.0"), port)) ;
+			return text( "diagnostic.available") ;
+		} catch( IOException ioex) {
+			return text( "diagnostic.inUseOrProtected") ;
+		}
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * TCPポート状態を表示します。<br><br>
+	 *
+	 * <p>メソッド名称： TCPポート状態表示</p>
+	 *
+	 * @param port	ポート
+	 * @return 表示文字列
+	 */
+	//--------------------------------------------------------------------------
+	private String describeTcpPortStatus(int port) {
+		try( ServerSocket socket = new ServerSocket()) {
+			socket.setReuseAddress( false) ;
+			socket.bind( new InetSocketAddress( InetAddress.getByName( "0.0.0.0"), port)) ;
+			return text( "diagnostic.available") ;
+		} catch( IOException ioex) {
+			return text( "diagnostic.inUseOrProtected") ;
+		}
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * Windows NFS Client状態を取得します。<br><br>
+	 *
+	 * <p>メソッド名称： Windows NFS Client状態取得</p>
+	 *
+	 * @return 状態
+	 */
+	//--------------------------------------------------------------------------
+	private String getWindowsNfsClientStatus() {
+		try {
+			ProcessBuilder builder = new ProcessBuilder(
+					"powershell.exe",
+					"-NoProfile",
+					"-Command",
+					"$s=Get-Service -Name NfsClnt -ErrorAction SilentlyContinue; "
+					+ "if($s -eq $null){'Not installed'}else{$s.Status.ToString()}") ;
+			builder.redirectErrorStream( true) ;
+			Process process = builder.start() ;
+			String output = readProcessOutput( process).trim() ;
+			process.waitFor() ;
+
+			// 状態が空の場合
+			if( output.isBlank()) {
+				return text( "status.unknown") ;
+			}
+
+			// 未インストールの場合
+			if( "Not installed".equals( output)) {
+				return text( "status.notInstalled") ;
+			}
+
+			return output ;
+		} catch( IOException ioex) {
+			return text( "status.unknown") ;
+		} catch( InterruptedException iex) {
+			Thread.currentThread().interrupt() ;
+			return text( "status.unknown") ;
+		}
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * WinSWログパスを取得します。<br><br>
+	 *
+	 * <p>メソッド名称： WinSWログパス取得</p>
+	 *
+	 * @return WinSWログパス
+	 */
+	//--------------------------------------------------------------------------
+	private Path getWinswLogPath() {
+		Path serviceExecutable = detectInstalledServiceExecutablePath() ;
+
+		// サービス実行ファイルが取得できる場合
+		if( serviceExecutable != null && serviceExecutable.getParent() != null) {
+			return serviceExecutable.getParent() ;
+		}
+
+		return rootPath.resolve( "service").resolve( "winsw") ;
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * パスを開きます。<br><br>
+	 *
+	 * <p>メソッド名称： パスオープン</p>
+	 *
+	 * @param path	パス
+	 */
+	//--------------------------------------------------------------------------
+	private void openPath(Path path) {
+		try {
+			Path normalized = path.toAbsolutePath().normalize() ;
+
+			// ファイルが存在する場合
+			if( Files.isRegularFile( normalized)) {
+				new ProcessBuilder( "explorer.exe", "/select," + normalized).start() ;
+				return ;
+			}
+
+			// ディレクトリが存在する場合
+			if( Files.isDirectory( normalized)) {
+				new ProcessBuilder( "explorer.exe", normalized.toString()).start() ;
+				return ;
+			}
+
+			Path parent = normalized.getParent() ;
+
+			// 親ディレクトリが存在する場合
+			if( parent != null && Files.isDirectory( parent)) {
+				new ProcessBuilder( "explorer.exe", parent.toString()).start() ;
+				return ;
+			}
+
+			appendLog( format( "log.pathOpenFailed", normalized)) ;
+		} catch( IOException ioex) {
+			appendLog( format( "log.pathOpenFailed", path)) ;
+		}
 	}
 
 	//--------------------------------------------------------------------------
@@ -2310,15 +2531,7 @@ public class TinyWinNfsSwtManager {
 			builder.directory( rootPath.toFile()) ;
 			builder.redirectErrorStream( true) ;
 			Process process = builder.start() ;
-
-			try( BufferedReader reader = new BufferedReader( new InputStreamReader( process.getInputStream(), Charset.defaultCharset()))) {
-				String line ;
-
-				while( (line = reader.readLine()) != null) {
-					output.append( line).append( System.lineSeparator()) ;
-				}
-			}
-
+			output.append( readProcessOutput( process)) ;
 			int exitCode = process.waitFor() ;
 			return new ProcessResult( exitCode, output.toString()) ;
 		} catch( IOException ioex) {
@@ -2329,6 +2542,31 @@ public class TinyWinNfsSwtManager {
 			output.append( iex.getMessage()) ;
 			return new ProcessResult( 1, output.toString()) ;
 		}
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * プロセス出力を読み取ります。<br><br>
+	 *
+	 * <p>メソッド名称： プロセス出力読取</p>
+	 *
+	 * @param process	プロセス
+	 * @return 出力
+	 * @throws IOException 読取異常
+	 */
+	//--------------------------------------------------------------------------
+	private String readProcessOutput(Process process) throws IOException {
+		StringBuilder output = new StringBuilder() ;
+
+		try( BufferedReader reader = new BufferedReader( new InputStreamReader( process.getInputStream(), Charset.defaultCharset()))) {
+			String line ;
+
+			while( (line = reader.readLine()) != null) {
+				output.append( line).append( System.lineSeparator()) ;
+			}
+		}
+
+		return output.toString() ;
 	}
 
 	//--------------------------------------------------------------------------

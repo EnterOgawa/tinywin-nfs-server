@@ -2,7 +2,8 @@ param(
 	[ValidateSet("UDP", "TCP")]
 	[string]$Transport = "UDP",
 	[switch]$RestartHandlePersistence,
-	[switch]$VerifyFileIntegrity
+	[switch]$VerifyFileIntegrity,
+	[switch]$VerifyLargeTreeIntegrity
 )
 
 $ErrorActionPreference = "Stop"
@@ -36,6 +37,14 @@ if( (Test-Path -LiteralPath $appJar) -and (Test-Path -LiteralPath $java)) {
 
 			if( $LASTEXITCODE -ne 0) {
 				throw "service file integrity test failed: $LASTEXITCODE"
+			}
+
+			exit 0
+		} elseif( $VerifyLargeTreeIntegrity) {
+			& $java -cp $appJar jp.co.enterogawa.nfs.ServiceSmokeTest verify-large-tree-integrity $configPath
+
+			if( $LASTEXITCODE -ne 0) {
+				throw "service large tree integrity test failed: $LASTEXITCODE"
 			}
 
 			exit 0
@@ -106,6 +115,14 @@ try {
 
 		if( $LASTEXITCODE -ne 0) {
 			throw "service file integrity test failed: $LASTEXITCODE"
+		}
+	} elseif( $VerifyLargeTreeIntegrity) {
+		Pop-Location
+		Push-Location $serviceConfigRoot
+		& $developerJava -cp "$bin;$testBin" jp.co.enterogawa.nfs.ServiceSmokeTest verify-large-tree-integrity $serviceConfigPath
+
+		if( $LASTEXITCODE -ne 0) {
+			throw "service large tree integrity test failed: $LASTEXITCODE"
 		}
 	} elseif( $RestartHandlePersistence) {
 		& $developerJava -cp "$bin;$testBin" jp.co.enterogawa.nfs.ServiceSmokeTest prepare-handle-persistence $stateFile
