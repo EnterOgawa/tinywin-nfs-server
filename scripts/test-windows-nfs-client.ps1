@@ -84,6 +84,15 @@ function Add-ReportCodeBlock {
 	Add-ReportLine '```'
 }
 
+function Add-RecoveryHints {
+	Add-ReportSection -Title "復旧案"
+	Add-ReportLine '- `NfsClnt` が停止している場合は Windows を再起動し、`Get-Service NfsClnt` と `nfsadmin client` を確認します。'
+	Add-ReportLine '- UDP/TCP `111`、`2049`、`20048` が使用中の場合は、TinyWinNFS サービスまたは他の NFS サーバーを停止します。'
+	Add-ReportLine ('- ドライブが使用中の場合は `umount {0}` を実行し、ドライブ解放後に再実行します。' -f $drivePath)
+	Add-ReportLine "- mount は成功するが NFSv3 ログが出ない場合は、前回 mount のキャッシュが残っていないか確認し、unmount 後に再実行します。"
+	Add-ReportLine '- Access denied が出る場合は、`uid=-2`、`gid=-2`、`file.mode=0666`、`directory.mode=0777`、`filename.charset=Shift_JIS` を確認します。'
+}
+
 function Write-TestReport {
 	$reportDirectory = Split-Path -Parent $ReportPath
 
@@ -108,6 +117,10 @@ function Write-TestReport {
 
 	if( $script:cleanupErrors.Count -gt 0) {
 		$lines.Add("- cleanup: $($script:cleanupErrors -join '; ')") | Out-Null
+	}
+
+	if( ![string]::IsNullOrWhiteSpace($script:testFailure) -or $script:cleanupErrors.Count -gt 0) {
+		Add-RecoveryHints
 	}
 
 	$lines.AddRange($script:reportLines)

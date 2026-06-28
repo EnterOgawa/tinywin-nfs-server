@@ -6,7 +6,7 @@ QNX 4.25 を重要な検証対象にしていますが、製品自体は QNX 専
 
 ## 対応範囲
 
-| 項目 | v1.12.0 の状態 |
+| 項目 | v1.13.0 の状態 |
 |---|---|
 | NFS | NFSv2 / NFSv3 |
 | MOUNT | MOUNT v1-v3 |
@@ -19,7 +19,8 @@ QNX 4.25 を重要な検証対象にしていますが、製品自体は QNX 専
 | 運用診断 | export状態、設定警告、大文字小文字衝突、環境・サービス情報を診断パッケージに出力 |
 | 管理ツール | 診断ビュー、サーバーログ検索、設定インポート/エクスポート、クライアント別mount支援 |
 | 性能/負荷検証 | ローカルRPCベンチマーク、長時間負荷ループ、大量READDIR回帰テスト |
-| 検証対象 | QNX 4.25: NFSv2/UDP、Windows Client for NFS: NFSv3/UDP と NFSv3/TCP |
+| 検証対象 | QNX 4.25: NFSv2/UDP、Windows Client for NFS: NFSv3/UDP と NFSv3/TCP、Linux/WSL: 任意回帰 |
+| 互換性回帰 | NFSエラー応答、属性応答、複数クライアント相当の相互編集、Windows NFS検証マトリクス |
 | 対応外 | NFSv3 `MKNOD` などの特殊デバイスノード作成、NLM/file locking、NFSv4 |
 
 ## 画面
@@ -77,6 +78,16 @@ C:\develop\tools\eclipse202503\eclipse\jdk-21.0.8+9
 ```
 
 結果は `work\analysis\v1.12.0-benchmark` に Markdown と CSV で保存します。
+
+### Windows Client for NFS 検証
+
+Windows 標準 NFS クライアントで UDP/TCP をまとめて確認します。
+
+```powershell
+.\scripts\test-windows-nfs-client-matrix.ps1
+```
+
+結果は `work\analysis\windows-nfs-client-matrix` に Markdown で保存します。Windows の `mount.exe` は portable な NFS version option を公開していないため、サーバーログで MOUNT v3 / NFSv3 RPC を確認します。
 
 ### 管理ツール作成
 
@@ -248,6 +259,7 @@ mount -o anon \\127.0.0.1\export Z:
 | 再起動後ハンドル確認 | `.\scripts\smoke-service.ps1 -RestartHandlePersistence` |
 | Windows Client for NFS 結合テスト | `.\scripts\test-windows-nfs-client.ps1` |
 | Windows Client for NFS TCP 結合テスト | `.\scripts\test-windows-nfs-client.ps1 -Transport TCP` |
+| Windows Client for NFS UDP/TCP マトリクス | `.\scripts\test-windows-nfs-client-matrix.ps1` |
 | Windows Client for NFS protocol 事前設定済み確認 | `.\scripts\test-windows-nfs-client.ps1 -Transport TCP -SkipProtocolChange` |
 | Windows Client for NFS レポート指定 | `.\scripts\test-windows-nfs-client.ps1 -ReportPath work\analysis\windows-nfs-client\manual.md` |
 | 長時間稼働確認 | `.\scripts\test-service-stability.ps1 -DurationMinutes 60 -IntervalSeconds 15 -RestartEveryIterations 10` |

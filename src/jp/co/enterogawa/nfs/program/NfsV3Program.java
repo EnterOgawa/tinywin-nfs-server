@@ -993,6 +993,22 @@ public class NfsV3Program implements RpcProgram {
 			return ;
 		}
 
+		// 対象が存在しない場合
+		if( !Files.exists( path, LinkOption.NOFOLLOW_LINKS)) {
+			logMutation( "RMDIR", path, NfsStatus.NOENT, "missing") ;
+			response.writeInt( NfsStatus.NOENT) ;
+			writeWccData( response, directoryBefore, target.getDirectory()) ;
+			return ;
+		}
+
+		// 対象がディレクトリではない場合
+		if( !Files.isDirectory( path, LinkOption.NOFOLLOW_LINKS)) {
+			logMutation( "RMDIR", path, NfsStatus.NOTDIR, "not-directory") ;
+			response.writeInt( NfsStatus.NOTDIR) ;
+			writeWccData( response, directoryBefore, target.getDirectory()) ;
+			return ;
+		}
+
 		try {
 			Files.delete( path) ;
 			handleTable.forget( path) ;

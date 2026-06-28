@@ -102,6 +102,8 @@ public class AllTests {
 		runTest( "NFSv2 procedures", this::testNfsV2Procedures) ;
 		runTest( "NFSv2 large READDIR", this::testNfsV2LargeReadDir) ;
 		runTest( "NFSv3 procedures", this::testNfsV3Procedures) ;
+		runTest( "NFS status and attributes", this::testNfsStatusAndAttributes) ;
+		runTest( "Cross client edit regression", this::testCrossClientEditRegression) ;
 		runTest( "Write cache flush", this::testWriteCacheFlush) ;
 		runTest( "NFSv2 filename charset", this::testNfsV2FilenameCharset) ;
 		runTest( "File handle persistence", this::testFileHandlePersistence) ;
@@ -864,6 +866,71 @@ public class AllTests {
 		} finally {
 			asyncProgram.close() ;
 			asyncContext.close() ;
+		}
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * NFSステータスと属性応答を確認します。<br><br>
+	 *
+	 * <p>メソッド名称： NFSステータス属性応答確認</p>
+	 *
+	 * @throws Exception テスト異常
+	 */
+	//--------------------------------------------------------------------------
+	private void testNfsStatusAndAttributes() throws Exception {
+		TestContext context = createContext() ;
+		NfsV2Program v2Program = new NfsV2Program( context.getConfig(), context.getHandleTable()) ;
+		NfsV3Program v3Program = new NfsV3Program( context.getConfig(), context.getHandleTable()) ;
+
+		try {
+			FileHandle rootHandle = context.getHandleTable().getRootHandle() ;
+			FileHandle fileHandle = assertLookupFile( v2Program, rootHandle) ;
+			assertStatusAndAttributesV2( v2Program, rootHandle, fileHandle) ;
+			assertStatusAndAttributesV3( v3Program, rootHandle, fileHandle) ;
+		} finally {
+			v2Program.close() ;
+			v3Program.close() ;
+			context.close() ;
+		}
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * 複数クライアント相当の相互編集を確認します。<br><br>
+	 *
+	 * <p>メソッド名称： 複数クライアント相互編集確認</p>
+	 *
+	 * @throws Exception テスト異常
+	 */
+	//--------------------------------------------------------------------------
+	private void testCrossClientEditRegression() throws Exception {
+		TestContext context = createContext( "UTF-8", false) ;
+		WriteFileCache writeFileCache = new WriteFileCache( context.getConfig()) ;
+		NfsV2Program v2Program = new NfsV2Program( context.getConfig(), context.getHandleTable(), writeFileCache) ;
+		NfsV3Program v3Program = new NfsV3Program( context.getConfig(), context.getHandleTable(), writeFileCache) ;
+
+		try {
+			FileHandle rootHandle = context.getHandleTable().getRootHandle() ;
+			FileHandle v2FileHandle = assertLookupFile( v2Program, rootHandle) ;
+			FileHandle v3FileHandle = assertLookupFileV3( v3Program, rootHandle) ;
+			Path file = context.getRoot().resolve( "hello.txt") ;
+
+			Files.writeString( file, "windows side edit", StandardCharsets.UTF_8) ;
+			assertEquals( "cross edit v2 read windows", "windows side edit", readFileValue( v2Program, v2FileHandle)) ;
+
+			writeFileByV2( v2Program, v2FileHandle, "qnx side edit") ;
+			assertEquals( "cross edit windows read v2", "qnx side edit", Files.readString( file, StandardCharsets.UTF_8)) ;
+
+			Files.writeString( file, "windows side v3 edit", StandardCharsets.UTF_8) ;
+			assertEquals( "cross edit v3 read windows", "windows side v3 edit", readFileValueV3( v3Program, v3FileHandle)) ;
+
+			writeFileByV3( v3Program, v3FileHandle, "windows client edit") ;
+			assertEquals( "cross edit windows read v3", "windows client edit", Files.readString( file, StandardCharsets.UTF_8)) ;
+		} finally {
+			v2Program.close() ;
+			v3Program.close() ;
+			context.close() ;
 		}
 	}
 
@@ -1658,6 +1725,119 @@ public class AllTests {
 
 	//--------------------------------------------------------------------------
 	/**
+	 * NFSv2ステータスと属性応答を確認します。<br><br>
+	 *
+	 * <p>メソッド名称： NFSv2ステータス属性応答確認</p>
+	 *
+	 * @param program		NFSv2プログラム
+	 * @param rootHandle	ルートハンドル
+	 * @param fileHandle	ファイルハンドル
+	 * @throws IOException 処理異常
+	 */
+	//--------------------------------------------------------------------------
+	private void assertStatusAndAttributesV2(NfsV2Program program, FileHandle rootHandle, FileHandle fileHandle) throws IOException {
+		XdrWriter rootArguments = new XdrWriter() ;
+		rootArguments.writeFixedOpaque( rootHandle.getValue()) ;
+		XdrReader rootReader = new XdrReader( handle( program, RpcConstants.PROGRAM_NFS, 2, 1, rootArguments).toByteArray()) ;
+
+		assertEquals( "v2 root attr status", NfsStatus.OK, rootReader.readInt()) ;
+		assertEquals( "v2 root attr type", 2, rootReader.readInt()) ;
+		assertEquals( "v2 root attr mode", 0755, rootReader.readInt() & 0777) ;
+		assertTrue( "v2 root attr nlink", rootReader.readInt() >= 1) ;
+		assertEquals( "v2 root attr uid", 0, rootReader.readInt()) ;
+		assertEquals( "v2 root attr gid", 0, rootReader.readInt()) ;
+
+		XdrWriter fileArguments = new XdrWriter() ;
+		fileArguments.writeFixedOpaque( fileHandle.getValue()) ;
+		XdrReader fileReader = new XdrReader( handle( program, RpcConstants.PROGRAM_NFS, 2, 1, fileArguments).toByteArray()) ;
+
+		assertEquals( "v2 file attr status", NfsStatus.OK, fileReader.readInt()) ;
+		assertEquals( "v2 file attr type", 1, fileReader.readInt()) ;
+		assertEquals( "v2 file attr mode", 0644, fileReader.readInt() & 0777) ;
+		assertTrue( "v2 file attr nlink", fileReader.readInt() >= 1) ;
+		assertEquals( "v2 file attr uid", 0, fileReader.readInt()) ;
+		assertEquals( "v2 file attr gid", 0, fileReader.readInt()) ;
+		assertEquals( "v2 file attr size", "hello qnx".length(), fileReader.readInt()) ;
+
+		XdrWriter missingArguments = new XdrWriter() ;
+		writeDiropargs( missingArguments, rootHandle, "missing-status.txt") ;
+		XdrReader missingReader = new XdrReader( handle( program, RpcConstants.PROGRAM_NFS, 2, 4, missingArguments).toByteArray()) ;
+
+		assertEquals( "v2 missing lookup status", NfsStatus.NOENT, missingReader.readInt()) ;
+
+		XdrWriter existingArguments = new XdrWriter() ;
+		writeDiropargs( existingArguments, rootHandle, "hello.txt") ;
+		writeSattrUnset( existingArguments) ;
+		XdrReader existingReader = new XdrReader( handle( program, RpcConstants.PROGRAM_NFS, 2, 9, existingArguments).toByteArray()) ;
+
+		assertEquals( "v2 existing create status", NfsStatus.EXIST, existingReader.readInt()) ;
+
+		XdrWriter rmdirFileArguments = new XdrWriter() ;
+		writeDiropargs( rmdirFileArguments, rootHandle, "hello.txt") ;
+		XdrReader rmdirFileReader = new XdrReader( handle( program, RpcConstants.PROGRAM_NFS, 2, 15, rmdirFileArguments).toByteArray()) ;
+
+		assertEquals( "v2 rmdir file status", NfsStatus.NOTDIR, rmdirFileReader.readInt()) ;
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * NFSv3ステータスと属性応答を確認します。<br><br>
+	 *
+	 * <p>メソッド名称： NFSv3ステータス属性応答確認</p>
+	 *
+	 * @param program		NFSv3プログラム
+	 * @param rootHandle	ルートハンドル
+	 * @param fileHandle	ファイルハンドル
+	 * @throws IOException 処理異常
+	 */
+	//--------------------------------------------------------------------------
+	private void assertStatusAndAttributesV3(NfsV3Program program, FileHandle rootHandle, FileHandle fileHandle) throws IOException {
+		XdrWriter rootArguments = new XdrWriter() ;
+		rootArguments.writeOpaque( rootHandle.getValue()) ;
+		XdrReader rootReader = new XdrReader( handle( program, RpcConstants.PROGRAM_NFS, 3, 1, rootArguments).toByteArray()) ;
+
+		assertEquals( "v3 root attr status", NfsStatus.OK, rootReader.readInt()) ;
+		assertEquals( "v3 root attr type", 2, rootReader.readInt()) ;
+		assertEquals( "v3 root attr mode", 0755, rootReader.readInt() & 0777) ;
+		assertTrue( "v3 root attr nlink", rootReader.readInt() >= 1) ;
+		assertEquals( "v3 root attr uid", 0, rootReader.readInt()) ;
+		assertEquals( "v3 root attr gid", 0, rootReader.readInt()) ;
+
+		XdrWriter fileArguments = new XdrWriter() ;
+		fileArguments.writeOpaque( fileHandle.getValue()) ;
+		XdrReader fileReader = new XdrReader( handle( program, RpcConstants.PROGRAM_NFS, 3, 1, fileArguments).toByteArray()) ;
+
+		assertEquals( "v3 file attr status", NfsStatus.OK, fileReader.readInt()) ;
+		assertEquals( "v3 file attr type", 1, fileReader.readInt()) ;
+		assertEquals( "v3 file attr mode", 0644, fileReader.readInt() & 0777) ;
+		assertTrue( "v3 file attr nlink", fileReader.readInt() >= 1) ;
+		assertEquals( "v3 file attr uid", 0, fileReader.readInt()) ;
+		assertEquals( "v3 file attr gid", 0, fileReader.readInt()) ;
+		assertEquals( "v3 file attr size", "hello qnx".length(), fileReader.readLong()) ;
+
+		XdrWriter missingArguments = new XdrWriter() ;
+		writeDiropargsV3( missingArguments, rootHandle, "missing-status.txt") ;
+		XdrReader missingReader = new XdrReader( handle( program, RpcConstants.PROGRAM_NFS, 3, 3, missingArguments).toByteArray()) ;
+
+		assertEquals( "v3 missing lookup status", NfsStatus.NOENT, missingReader.readInt()) ;
+
+		XdrWriter existingArguments = new XdrWriter() ;
+		writeDiropargsV3( existingArguments, rootHandle, "hello.txt") ;
+		existingArguments.writeInt( 1) ;
+		writeSattr3Unset( existingArguments) ;
+		XdrReader existingReader = new XdrReader( handle( program, RpcConstants.PROGRAM_NFS, 3, 8, existingArguments).toByteArray()) ;
+
+		assertEquals( "v3 guarded create existing status", NfsStatus.EXIST, existingReader.readInt()) ;
+
+		XdrWriter rmdirFileArguments = new XdrWriter() ;
+		writeDiropargsV3( rmdirFileArguments, rootHandle, "hello.txt") ;
+		XdrReader rmdirFileReader = new XdrReader( handle( program, RpcConstants.PROGRAM_NFS, 3, 13, rmdirFileArguments).toByteArray()) ;
+
+		assertEquals( "v3 rmdir file status", NfsStatus.NOTDIR, rmdirFileReader.readInt()) ;
+	}
+
+	//--------------------------------------------------------------------------
+	/**
 	 * exportをMOUNTします。<br><br>
 	 *
 	 * <p>メソッド名称： export MOUNT</p>
@@ -1757,6 +1937,105 @@ public class AllTests {
 		assertEquals( "read status", NfsStatus.OK, reader.readInt()) ;
 		skipAttributes( reader) ;
 		return new String( reader.readOpaque(), StandardCharsets.UTF_8) ;
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * NFSv3ファイルREAD値を取得します。<br><br>
+	 *
+	 * <p>メソッド名称： NFSv3ファイルREAD値取得</p>
+	 *
+	 * @param program	NFSv3プログラム
+	 * @param handle	ファイルハンドル
+	 * @return READ値
+	 * @throws IOException 処理異常
+	 */
+	//--------------------------------------------------------------------------
+	private String readFileValueV3(NfsV3Program program, FileHandle handle) throws IOException {
+		XdrWriter arguments = new XdrWriter() ;
+		arguments.writeOpaque( handle.getValue()) ;
+		arguments.writeLong( 0L) ;
+		arguments.writeInt( 128) ;
+		XdrReader reader = new XdrReader( handle( program, RpcConstants.PROGRAM_NFS, 3, 6, arguments).toByteArray()) ;
+
+		assertEquals( "v3 read value status", NfsStatus.OK, reader.readInt()) ;
+		skipPostOpAttrV3( reader) ;
+		reader.readInt() ;
+		reader.readBoolean() ;
+		return new String( reader.readOpaque(), StandardCharsets.UTF_8) ;
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * NFSv2からファイルを置換します。<br><br>
+	 *
+	 * <p>メソッド名称： NFSv2ファイル置換</p>
+	 *
+	 * @param program	NFSv2プログラム
+	 * @param handle	ファイルハンドル
+	 * @param value		値
+	 * @throws IOException 処理異常
+	 */
+	//--------------------------------------------------------------------------
+	private void writeFileByV2(NfsV2Program program, FileHandle handle, String value) throws IOException {
+		XdrWriter truncateArguments = new XdrWriter() ;
+		truncateArguments.writeFixedOpaque( handle.getValue()) ;
+		writeSattrSize( truncateArguments, 0) ;
+		XdrReader truncateReader = new XdrReader( handle( program, RpcConstants.PROGRAM_NFS, 2, 2, truncateArguments).toByteArray()) ;
+
+		assertEquals( "v2 replace truncate status", NfsStatus.OK, truncateReader.readInt()) ;
+		skipAttributes( truncateReader) ;
+
+		byte[] data = value.getBytes( StandardCharsets.UTF_8) ;
+		XdrWriter writeArguments = new XdrWriter() ;
+		writeArguments.writeFixedOpaque( handle.getValue()) ;
+		writeArguments.writeUnsignedInt( 0) ;
+		writeArguments.writeUnsignedInt( 0) ;
+		writeArguments.writeUnsignedInt( data.length) ;
+		writeArguments.writeOpaque( data) ;
+		XdrReader writeReader = new XdrReader( handle( program, RpcConstants.PROGRAM_NFS, 2, 8, writeArguments).toByteArray()) ;
+
+		assertEquals( "v2 replace write status", NfsStatus.OK, writeReader.readInt()) ;
+		skipAttributes( writeReader) ;
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * NFSv3からファイルを置換します。<br><br>
+	 *
+	 * <p>メソッド名称： NFSv3ファイル置換</p>
+	 *
+	 * @param program	NFSv3プログラム
+	 * @param handle	ファイルハンドル
+	 * @param value		値
+	 * @throws IOException 処理異常
+	 */
+	//--------------------------------------------------------------------------
+	private void writeFileByV3(NfsV3Program program, FileHandle handle, String value) throws IOException {
+		XdrWriter truncateArguments = new XdrWriter() ;
+		truncateArguments.writeOpaque( handle.getValue()) ;
+		writeSattr3Size( truncateArguments, 0L) ;
+		truncateArguments.writeBoolean( false) ;
+		XdrReader truncateReader = new XdrReader( handle( program, RpcConstants.PROGRAM_NFS, 3, 2, truncateArguments).toByteArray()) ;
+
+		assertEquals( "v3 replace truncate status", NfsStatus.OK, truncateReader.readInt()) ;
+		skipWccDataV3( truncateReader) ;
+
+		byte[] data = value.getBytes( StandardCharsets.UTF_8) ;
+		XdrWriter writeArguments = new XdrWriter() ;
+		writeArguments.writeOpaque( handle.getValue()) ;
+		writeArguments.writeLong( 0L) ;
+		writeArguments.writeInt( data.length) ;
+		writeArguments.writeInt( 2) ;
+		writeArguments.writeOpaque( data) ;
+		XdrReader writeReader = new XdrReader( handle( program, RpcConstants.PROGRAM_NFS, 3, 7, writeArguments).toByteArray()) ;
+
+		assertEquals( "v3 replace write status", NfsStatus.OK, writeReader.readInt()) ;
+		skipWccDataV3( writeReader) ;
+		assertEquals( "v3 replace write count", data.length, writeReader.readInt()) ;
+		int committed = writeReader.readInt() ;
+		assertTrue( "v3 replace write committed", committed == 0 || committed == 2) ;
+		assertEquals( "v3 replace write verifier", 8, writeReader.readFixedOpaque( 8).length) ;
 	}
 
 	//--------------------------------------------------------------------------

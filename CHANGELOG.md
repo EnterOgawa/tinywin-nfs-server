@@ -1,5 +1,15 @@
 # 変更履歴
 
+## 1.13.0 - 未リリース
+
+- Windows Client for NFS の UDP/TCP 検証をまとめて実行する `test-windows-nfs-client-matrix.ps1` を追加しました。
+- Windows Client for NFS 検証レポートに、`NfsClnt`、ポート、ドライブ、NFSv3ログ、匿名UID/GIDに関する復旧案を出力するようにしました。
+- QNX 4.25、Windows Client for NFS、Linux/WSL の検証範囲を分け、v1.13.0 リリースチェックリストへ反映しました。
+- NFSv2/NFSv3 の基本エラー応答と属性応答を確認する単体回帰テストを追加しました。
+- Windows 側直接編集と NFS 経由編集の相互反映を確認する単体回帰テストを追加しました。
+- NFSv3 `RMDIR` が通常ファイルを削除せず `NOTDIR` を返すように修正しました。
+- README、QNX mount、WSL mount、Windows Client for NFS のドキュメントを更新しました。
+
 ## 1.12.0 - 2026-06-28
 
 - ローカルRPCベンチマークを追加し、NFSv2手続きの作成、書込、LOOKUP、READDIR、rename、削除をMarkdown/CSVへ記録できるようにしました。

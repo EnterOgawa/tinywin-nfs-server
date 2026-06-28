@@ -13,7 +13,7 @@ $input = Join-Path $work "input"
 $smokeBin = Join-Path $work "smoke-bin"
 $dist = Join-Path $root "dist"
 $appName = "TinyWinNfsManager"
-$appVersion = "1.12.0"
+$appVersion = "1.13.0"
 $appImage = Join-Path $dist $appName
 $appJar = Join-Path $input "tinywin-nfs-server.jar"
 $smokeTest = Join-Path $root "test\jp\co\enterogawa\nfs\ServiceSmokeTest.java"
@@ -97,6 +97,7 @@ $runtimeScripts = @(
 	"start-service.ps1",
 	"status-service.ps1",
 	"test-service-stability.ps1",
+	"test-windows-nfs-client-matrix.ps1",
 	"test-windows-nfs-client.ps1",
 	"stop-service.ps1",
 	"uninstall-service.ps1"

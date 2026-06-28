@@ -1,6 +1,6 @@
 # NFS 手続きカバレッジ
 
-この表は TinyWinNFS Server v1.12.0 開発版時点の実装状況です。
+この表は TinyWinNFS Server v1.13.0 開発版時点の実装状況です。
 
 ## 区分
 
@@ -41,7 +41,7 @@
 | `LINK` | 制限付き | Windows の hard link 機能に依存 |
 | `SYMLINK` | 制限付き | Windows の symlink 作成権限に依存 |
 | `MKDIR` | 実装済み | ディレクトリ作成 |
-| `RMDIR` | 実装済み | 空ディレクトリ削除 |
+| `RMDIR` | 実装済み | 空ディレクトリ削除。通常ファイルは `NOTDIR` |
 | `READDIR` | 実装済み | cookie 分割に対応 |
 | `STATFS` | 実装済み | Windows の `FileStore` 情報を元に応答 |
 
@@ -90,3 +90,13 @@
 | QNX 4.25 | NFSv2/UDP、通常ファイル、ディレクトリ、大量コピー、削除、Shift_JIS系ファイル名 |
 | Windows Client for NFS | NFSv3/UDP、NFSv3/TCP、通常ファイル、ディレクトリ、日本語ファイル名 |
 | WSL/Linux | 任意の結合確認。高番ポートでの mount 確認 |
+
+## v1.13.0 回帰確認
+
+| 観点 | 自動確認 |
+|---|---|
+| NFSv2 エラー応答 | `LOOKUP` の `NOENT`、既存 `CREATE` の `EXIST`、通常ファイル `RMDIR` の `NOTDIR` |
+| NFSv3 エラー応答 | `LOOKUP` の `NOENT`、guarded `CREATE` の `EXIST`、通常ファイル `RMDIR` の `NOTDIR` |
+| 属性応答 | NFSv2/NFSv3 の type、mode、uid、gid、size |
+| 相互編集 | Windows 側直接編集と NFSv2/NFSv3 経由編集の反映 |
+| Windows Client for NFS | UDP/TCP マトリクス実行と transport 別 Markdown レポート |
