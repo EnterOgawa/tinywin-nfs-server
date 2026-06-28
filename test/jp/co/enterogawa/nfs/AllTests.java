@@ -476,6 +476,17 @@ public class AllTests {
 					"/export",
 					"" ) ;
 			assertThrows( "missing export path", () -> NfsServerConfig.load( missingPathConfig)) ;
+
+			Path invalidPathconfConfig = writeConfig(
+					"test-invalid-pathconf-config.properties",
+					root,
+					"/export",
+					"" ) ;
+			Files.writeString(
+					invalidPathconfConfig,
+					Files.readString( invalidPathconfConfig, StandardCharsets.UTF_8) + "pathconf.name.max=300\n",
+					StandardCharsets.UTF_8) ;
+			assertThrows( "invalid pathconf name max", () -> NfsServerConfig.load( invalidPathconfConfig)) ;
 		} finally {
 			deleteDirectory( root) ;
 		}
@@ -1159,7 +1170,17 @@ public class AllTests {
 
 		assertEquals( "v3 fsinfo status", NfsStatus.OK, fsInfoReader.readInt()) ;
 		skipPostOpAttrV3( fsInfoReader) ;
-		assertTrue( "v3 fsinfo rtmax", fsInfoReader.readInt() > 0) ;
+		assertEquals( "v3 fsinfo rtmax", 8192, fsInfoReader.readInt()) ;
+		assertEquals( "v3 fsinfo rtpref", 8192, fsInfoReader.readInt()) ;
+		assertEquals( "v3 fsinfo rtmult", 4096, fsInfoReader.readInt()) ;
+		assertEquals( "v3 fsinfo wtmax", 16384, fsInfoReader.readInt()) ;
+		assertEquals( "v3 fsinfo wtpref", 16384, fsInfoReader.readInt()) ;
+		assertEquals( "v3 fsinfo wtmult", 4096, fsInfoReader.readInt()) ;
+		assertEquals( "v3 fsinfo dtpref", 4096, fsInfoReader.readInt()) ;
+		assertEquals( "v3 fsinfo maxfilesize", 1099511627776L, fsInfoReader.readLong()) ;
+		assertEquals( "v3 fsinfo time delta seconds", 0, fsInfoReader.readInt()) ;
+		assertEquals( "v3 fsinfo time delta nanos", 1000000, fsInfoReader.readInt()) ;
+		assertTrue( "v3 fsinfo properties", fsInfoReader.readInt() != 0) ;
 
 		XdrWriter fsStatArguments = new XdrWriter() ;
 		fsStatArguments.writeOpaque( rootHandle.getValue()) ;
@@ -1168,6 +1189,12 @@ public class AllTests {
 		assertEquals( "v3 fsstat status", NfsStatus.OK, fsStatReader.readInt()) ;
 		skipPostOpAttrV3( fsStatReader) ;
 		assertTrue( "v3 fsstat total", fsStatReader.readLong() > 0L) ;
+		assertTrue( "v3 fsstat free", fsStatReader.readLong() >= 0L) ;
+		assertTrue( "v3 fsstat available", fsStatReader.readLong() >= 0L) ;
+		assertTrue( "v3 fsstat total files", fsStatReader.readLong() > 0L) ;
+		fsStatReader.readLong() ;
+		fsStatReader.readLong() ;
+		assertEquals( "v3 fsstat invariant seconds", 0, fsStatReader.readInt()) ;
 
 		XdrWriter pathConfArguments = new XdrWriter() ;
 		pathConfArguments.writeOpaque( rootHandle.getValue()) ;
@@ -1175,7 +1202,12 @@ public class AllTests {
 
 		assertEquals( "v3 pathconf status", NfsStatus.OK, pathConfReader.readInt()) ;
 		skipPostOpAttrV3( pathConfReader) ;
-		assertTrue( "v3 pathconf name max", pathConfReader.readInt() > 0) ;
+		assertEquals( "v3 pathconf link max", 1024, pathConfReader.readInt()) ;
+		assertEquals( "v3 pathconf name max", 255, pathConfReader.readInt()) ;
+		assertTrue( "v3 pathconf no trunc", pathConfReader.readBoolean()) ;
+		assertTrue( "v3 pathconf chown restricted", pathConfReader.readBoolean()) ;
+		assertTrue( "v3 pathconf case insensitive", pathConfReader.readBoolean()) ;
+		assertTrue( "v3 pathconf case preserving", pathConfReader.readBoolean()) ;
 	}
 
 	//--------------------------------------------------------------------------
@@ -2802,6 +2834,12 @@ public class AllTests {
 				+ "directory.mode=0755\n"
 				+ "block.size=4096\n"
 				+ "read.size=8192\n"
+				+ "write.size=16384\n"
+				+ "directory.preferred.size=4096\n"
+				+ "max.file.size=1099511627776\n"
+				+ "time.delta.nanos=1000000\n"
+				+ "pathconf.link.max=1024\n"
+				+ "pathconf.name.max=255\n"
 				+ "write.sync=" + writeSync + "\n"
 				+ "filename.charset=" + filenameCharset + "\n" ;
 		Files.writeString( configPath, configText, StandardCharsets.UTF_8) ;
@@ -2844,6 +2882,12 @@ public class AllTests {
 				+ "directory.mode=0755\n"
 				+ "block.size=4096\n"
 				+ "read.size=8192\n"
+				+ "write.size=16384\n"
+				+ "directory.preferred.size=4096\n"
+				+ "max.file.size=1099511627776\n"
+				+ "time.delta.nanos=1000000\n"
+				+ "pathconf.link.max=1024\n"
+				+ "pathconf.name.max=255\n"
 				+ "write.sync=true\n"
 				+ "filename.charset=UTF-8\n" ;
 		Files.writeString( configPath, configText, StandardCharsets.UTF_8) ;

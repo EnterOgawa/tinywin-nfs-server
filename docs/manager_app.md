@@ -107,6 +107,7 @@ mount_nfs <server-host>:<server-mount-name> <client-mount-point>
 - コマンド生成に使うサーバーホストとクライアント側 mount point
 - UDP/TCP の両方で使う Portmap、NFS、MOUNT ポート
 - UID/GID、ファイル mode、ディレクトリ mode、ブロックサイズ、read size、同期書込、書込キャッシュ、ファイル名文字コード
+- NFSv3 `FSINFO` / `PATHCONF` で返す write size、ディレクトリ推奨サイズ、最大ファイルサイズ、時刻精度、PATHCONF 上限値
 
 `permission.identity=auto` が既定です。管理ツールには詳細設定の予備値として UID/GID を残しています。
 自動モードでは、サーバーは現在の NFS クライアントが送信した AUTH_SYS UID/GID をファイル属性に返します。
@@ -187,6 +188,32 @@ exports.1.allowed.clients=192.168.1.30,127.0.0.1
 
 `ログを開く` は TinyWinNFS サーバーログの場所を開きます。
 `WinSWログ` はサービスラッパーのログフォルダを開きます。
+`診断出力` は、調査に必要な設定、ログ、状態情報をZIPにまとめます。
+
+## 診断パッケージ
+
+`サービス` タブの `診断出力` を実行すると、以下にZIPファイルを作成します。
+
+```text
+C:\ProgramData\EnterOgawa\TinyWinNFS Server\diagnostics
+```
+
+ファイル名は以下の形式です。
+
+```text
+tinywin-nfs-diagnostics-YYYYMMDD-HHMMSS.zip
+```
+
+含まれる情報:
+
+- `summary.txt`: サービス状態、データルート、設定ファイル、ポート状態、Windows Client for NFS 状態、共有定義概要
+- `conf/nfs-server.properties`: 現在の設定ファイル
+- `conf/backups`: 設定バックアップ
+- `logs/nfs-server.log`: TinyWinNFS サーバーログ
+- `winsw-logs`: WinSW の `.log` / `.out` / `.err`
+
+export 配下の共有ファイル本体は含めません。
+問題調査時は、このZIPと発生時刻、クライアント種別、mount コマンドを合わせて確認します。
 
 ## 設定バックアップ
 

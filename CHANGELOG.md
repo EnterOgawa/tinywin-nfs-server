@@ -1,5 +1,15 @@
 # 変更履歴
 
+## 1.9.0 - 2026-06-28
+
+- Windows Client for NFS 結合テストで、実行環境、protocol、mount対象、操作結果、失敗理由をMarkdownレポートとして保存するようにしました。
+- 管理ツールのサービス タブに `診断出力` を追加し、設定、バックアップ、TinyWinNFSログ、WinSWログ、サービス状態をZIPへまとめられるようにしました。
+- NFSv2/NFSv3/MOUNT の手続きカバレッジ表を追加し、実装済み、互換 no-op、制限付き、未対応を整理しました。
+- NFSv3 `FSINFO` / `FSSTAT` / `PATHCONF` の応答を、設定値とWindowsの容量情報に基づく内容へ改善しました。
+- `write.size`、`directory.preferred.size`、`max.file.size`、`time.delta.nanos`、`pathconf.link.max`、`pathconf.name.max` 設定を追加しました。
+- `smoke-service.ps1 -VerifyLargeTreeIntegrity` を拡張し、複数階層、28ファイル、rename、削除、残骸確認を行うようにしました。
+- v1.9.0向けのリリースチェックリスト、README、管理ツール、Windows Client for NFS、Windowsサービス文書を更新しました。
+
 ## 1.8.0 - 2026-06-28
 
 - Windows Client for NFS 検証スクリプトの前提条件チェックを強化し、`NfsClnt` が利用不能な状態では復旧案を表示して中断するようにしました。

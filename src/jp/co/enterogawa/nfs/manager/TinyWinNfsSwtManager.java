@@ -22,6 +22,8 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.dnd.Clipboard;
@@ -174,6 +176,24 @@ public class TinyWinNfsSwtManager {
 
 	/** 読込サイズ */
 	private Text						readSizeText ;
+
+	/** 書込サイズ */
+	private Text						writeSizeText ;
+
+	/** ディレクトリ推奨サイズ */
+	private Text						directoryPreferredSizeText ;
+
+	/** 最大ファイルサイズ */
+	private Text						maxFileSizeText ;
+
+	/** 時刻精度ナノ秒 */
+	private Text						timeDeltaNanosText ;
+
+	/** PATHCONF link最大値 */
+	private Text						pathconfLinkMaxText ;
+
+	/** PATHCONF name最大値 */
+	private Text						pathconfNameMaxText ;
 
 	/** 同期書込 */
 	private Button						writeSyncButton ;
@@ -467,6 +487,14 @@ public class TinyWinNfsSwtManager {
 		readSizeText = addField( permissionGroup, text( "label.readSize")) ;
 		filenameCharsetText = addField( permissionGroup, text( "label.filenameCharset")) ;
 
+		Group nfsV3Group = createGroup( panel, text( "group.nfsv3Compatibility"), 3) ;
+		writeSizeText = addField( nfsV3Group, text( "label.writeSize")) ;
+		directoryPreferredSizeText = addField( nfsV3Group, text( "label.directoryPreferredSize")) ;
+		maxFileSizeText = addField( nfsV3Group, text( "label.maxFileSize")) ;
+		timeDeltaNanosText = addField( nfsV3Group, text( "label.timeDeltaNanos")) ;
+		pathconfLinkMaxText = addField( nfsV3Group, text( "label.pathconfLinkMax")) ;
+		pathconfNameMaxText = addField( nfsV3Group, text( "label.pathconfNameMax")) ;
+
 		Group performanceGroup = createGroup( panel, text( "group.performance"), 3) ;
 		createLabel( performanceGroup, text( "label.writeSync")) ;
 		writeSyncButton = new Button( performanceGroup, SWT.CHECK) ;
@@ -502,7 +530,7 @@ public class TinyWinNfsSwtManager {
 
 		Composite buttons = new Composite( panel, SWT.NONE) ;
 		buttons.setLayoutData( new GridData( SWT.FILL, SWT.TOP, true, false)) ;
-		buttons.setLayout( createGridLayout( 10, false, 6, 6)) ;
+		buttons.setLayout( createGridLayout( 11, false, 6, 6)) ;
 		createButton( buttons, text( "button.install"), event -> runPrivilegedScriptAsync( "install-service.ps1")) ;
 		createButton( buttons, text( "button.start"), event -> runPrivilegedScriptAsync( "start-service.ps1")) ;
 		createButton( buttons, text( "button.stop"), event -> runPrivilegedScriptAsync( "stop-service.ps1")) ;
@@ -513,6 +541,7 @@ public class TinyWinNfsSwtManager {
 		createButton( buttons, text( "button.status"), event -> refreshStatus()) ;
 		createButton( buttons, text( "button.openLog"), event -> openPath( TinyWinNfsPaths.getLogPath( rootPath))) ;
 		createButton( buttons, text( "button.openWinswLog"), event -> openPath( getWinswLogPath())) ;
+		createButton( buttons, text( "button.createDiagnostics"), event -> createDiagnosticPackage()) ;
 
 		serviceInfoText = createText( panel, SWT.BORDER | SWT.MULTI | SWT.READ_ONLY | SWT.WRAP | SWT.V_SCROLL) ;
 		serviceInfoText.setLayoutData( new GridData( SWT.FILL, SWT.FILL, true, true)) ;
@@ -1346,6 +1375,12 @@ public class TinyWinNfsSwtManager {
 			directoryModeText.setText( properties.getProperty( "directory.mode", "0755")) ;
 			blockSizeText.setText( properties.getProperty( "block.size", "4096")) ;
 			readSizeText.setText( properties.getProperty( "read.size", "8192")) ;
+			writeSizeText.setText( properties.getProperty( "write.size", readSizeText.getText())) ;
+			directoryPreferredSizeText.setText( properties.getProperty( "directory.preferred.size", blockSizeText.getText())) ;
+			maxFileSizeText.setText( properties.getProperty( "max.file.size", "9223372036854775807")) ;
+			timeDeltaNanosText.setText( properties.getProperty( "time.delta.nanos", "1000000")) ;
+			pathconfLinkMaxText.setText( properties.getProperty( "pathconf.link.max", "1024")) ;
+			pathconfNameMaxText.setText( properties.getProperty( "pathconf.name.max", "255")) ;
 			filenameCharsetText.setText( properties.getProperty( "filename.charset", "UTF-8")) ;
 			writeSyncButton.setSelection( Boolean.parseBoolean( properties.getProperty( "write.sync", "false"))) ;
 			writeCacheEnabledButton.setSelection( Boolean.parseBoolean( properties.getProperty( "write.cache.enabled", "true"))) ;
@@ -1416,6 +1451,12 @@ public class TinyWinNfsSwtManager {
 			lines.add( "directory.mode=" + directoryModeText.getText().trim()) ;
 			lines.add( "block.size=" + blockSizeText.getText().trim()) ;
 			lines.add( "read.size=" + readSizeText.getText().trim()) ;
+			lines.add( "write.size=" + writeSizeText.getText().trim()) ;
+			lines.add( "directory.preferred.size=" + directoryPreferredSizeText.getText().trim()) ;
+			lines.add( "max.file.size=" + maxFileSizeText.getText().trim()) ;
+			lines.add( "time.delta.nanos=" + timeDeltaNanosText.getText().trim()) ;
+			lines.add( "pathconf.link.max=" + pathconfLinkMaxText.getText().trim()) ;
+			lines.add( "pathconf.name.max=" + pathconfNameMaxText.getText().trim()) ;
 			lines.add( "write.sync=" + writeSyncButton.getSelection()) ;
 			lines.add( "write.cache.enabled=" + writeCacheEnabledButton.getSelection()) ;
 			lines.add( "write.cache.max.open=" + writeCacheMaxOpenText.getText().trim()) ;
@@ -1604,6 +1645,12 @@ public class TinyWinNfsSwtManager {
 		validatePort( text( "label.mountUdpPort"), mountPortText.getText()) ;
 		validatePositiveInt( text( "label.blockSize"), blockSizeText.getText()) ;
 		validatePositiveInt( text( "label.readSize"), readSizeText.getText()) ;
+		validatePositiveInt( text( "label.writeSize"), writeSizeText.getText()) ;
+		validatePositiveInt( text( "label.directoryPreferredSize"), directoryPreferredSizeText.getText()) ;
+		validatePositiveLong( text( "label.maxFileSize"), maxFileSizeText.getText()) ;
+		validateTimeDeltaNanos() ;
+		validatePositiveInt( text( "label.pathconfLinkMax"), pathconfLinkMaxText.getText()) ;
+		validatePathconfNameMax() ;
 		validatePositiveInt( text( "label.writeCacheMaxOpen"), writeCacheMaxOpenText.getText()) ;
 		validatePositiveInt( text( "label.writeCacheIdleMillis"), writeCacheIdleMillisText.getText()) ;
 		validateInt( text( "label.uid"), uidText.getText()) ;
@@ -1674,6 +1721,60 @@ public class TinyWinNfsSwtManager {
 
 	//--------------------------------------------------------------------------
 	/**
+	 * 正のlong値を検証します。<br><br>
+	 *
+	 * <p>メソッド名称： 正long値検証</p>
+	 *
+	 * @param label	ラベル
+	 * @param value	値
+	 * @return 数値
+	 */
+	//--------------------------------------------------------------------------
+	private long validatePositiveLong(String label, String value) {
+		long number = validateLong( label, value) ;
+
+		// 正数ではない場合
+		if( number <= 0L) {
+			throw new IllegalArgumentException( format( "error.mustBePositive", label) ) ;
+		}
+
+		return number ;
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * PATHCONF name最大値を検証します。<br><br>
+	 *
+	 * <p>メソッド名称： PATHCONF name最大値検証</p>
+	 */
+	//--------------------------------------------------------------------------
+	private void validatePathconfNameMax() {
+		int value = validatePositiveInt( text( "label.pathconfNameMax"), pathconfNameMaxText.getText()) ;
+
+		// NFSファイル名上限を超える場合
+		if( value > 255) {
+			throw new IllegalArgumentException( format( "error.pathconfNameMaxOutOfRange", text( "label.pathconfNameMax")) ) ;
+		}
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * 時刻精度ナノ秒を検証します。<br><br>
+	 *
+	 * <p>メソッド名称： 時刻精度ナノ秒検証</p>
+	 */
+	//--------------------------------------------------------------------------
+	private void validateTimeDeltaNanos() {
+		int value = validatePositiveInt( text( "label.timeDeltaNanos"), timeDeltaNanosText.getText()) ;
+
+		// NFS nsecondsの範囲外の場合
+		if( value > 999999999) {
+			throw new IllegalArgumentException( format( "error.timeDeltaNanosOutOfRange", text( "label.timeDeltaNanos")) ) ;
+		}
+	}
+
+	//--------------------------------------------------------------------------
+	/**
 	 * 整数を検証します。<br><br>
 	 *
 	 * <p>メソッド名称： 整数検証</p>
@@ -1686,6 +1787,25 @@ public class TinyWinNfsSwtManager {
 	private int validateInt(String label, String value) {
 		try {
 			return Integer.parseInt( value.trim()) ;
+		} catch( NumberFormatException nfex) {
+			throw new IllegalArgumentException( format( "error.mustBeInteger", label) ) ;
+		}
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * long値を検証します。<br><br>
+	 *
+	 * <p>メソッド名称： long値検証</p>
+	 *
+	 * @param label	ラベル
+	 * @param value	値
+	 * @return 数値
+	 */
+	//--------------------------------------------------------------------------
+	private long validateLong(String label, String value) {
+		try {
+			return Long.parseLong( value.trim()) ;
 		} catch( NumberFormatException nfex) {
 			throw new IllegalArgumentException( format( "error.mustBeInteger", label) ) ;
 		}
@@ -1961,6 +2081,195 @@ public class TinyWinNfsSwtManager {
 				describePortStatus( mountPortText),
 				getWindowsNfsClientStatus(),
 				configPath.getParent().resolve( "backups"))) ;
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * 診断パッケージを作成します。<br><br>
+	 *
+	 * <p>メソッド名称： 診断パッケージ作成</p>
+	 */
+	//--------------------------------------------------------------------------
+	private void createDiagnosticPackage() {
+		updateServiceInfoText() ;
+		String summary = buildDiagnosticSummary() ;
+		Path logPath = TinyWinNfsPaths.getLogPath( rootPath) ;
+		Path backupPath = configPath.getParent().resolve( "backups") ;
+		Path winswLogPath = getWinswLogPath() ;
+		appendLog( text( "log.diagnosticPackageStarted")) ;
+
+		new Thread( () -> {
+			try {
+				Path packagePath = writeDiagnosticPackage( summary, logPath, backupPath, winswLogPath) ;
+				runOnUi( () -> {
+					appendLog( format( "log.diagnosticPackageCreated", packagePath)) ;
+					openPath( packagePath) ;
+				}) ;
+			} catch( Exception ex) {
+				runOnUi( () -> {
+					appendLog( format( "log.diagnosticPackageFailed", ex.getMessage())) ;
+					showError( text( "error.diagnosticPackageFailed"), ex) ;
+				}) ;
+			}
+		}, "diagnostic-package").start() ;
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * 診断概要を作成します。<br><br>
+	 *
+	 * <p>メソッド名称： 診断概要作成</p>
+	 *
+	 * @return 診断概要
+	 */
+	//--------------------------------------------------------------------------
+	private String buildDiagnosticSummary() {
+		StringBuilder builder = new StringBuilder() ;
+		builder.append( PRODUCT_NAME).append( " diagnostics" ).append( System.lineSeparator()) ;
+		builder.append( "created=" ).append( LocalDateTime.now()).append( System.lineSeparator()) ;
+		builder.append( "administrator=" ).append( isAdministrator()).append( System.lineSeparator()) ;
+		builder.append( "serviceStatus=" ).append( statusValueLabel.getText()).append( System.lineSeparator()) ;
+		builder.append( System.lineSeparator()) ;
+		builder.append( "Service information" ).append( System.lineSeparator()) ;
+		builder.append( serviceInfoText == null || serviceInfoText.isDisposed() ? "" : serviceInfoText.getText()).append( System.lineSeparator()) ;
+		builder.append( System.lineSeparator()) ;
+		builder.append( "Exports" ).append( System.lineSeparator()) ;
+		builder.append( buildExportSummary()) ;
+		return builder.toString() ;
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * 診断パッケージを書き込みます。<br><br>
+	 *
+	 * <p>メソッド名称： 診断パッケージ書込</p>
+	 *
+	 * @param summary		概要
+	 * @param logPath		ログパス
+	 * @param backupPath	バックアップパス
+	 * @param winswLogPath	WinSWログパス
+	 * @return 診断パッケージ
+	 * @throws IOException 書込異常
+	 */
+	//--------------------------------------------------------------------------
+	private Path writeDiagnosticPackage(String summary, Path logPath, Path backupPath, Path winswLogPath) throws IOException {
+		Path diagnosticDirectory = dataRootPath.resolve( "diagnostics") ;
+		Files.createDirectories( diagnosticDirectory) ;
+		String timestamp = DateTimeFormatter.ofPattern( "yyyyMMdd-HHmmss").format( LocalDateTime.now()) ;
+		Path packagePath = diagnosticDirectory.resolve( "tinywin-nfs-diagnostics-" + timestamp + ".zip") ;
+
+		try( ZipOutputStream zip = new ZipOutputStream( Files.newOutputStream( packagePath))) {
+			addTextEntry( zip, "summary.txt", summary) ;
+			addFileEntryIfExists( zip, "conf/nfs-server.properties", configPath) ;
+			addDirectoryEntries( zip, "conf/backups", backupPath, ".properties") ;
+			addFileEntryIfExists( zip, "logs/nfs-server.log", logPath) ;
+			addDirectoryEntries( zip, "winsw-logs", winswLogPath, ".log", ".out", ".err") ;
+		}
+
+		return packagePath ;
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * テキストエントリを追加します。<br><br>
+	 *
+	 * <p>メソッド名称： テキストエントリ追加</p>
+	 *
+	 * @param zip		Zip出力
+	 * @param entryName	エントリ名
+	 * @param text		テキスト
+	 * @throws IOException 書込異常
+	 */
+	//--------------------------------------------------------------------------
+	private void addTextEntry(ZipOutputStream zip, String entryName, String text) throws IOException {
+		zip.putNextEntry( new ZipEntry( entryName)) ;
+		zip.write( text.getBytes( StandardCharsets.UTF_8)) ;
+		zip.closeEntry() ;
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * ファイルエントリを追加します。<br><br>
+	 *
+	 * <p>メソッド名称： ファイルエントリ追加</p>
+	 *
+	 * @param zip		Zip出力
+	 * @param entryName	エントリ名
+	 * @param filePath	ファイルパス
+	 * @throws IOException 書込異常
+	 */
+	//--------------------------------------------------------------------------
+	private void addFileEntryIfExists(ZipOutputStream zip, String entryName, Path filePath) throws IOException {
+		// 通常ファイルではない場合
+		if( !Files.isRegularFile( filePath)) {
+			return ;
+		}
+
+		zip.putNextEntry( new ZipEntry( entryName.replace( "\\", "/" ))) ;
+		Files.copy( filePath, zip) ;
+		zip.closeEntry() ;
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * ディレクトリ内エントリを追加します。<br><br>
+	 *
+	 * <p>メソッド名称： ディレクトリ内エントリ追加</p>
+	 *
+	 * @param zip			Zip出力
+	 * @param entryPrefix	エントリ接頭辞
+	 * @param directory		ディレクトリ
+	 * @param extensions	拡張子
+	 * @throws IOException 書込異常
+	 */
+	//--------------------------------------------------------------------------
+	private void addDirectoryEntries(ZipOutputStream zip, String entryPrefix, Path directory, String... extensions) throws IOException {
+		// ディレクトリではない場合
+		if( !Files.isDirectory( directory)) {
+			return ;
+		}
+
+		try( var stream = Files.list( directory)) {
+			List<Path> files = stream
+					.filter( Files::isRegularFile )
+					.sorted()
+					.toList() ;
+
+			// 対象ファイルを追加する
+			for( Path file : files) {
+				// 拡張子が対象外の場合
+				if( !hasAnyExtension( file, extensions)) {
+					continue ;
+				}
+
+				addFileEntryIfExists( zip, entryPrefix + "/" + file.getFileName().toString(), file) ;
+			}
+		}
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * 拡張子一致を確認します。<br><br>
+	 *
+	 * <p>メソッド名称： 拡張子一致確認</p>
+	 *
+	 * @param file			ファイル
+	 * @param extensions	拡張子
+	 * @return true:一致 false:不一致
+	 */
+	//--------------------------------------------------------------------------
+	private boolean hasAnyExtension(Path file, String... extensions) {
+		String fileName = file.getFileName().toString().toLowerCase() ;
+
+		// 拡張子を確認する
+		for( String extension : extensions) {
+			// 拡張子が一致する場合
+			if( fileName.endsWith( extension.toLowerCase())) {
+				return true ;
+			}
+		}
+
+		return false ;
 	}
 
 	//--------------------------------------------------------------------------

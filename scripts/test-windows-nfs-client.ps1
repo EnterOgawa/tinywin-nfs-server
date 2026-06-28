@@ -5,7 +5,8 @@ param(
 	[ValidateSet("UDP", "TCP")]
 	[string]$Transport = "UDP",
 	[switch]$SkipProtocolChange,
-	[switch]$KeepWork
+	[switch]$KeepWork,
+	[string]$ReportPath = ""
 )
 
 $ErrorActionPreference = "Stop"
@@ -27,9 +28,91 @@ $mountPath = $drivePath + "\"
 $serverProcess = $null
 $mounted = $false
 $originalProtocol = $null
+$reportLines = [System.Collections.Generic.List[string]]::new()
+$testStartedAt = Get-Date
+$testResult = "FAILED"
+$testFailure = ""
+$cleanupErrors = @()
 
 if( !$PSBoundParameters.ContainsKey("ExportName")) {
 	$ExportName = "export-$($Transport.ToLowerInvariant())-$(Get-Date -Format 'yyyyMMddHHmmss')"
+}
+
+if( [string]::IsNullOrWhiteSpace($ReportPath)) {
+	$reportRoot = Join-Path $root "work\analysis\windows-nfs-client"
+	$ReportPath = Join-Path $reportRoot ("windows-nfs-client-{0}-{1}.md" -f $Transport.ToLowerInvariant(), (Get-Date -Format "yyyyMMdd-HHmmss"))
+}
+
+function Add-ReportLine {
+	param(
+		[string]$Line = ""
+	)
+
+	$script:reportLines.Add($Line) | Out-Null
+}
+
+function Add-ReportSection {
+	param(
+		[string]$Title
+	)
+
+	Add-ReportLine ""
+	Add-ReportLine "## $Title"
+	Add-ReportLine ""
+}
+
+function Add-ReportValue {
+	param(
+		[string]$Name,
+		[string]$Value
+	)
+
+	Add-ReportLine "- ${Name}: $Value"
+}
+
+function Add-ReportCodeBlock {
+	param(
+		[string]$Title,
+		[string]$Text
+	)
+
+	Add-ReportLine ""
+	Add-ReportLine "### $Title"
+	Add-ReportLine ""
+	Add-ReportLine '```text'
+	Add-ReportLine $Text.TrimEnd()
+	Add-ReportLine '```'
+}
+
+function Write-TestReport {
+	$reportDirectory = Split-Path -Parent $ReportPath
+
+	if( ![string]::IsNullOrWhiteSpace($reportDirectory) -and !(Test-Path -LiteralPath $reportDirectory)) {
+		New-Item -ItemType Directory -Path $reportDirectory | Out-Null
+	}
+
+	$lines = [System.Collections.Generic.List[string]]::new()
+	$lines.Add("# Windows Client for NFS 結合テストレポート") | Out-Null
+	$lines.Add("") | Out-Null
+	$lines.Add("- result: $script:testResult") | Out-Null
+	$lines.Add("- started: $($script:testStartedAt.ToString('yyyy-MM-dd HH:mm:ss'))") | Out-Null
+	$lines.Add("- finished: $((Get-Date).ToString('yyyy-MM-dd HH:mm:ss'))") | Out-Null
+	$lines.Add("- transport: $Transport") | Out-Null
+	$lines.Add("- server: $ServerHost") | Out-Null
+	$lines.Add("- export: /$ExportName") | Out-Null
+	$lines.Add("- drive: $drivePath") | Out-Null
+
+	if( ![string]::IsNullOrWhiteSpace($script:testFailure)) {
+		$lines.Add("- failure: $script:testFailure") | Out-Null
+	}
+
+	if( $script:cleanupErrors.Count -gt 0) {
+		$lines.Add("- cleanup: $($script:cleanupErrors -join '; ')") | Out-Null
+	}
+
+	$lines.AddRange($script:reportLines)
+	Set-Content -LiteralPath $ReportPath -Value $lines -Encoding UTF8
+	Write-Host "Report: $ReportPath"
 }
 
 function Assert-CommandPath {
@@ -176,13 +259,16 @@ function Assert-DriveAvailable {
 function Use-TestProtocol {
 	if( $SkipProtocolChange) {
 		Write-Host "INFO: Skipping Windows Client for NFS protocol change. Current protocol: $(Get-NfsClientProtocol)"
+		Add-ReportValue -Name "protocol change" -Value "skipped"
 		return
 	}
 
 	$currentProtocol = Get-NfsClientProtocol
+	Add-ReportValue -Name "original protocol" -Value $currentProtocol
 
 	if( $currentProtocol -eq $Transport) {
 		Write-Host "INFO: Windows Client for NFS protocol is already $Transport"
+		Add-ReportValue -Name "protocol change" -Value "not required"
 		return
 	}
 
@@ -190,6 +276,7 @@ function Use-TestProtocol {
 	Set-NfsClientProtocol -Protocol $Transport
 	Start-Sleep -Seconds 2
 	Write-Host "INFO: Windows Client for NFS protocol is now $(Get-NfsClientProtocol)"
+	Add-ReportValue -Name "protocol change" -Value "$currentProtocol -> $Transport"
 }
 
 function Wait-DriveReleased {
@@ -249,6 +336,12 @@ file.mode=0666
 directory.mode=0777
 block.size=4096
 read.size=8192
+write.size=8192
+directory.preferred.size=4096
+max.file.size=9223372036854775807
+time.delta.nanos=1000000
+pathconf.link.max=1024
+pathconf.name.max=255
 filename.charset=Shift_JIS
 "@
 	Set-Content -LiteralPath $configPath -Value $configText -Encoding ASCII
@@ -256,6 +349,7 @@ filename.charset=Shift_JIS
 
 function Invoke-Mount {
 	$remote = "\\$ServerHost\$ExportName"
+	Add-ReportValue -Name "mount remote" -Value $remote
 	& $mountExe -o anon,nolock,rsize=8,wsize=8,lang=shift-jis $remote $drivePath
 
 	if( $LASTEXITCODE -ne 0) {
@@ -263,6 +357,7 @@ function Invoke-Mount {
 	}
 
 	$script:mounted = $true
+	Add-ReportValue -Name "mount" -Value "succeeded"
 }
 
 function Invoke-WindowsNfsChecks {
@@ -284,12 +379,16 @@ function Invoke-WindowsNfsChecks {
 		throw "created file readback mismatch: $createdReadBack"
 	}
 
+	Add-ReportValue -Name "create/read" -Value "succeeded"
+
 	"updated-from-windows-nfs-client" | Set-Content -LiteralPath $mountedFile -Encoding ASCII
 	$updatedReadBack = (Get-Content -LiteralPath $mountedFile -Raw).Trim()
 
 	if( $updatedReadBack -ne "updated-from-windows-nfs-client") {
 		throw "updated file readback mismatch: $updatedReadBack"
 	}
+
+	Add-ReportValue -Name "update/read" -Value "succeeded"
 
 	Rename-Item -LiteralPath $mountedFile -NewName "$baseName-renamed.txt"
 
@@ -303,17 +402,23 @@ function Invoke-WindowsNfsChecks {
 		throw "server-side file content mismatch: $localContent"
 	}
 
+	Add-ReportValue -Name "rename/server visibility" -Value "succeeded"
+
 	New-Item -ItemType Directory -Path $mountedDir | Out-Null
 
 	if( !(Test-Path -LiteralPath $localDir)) {
 		throw "created directory is not visible on server: $localDir"
 	}
 
+	Add-ReportValue -Name "directory create" -Value "succeeded"
+
 	"jp-name-from-windows" | Set-Content -LiteralPath $mountedJpFile -Encoding ASCII
 
 	if( !(Test-Path -LiteralPath $localJpFile)) {
 		throw "Japanese filename is not visible on server: $localJpFile"
 	}
+
+	Add-ReportValue -Name "Japanese filename" -Value "succeeded"
 
 	Remove-Item -LiteralPath $renamedFile -Force
 	Remove-Item -LiteralPath $mountedDir -Force
@@ -322,6 +427,8 @@ function Invoke-WindowsNfsChecks {
 	if( (Test-Path -LiteralPath $localFile) -or (Test-Path -LiteralPath $localDir) -or (Test-Path -LiteralPath $localJpFile)) {
 		throw "cleanup through Windows NFS mount did not remove all test paths"
 	}
+
+	Add-ReportValue -Name "cleanup through mount" -Value "succeeded"
 }
 
 function Wait-LogPattern {
@@ -355,18 +462,38 @@ function Assert-NfsV3Log {
 
 	Wait-LogPattern -Pattern "program=100005 version=3" -Description "MOUNT v3 request"
 	Wait-LogPattern -Pattern "program=100003 version=3" -Description "NFSv3 request"
+	Add-ReportValue -Name "NFS version" -Value "v3 observed"
 
 	if( $Transport -eq "TCP") {
 		Wait-LogPattern -Pattern "server=nfs-mount-tcp.*program=100005 version=3" -Description "MOUNT v3 request over TCP"
 		Wait-LogPattern -Pattern "server=nfs-tcp.*program=100003 version=3" -Description "NFSv3 request over TCP"
+		Add-ReportValue -Name "transport log" -Value "TCP observed"
+	} else {
+		Add-ReportValue -Name "transport log" -Value "UDP observed"
 	}
 }
 
 try {
+	Add-ReportSection -Title "入力"
+	Add-ReportValue -Name "drive" -Value $drivePath
+	Add-ReportValue -Name "server" -Value $ServerHost
+	Add-ReportValue -Name "export" -Value "/$ExportName"
+	Add-ReportValue -Name "transport" -Value $Transport
+	Add-ReportValue -Name "skip protocol change" -Value $SkipProtocolChange.ToString()
+	Add-ReportValue -Name "keep work" -Value $KeepWork.ToString()
+
 	Assert-CommandPath -Path $java -Name "java.exe"
 	Assert-CommandPath -Path $mountExe -Name "mount.exe"
 	Assert-CommandPath -Path $umountExe -Name "umount.exe"
 	Assert-CommandPath -Path $nfsAdminExe -Name "nfsadmin.exe"
+
+	Add-ReportSection -Title "環境"
+	Add-ReportValue -Name "java" -Value $java
+	Add-ReportValue -Name "mount.exe" -Value $mountExe
+	Add-ReportValue -Name "umount.exe" -Value $umountExe
+	Add-ReportValue -Name "nfsadmin.exe" -Value $nfsAdminExe
+	Add-ReportValue -Name "NfsClnt" -Value (Get-ServiceStatusText -Name "NfsClnt")
+	Add-ReportCodeBlock -Title "nfsadmin client" -Text ((& $nfsAdminExe client 2>&1) -join [Environment]::NewLine)
 
 	$nfsClient = Get-Service -Name NfsClnt -ErrorAction SilentlyContinue
 
@@ -376,7 +503,9 @@ try {
 
 	Assert-NfsClientReady
 	Assert-DriveAvailable
+	Add-ReportValue -Name "drive availability" -Value "available"
 
+	Add-ReportSection -Title "ポート"
 	foreach( $port in @(111, 2049, 20048)) {
 		if( Get-NetUDPEndpoint -LocalPort $port -ErrorAction SilentlyContinue) {
 			throw "UDP port $port is already in use. Stop TinyWinNFS service or any other NFS server before running this test."
@@ -385,14 +514,22 @@ try {
 		if( Get-NetTCPConnection -LocalPort $port -State Listen -ErrorAction SilentlyContinue) {
 			throw "TCP port $port is already in use. Stop TinyWinNFS service or any other NFS server before running this test."
 		}
+
+		Add-ReportValue -Name "port $port" -Value "available"
 	}
 
 	& (Join-Path $root "scripts\compile.ps1")
+	Add-ReportValue -Name "compile" -Value "succeeded"
 
 	Remove-TestPath -Path $workRoot
 	New-Item -ItemType Directory -Path $exportRoot | Out-Null
 	New-Item -ItemType Directory -Path $dataRoot | Out-Null
 	Write-TestConfig
+	Add-ReportSection -Title "テスト設定"
+	Add-ReportValue -Name "work root" -Value $workRoot
+	Add-ReportValue -Name "export root" -Value $exportRoot
+	Add-ReportValue -Name "data root" -Value $dataRoot
+	Add-ReportValue -Name "config" -Value $configPath
 
 	$arguments = @(
 		"-Dfile.encoding=UTF-8",
@@ -405,10 +542,13 @@ try {
 		$configPath
 	)
 	$serverProcess = Start-Process -FilePath $java -ArgumentList $arguments -WorkingDirectory $root -WindowStyle Hidden -PassThru
+	Add-ReportValue -Name "server process" -Value $serverProcess.Id.ToString()
 	Wait-UdpPorts -Ports @(111, 2049, 20048)
 	Wait-TcpPorts -Ports @(111, 2049, 20048)
+	Add-ReportValue -Name "server ports" -Value "listening"
 	$originalProtocol = Get-NfsClientProtocol
 	Use-TestProtocol
+	Add-ReportSection -Title "操作結果"
 	Invoke-Mount
 	Invoke-WindowsNfsChecks
 	Assert-NfsV3Log
@@ -420,9 +560,13 @@ try {
 	Write-Host "PASS: Windows Client for NFS directory create/delete"
 	Write-Host "PASS: Windows Client for NFS Japanese filename"
 	Write-Host "WINDOWS NFS CLIENT TEST PASSED"
+	$script:testResult = "PASSED"
+} catch {
+	$script:testFailure = $_.Exception.Message
+	Add-ReportSection -Title "失敗"
+	Add-ReportValue -Name "message" -Value $_.Exception.Message
+	throw
 } finally {
-	$cleanupErrors = @()
-
 	try {
 		Invoke-Umount
 	} catch {
@@ -456,6 +600,9 @@ try {
 	} catch {
 		$cleanupErrors += $_.Exception.Message
 	}
+
+	$script:cleanupErrors = $cleanupErrors
+	Write-TestReport
 
 	if( $cleanupErrors.Count -gt 0) {
 		throw "Cleanup failed: $($cleanupErrors -join '; ')"

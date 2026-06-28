@@ -243,12 +243,44 @@ public class ServiceSmokeTest {
 		try {
 			byte[] directoryHandle = createDirectory( rootHandle, directoryName) ;
 			byte[] nestedHandle = createDirectory( directoryHandle, "nested") ;
+			byte[] alphaHandle = createDirectory( directoryHandle, "alpha") ;
+			byte[] betaHandle = createDirectory( directoryHandle, "beta") ;
 			assertLargeTreeFile( directoryHandle, directoryPath, "empty.txt", "" ) ;
 			assertLargeTreeFile( directoryHandle, directoryPath, "small.txt", "small-content") ;
 			assertLargeTreeFile( directoryHandle, directoryPath, "long-name-file-0123456789.txt", createContent( 2048)) ;
 			assertLargeTreeFile( nestedHandle, directoryPath.resolve( "nested"), "nested.bin", createContent( 16384)) ;
+
+			// alpha配下に複数ファイルを作成する
+			for( int i = 0; i < 12; i++) {
+				assertLargeTreeFile( alphaHandle, directoryPath.resolve( "alpha"), "alpha-" + formatIndex( i) + ".txt", createContent( 128 + i)) ;
+			}
+
+			// beta配下に複数ファイルを作成する
+			for( int i = 0; i < 12; i++) {
+				assertLargeTreeFile( betaHandle, directoryPath.resolve( "beta"), "beta-" + formatIndex( i) + ".bin", createContent( 256 + i * 3)) ;
+			}
+
+			renameFile( alphaHandle, "alpha-00.txt", "alpha-00-renamed.txt") ;
+			assertDiskContent( directoryPath.resolve( "alpha").resolve( "alpha-00-renamed.txt"), createContent( 128)) ;
+			assertTreeFileCount( directoryPath, 28) ;
+
 			removeFile( nestedHandle, "nested.bin") ;
+
+			// alpha配下のファイルを削除する
+			for( int i = 1; i < 12; i++) {
+				removeFile( alphaHandle, "alpha-" + formatIndex( i) + ".txt") ;
+			}
+
+			removeFile( alphaHandle, "alpha-00-renamed.txt") ;
+
+			// beta配下のファイルを削除する
+			for( int i = 0; i < 12; i++) {
+				removeFile( betaHandle, "beta-" + formatIndex( i) + ".bin") ;
+			}
+
 			removeDirectory( directoryHandle, "nested") ;
+			removeDirectory( directoryHandle, "alpha") ;
+			removeDirectory( directoryHandle, "beta") ;
 			removeFile( directoryHandle, "empty.txt") ;
 			removeFile( directoryHandle, "small.txt") ;
 			removeFile( directoryHandle, "long-name-file-0123456789.txt") ;
@@ -259,7 +291,7 @@ public class ServiceSmokeTest {
 				throw new AssertionError( "Large tree directory remains: " + directoryPath) ;
 			}
 
-			System.out.println( "PASS: service large tree integrity") ;
+			System.out.println( "PASS: service large tree integrity files=28") ;
 		} finally {
 			deleteDirectory( directoryPath) ;
 		}
@@ -694,6 +726,38 @@ public class ServiceSmokeTest {
 		if( content.length() <= 1024) {
 			assertReadFile( fileHandle, content) ;
 		}
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * ツリー内ファイル数を確認します。<br><br>
+	 *
+	 * <p>メソッド名称： ツリー内ファイル数確認</p>
+	 *
+	 * @param directoryPath	ディレクトリパス
+	 * @param expected		期待件数
+	 * @throws Exception 確認異常
+	 */
+	//--------------------------------------------------------------------------
+	private void assertTreeFileCount(Path directoryPath, long expected) throws Exception {
+		try( var stream = Files.walk( directoryPath)) {
+			long actual = stream.filter( Files::isRegularFile).count() ;
+			assertEquals( "large tree file count", expected, actual) ;
+		}
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * インデックスを整形します。<br><br>
+	 *
+	 * <p>メソッド名称： インデックス整形</p>
+	 *
+	 * @param index	インデックス
+	 * @return 整形済みインデックス
+	 */
+	//--------------------------------------------------------------------------
+	private String formatIndex(int index) {
+		return String.format( "%02d", index) ;
 	}
 
 	//--------------------------------------------------------------------------
@@ -1149,6 +1213,24 @@ public class ServiceSmokeTest {
 	 */
 	//--------------------------------------------------------------------------
 	private void assertEquals(String name, int expected, int actual) {
+		// 値が一致しない場合
+		if( expected != actual) {
+			throw new AssertionError( name + " expected=" + expected + " actual=" + actual) ;
+		}
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * long値を検証します。<br><br>
+	 *
+	 * <p>メソッド名称： long値検証</p>
+	 *
+	 * @param name		名称
+	 * @param expected	期待値
+	 * @param actual	実値
+	 */
+	//--------------------------------------------------------------------------
+	private void assertEquals(String name, long expected, long actual) {
 		// 値が一致しない場合
 		if( expected != actual) {
 			throw new AssertionError( name + " expected=" + expected + " actual=" + actual) ;

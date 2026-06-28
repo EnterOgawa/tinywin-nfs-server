@@ -1329,19 +1329,33 @@ public class NfsV3Program implements RpcProgram {
 		}
 
 		int readSize = config.getReadSize() ;
-		int writeSize = Math.max( 1024, config.getReadSize()) ;
+		int writeSize = config.getWriteSize() ;
 		response.writeInt( NfsStatus.OK) ;
 		writePostOpAttr( response, path) ;
 		response.writeInt( readSize) ;
 		response.writeInt( readSize) ;
-		response.writeInt( 512) ;
+		response.writeInt( getTransferMultiple( readSize)) ;
 		response.writeInt( writeSize) ;
 		response.writeInt( writeSize) ;
-		response.writeInt( 512) ;
-		response.writeInt( 4096) ;
-		response.writeLong( Long.MAX_VALUE) ;
-		writeTimeValue( response, 0L, 1000000L) ;
+		response.writeInt( getTransferMultiple( writeSize)) ;
+		response.writeInt( config.getDirectoryPreferredSize()) ;
+		response.writeLong( config.getMaxFileSize()) ;
+		writeTimeValue( response, 0L, config.getTimeDeltaNanos()) ;
 		response.writeInt( FSF_LINK | FSF_SYMLINK | FSF_HOMOGENEOUS | FSF_CANSETTIME) ;
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * 転送単位を取得します。<br><br>
+	 *
+	 * <p>メソッド名称： 転送単位取得</p>
+	 *
+	 * @param transferSize	転送サイズ
+	 * @return 転送単位
+	 */
+	//--------------------------------------------------------------------------
+	private int getTransferMultiple(int transferSize) {
+		return Math.max( 1, Math.min( config.getBlockSize(), transferSize)) ;
 	}
 
 	//--------------------------------------------------------------------------
@@ -1375,8 +1389,8 @@ public class NfsV3Program implements RpcProgram {
 
 		response.writeInt( NfsStatus.OK) ;
 		writePostOpAttr( response, path) ;
-		response.writeInt( 1024) ;
-		response.writeInt( MAX_NAME_BYTES) ;
+		response.writeInt( config.getPathconfLinkMax()) ;
+		response.writeInt( Math.min( config.getPathconfNameMax(), MAX_NAME_BYTES)) ;
 		response.writeBoolean( true) ;
 		response.writeBoolean( true) ;
 		response.writeBoolean( true) ;

@@ -70,6 +70,24 @@ public class NfsServerConfig {
 	/** 読込サイズ */
 	private final int					readSize ;
 
+	/** 書込サイズ */
+	private final int					writeSize ;
+
+	/** ディレクトリ推奨サイズ */
+	private final int					directoryPreferredSize ;
+
+	/** 最大ファイルサイズ */
+	private final long					maxFileSize ;
+
+	/** 時刻精度ナノ秒 */
+	private final int					timeDeltaNanos ;
+
+	/** PATHCONF link最大値 */
+	private final int					pathconfLinkMax ;
+
+	/** PATHCONF name最大値 */
+	private final int					pathconfNameMax ;
+
 	/** 同期書込 */
 	private final boolean				writeSync ;
 
@@ -108,6 +126,12 @@ public class NfsServerConfig {
 		directoryMode = getOctalInt( properties, "directory.mode", 0755) ;
 		blockSize = getInt( properties, "block.size", 4096) ;
 		readSize = getInt( properties, "read.size", 8192) ;
+		writeSize = getInt( properties, "write.size", readSize) ;
+		directoryPreferredSize = getInt( properties, "directory.preferred.size", blockSize) ;
+		maxFileSize = getLong( properties, "max.file.size", Long.MAX_VALUE) ;
+		timeDeltaNanos = getInt( properties, "time.delta.nanos", 1000000) ;
+		pathconfLinkMax = getInt( properties, "pathconf.link.max", 1024) ;
+		pathconfNameMax = getInt( properties, "pathconf.name.max", 255) ;
 		writeSync = getBoolean( properties, "write.sync", false) ;
 		writeCacheEnabled = getBoolean( properties, "write.cache.enabled", true) ;
 		writeCacheMaxOpenFiles = getInt( properties, "write.cache.max.open", 64) ;
@@ -204,6 +228,29 @@ public class NfsServerConfig {
 		}
 
 		return Integer.parseInt( value.trim()) ;
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * long設定を取得します。<br><br>
+	 *
+	 * <p>メソッド名称： long設定取得</p>
+	 *
+	 * @param properties		設定値
+	 * @param key			キー
+	 * @param defaultValue	デフォルト値
+	 * @return long設定
+	 */
+	//--------------------------------------------------------------------------
+	private static long getLong(Properties properties, String key, long defaultValue) {
+		String value = properties.getProperty( key) ;
+
+		// 設定がない場合
+		if( value == null || value.isBlank()) {
+			return defaultValue ;
+		}
+
+		return Long.parseLong( value.trim()) ;
 	}
 
 	//--------------------------------------------------------------------------
@@ -388,6 +435,36 @@ public class NfsServerConfig {
 		// 読込サイズが不正な場合
 		if( readSize <= 0) {
 			throw new IllegalArgumentException( "read.size must be greater than zero.") ;
+		}
+
+		// 書込サイズが不正な場合
+		if( writeSize <= 0) {
+			throw new IllegalArgumentException( "write.size must be greater than zero.") ;
+		}
+
+		// ディレクトリ推奨サイズが不正な場合
+		if( directoryPreferredSize <= 0) {
+			throw new IllegalArgumentException( "directory.preferred.size must be greater than zero.") ;
+		}
+
+		// 最大ファイルサイズが不正な場合
+		if( maxFileSize <= 0L) {
+			throw new IllegalArgumentException( "max.file.size must be greater than zero.") ;
+		}
+
+		// 時刻精度が不正な場合
+		if( timeDeltaNanos <= 0 || timeDeltaNanos > 999999999) {
+			throw new IllegalArgumentException( "time.delta.nanos must be between 1 and 999999999.") ;
+		}
+
+		// PATHCONF link最大値が不正な場合
+		if( pathconfLinkMax <= 0) {
+			throw new IllegalArgumentException( "pathconf.link.max must be greater than zero.") ;
+		}
+
+		// PATHCONF name最大値が不正な場合
+		if( pathconfNameMax <= 0 || pathconfNameMax > 255) {
+			throw new IllegalArgumentException( "pathconf.name.max must be between 1 and 255.") ;
 		}
 
 		// 権限ID反映設定が不正な場合
@@ -770,6 +847,84 @@ public class NfsServerConfig {
 	//--------------------------------------------------------------------------
 	public int getReadSize() {
 		return readSize ;
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * 書込サイズを取得します。<br><br>
+	 *
+	 * <p>メソッド名称： 書込サイズ取得</p>
+	 *
+	 * @return 書込サイズ
+	 */
+	//--------------------------------------------------------------------------
+	public int getWriteSize() {
+		return writeSize ;
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * ディレクトリ推奨サイズを取得します。<br><br>
+	 *
+	 * <p>メソッド名称： ディレクトリ推奨サイズ取得</p>
+	 *
+	 * @return ディレクトリ推奨サイズ
+	 */
+	//--------------------------------------------------------------------------
+	public int getDirectoryPreferredSize() {
+		return directoryPreferredSize ;
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * 最大ファイルサイズを取得します。<br><br>
+	 *
+	 * <p>メソッド名称： 最大ファイルサイズ取得</p>
+	 *
+	 * @return 最大ファイルサイズ
+	 */
+	//--------------------------------------------------------------------------
+	public long getMaxFileSize() {
+		return maxFileSize ;
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * 時刻精度ナノ秒を取得します。<br><br>
+	 *
+	 * <p>メソッド名称： 時刻精度ナノ秒取得</p>
+	 *
+	 * @return 時刻精度ナノ秒
+	 */
+	//--------------------------------------------------------------------------
+	public int getTimeDeltaNanos() {
+		return timeDeltaNanos ;
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * PATHCONF link最大値を取得します。<br><br>
+	 *
+	 * <p>メソッド名称： PATHCONF link最大値取得</p>
+	 *
+	 * @return PATHCONF link最大値
+	 */
+	//--------------------------------------------------------------------------
+	public int getPathconfLinkMax() {
+		return pathconfLinkMax ;
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * PATHCONF name最大値を取得します。<br><br>
+	 *
+	 * <p>メソッド名称： PATHCONF name最大値取得</p>
+	 *
+	 * @return PATHCONF name最大値
+	 */
+	//--------------------------------------------------------------------------
+	public int getPathconfNameMax() {
+		return pathconfNameMax ;
 	}
 
 	//--------------------------------------------------------------------------
