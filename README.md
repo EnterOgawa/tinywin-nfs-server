@@ -4,6 +4,31 @@ TinyWinNFS Server は、Java 21 で実装した Windows 向けのユーザー空
 
 QNX 4.25 を重要な検証対象にしていますが、製品自体は QNX 専用ではありません。Windows Client for NFS でも検証しています。
 
+v2.0.0 は正式版です。インストーラーには Java runtime、管理ツール、Windows サービス、既定設定、運用ドキュメントを同梱しています。
+
+## 入手とインストール
+
+最新版は [GitHub Releases](https://github.com/EnterOgawa/tinywin-nfs-server/releases) から `TinyWinNfsSetup.exe` を取得してください。
+
+| 項目 | 内容 |
+|---|---|
+| 対象OS | Windows Pro / Windows Server 系 |
+| 配布形式 | 署名済み Inno Setup インストーラー |
+| Java | 同梱 runtime を使用。利用者側の Java インストールは不要 |
+| 権限 | インストール、サービス操作、低番ポート使用には管理者権限が必要 |
+| サービス | `TinyWinNfsServer` として登録 |
+| 既定ポート | Portmap `111`、NFS `2049`、MOUNT `20048` |
+
+インストール後は、スタートメニューまたはデスクトップショートカットから `TinyWinNFS Server Manager` を起動します。
+
+## 基本的な使い方
+
+1. 管理ツールの `共有` タブで、公開名と Windows 側フォルダを設定します。
+2. 必要に応じて、書込可否と許可クライアントを設定します。
+3. `保存して再起動` を実行してサービスへ反映します。
+4. クライアント側で `/export` などの公開名を mount します。
+5. 問題がある場合は、管理ツールの診断とログを確認します。
+
 ## 対応範囲
 
 | 項目 | v2.0.0 の状態 |
@@ -46,7 +71,7 @@ v1.7.1 以降、アプリ本体と可変データを分離しています。
 旧バージョンの `C:\Program Files\EnterOgawa\TinyWinNFS Server\conf\nfs-server.properties` が存在し、かつ `ProgramData` 側の設定がまだない場合は、初回インストール/起動時に `ProgramData` 側へ移行します。
 設定保存時と旧設定移行時には、既存設定を `conf\backups` 配下へ最大 10 世代保存します。
 
-## クイックスタート
+## 開発者向けクイックスタート
 
 ### Eclipse
 
@@ -244,7 +269,6 @@ mount -o anon \\127.0.0.1\export Z:
 | 設定互換性 | [docs/configuration_compatibility.md](docs/configuration_compatibility.md) |
 | セキュリティとアクセス制限 | [docs/security_model.md](docs/security_model.md) |
 | インストール/更新/アンインストール | [docs/install_upgrade_uninstall.md](docs/install_upgrade_uninstall.md) |
-| v2.0.0 リリース確認 | [docs/release_checklist_v2_0_0.md](docs/release_checklist_v2_0_0.md) |
 | NFS手続きカバレッジ | [docs/nfs_procedure_coverage.md](docs/nfs_procedure_coverage.md) |
 | Windowsファイルシステム制約 | [docs/windows_filesystem_constraints.md](docs/windows_filesystem_constraints.md) |
 | 性能/負荷確認 | [docs/performance_testing.md](docs/performance_testing.md) |
@@ -265,6 +289,7 @@ mount -o anon \\127.0.0.1\export Z:
 | Windows Client for NFS protocol 事前設定済み確認 | `.\scripts\test-windows-nfs-client.ps1 -Transport TCP -SkipProtocolChange` |
 | Windows Client for NFS レポート指定 | `.\scripts\test-windows-nfs-client.ps1 -ReportPath work\analysis\windows-nfs-client\manual.md` |
 | 長時間稼働確認 | `.\scripts\test-service-stability.ps1 -DurationMinutes 60 -IntervalSeconds 15 -RestartEveryIterations 10` |
+| v2.0.0 リリース確認 | [docs/release_checklist_v2_0_0.md](docs/release_checklist_v2_0_0.md) |
 
 このリポジトリでは環境依存を避けるため、サーバー起動を伴う確認は手動確認対象です。
 

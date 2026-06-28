@@ -1,6 +1,6 @@
 # 変更履歴
 
-## 2.0.0 - 未リリース
+## 2.0.0 - 2026-06-28
 
 - TinyWinNFS Server の正式版として、NFSv2/NFSv3、MOUNT v1-v3、AUTH_SYS、UDP/TCP、複数 export、read-write 対応を公開対象として確定しました。
 - README と主要 docs から正式版候補の表現を整理し、2.0.0 正式版のサポート範囲、既知制限、導入手順へ参照できるようにしました。
