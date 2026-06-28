@@ -2,6 +2,7 @@ package jp.co.enterogawa.nfs.manager;
 
 import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
@@ -40,6 +41,7 @@ import org.eclipse.swt.widgets.Combo;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.DirectoryDialog;
 import org.eclipse.swt.widgets.Display;
+import org.eclipse.swt.widgets.FileDialog;
 import org.eclipse.swt.widgets.Group;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.MessageBox;
@@ -84,7 +86,28 @@ public class TinyWinNfsSwtManager {
 	private static final String			PRODUCT_NAME = "TinyWinNFS Server" ;
 
 	/** 製品バージョン */
-	private static final String			PRODUCT_VERSION = "1.10.0" ;
+	private static final String			PRODUCT_VERSION = "1.11.0" ;
+
+	/** ログ読込最大バイト数 */
+	private static final long			MAX_LOG_READ_BYTES = 1024L * 1024L ;
+
+	/** mountクライアント QNX */
+	private static final int				MOUNT_CLIENT_QNX = 0 ;
+
+	/** mountクライアント Windows */
+	private static final int				MOUNT_CLIENT_WINDOWS = 1 ;
+
+	/** mountクライアント Linux */
+	private static final int				MOUNT_CLIENT_LINUX = 2 ;
+
+	/** mountプロトコル NFSv2 UDP */
+	private static final int				MOUNT_PROTOCOL_V2_UDP = 0 ;
+
+	/** mountプロトコル NFSv3 UDP */
+	private static final int				MOUNT_PROTOCOL_V3_UDP = 1 ;
+
+	/** mountプロトコル NFSv3 TCP */
+	private static final int				MOUNT_PROTOCOL_V3_TCP = 2 ;
 
 	/** アイコンファイル名 */
 	private static final String			ICON_FILE_NAME = "tinywin-nfs-server.png" ;
@@ -117,6 +140,30 @@ public class TinyWinNfsSwtManager {
 	/** ログ */
 	private Text						logText ;
 
+	/** サーバーログ */
+	private Text						serverLogText ;
+
+	/** サーバーログ検索 */
+	private Text						logSearchText ;
+
+	/** サーバーログフィルタ */
+	private Combo						logFilterCombo ;
+
+	/** サーバーログ自動更新 */
+	private Button						logAutoRefreshButton ;
+
+	/** サーバーログ内容 */
+	private String						serverLogContent = "" ;
+
+	/** 診断一覧 */
+	private Table						diagnosticTable ;
+
+	/** 診断詳細 */
+	private Text						diagnosticDetailText ;
+
+	/** 診断重大度フィルタ */
+	private Combo						diagnosticSeverityCombo ;
+
 	/** 状態表示 */
 	private Label						statusValueLabel ;
 
@@ -125,6 +172,12 @@ public class TinyWinNfsSwtManager {
 
 	/** サービス情報 */
 	private Text						serviceInfoText ;
+
+	/** サービス操作結果 */
+	private Text						serviceResultText ;
+
+	/** サービス操作ボタン */
+	private final List<Button>			serviceActionButtons = new ArrayList<Button>() ;
 
 	/** export名 */
 	private Text						exportNameText ;
@@ -152,6 +205,12 @@ public class TinyWinNfsSwtManager {
 
 	/** クライアント側マウントポイント */
 	private Text						clientMountPointText ;
+
+	/** mountクライアント種別 */
+	private Combo						mountClientCombo ;
+
+	/** mountプロトコル */
+	private Combo						mountProtocolCombo ;
 
 	/** mountコマンド */
 	private Text						mountCommandText ;
@@ -365,8 +424,18 @@ public class TinyWinNfsSwtManager {
 		folder.setLayoutData( new GridData( SWT.FILL, SWT.FILL, true, true)) ;
 		addTab( folder, text( "tab.share"), createShareComposite( folder)) ;
 		addTab( folder, text( "tab.options"), createOptionsComposite( folder)) ;
+		TabItem diagnosticItem = addTab( folder, text( "tab.diagnostics"), createDiagnosticComposite( folder)) ;
 		addTab( folder, text( "tab.service"), createServiceComposite( folder)) ;
 		addTab( folder, text( "tab.log"), createLogComposite( folder)) ;
+		folder.addSelectionListener( new SelectionAdapter() {
+			@Override
+			public void widgetSelected(SelectionEvent event) {
+				// 診断タブが選択され、未表示の場合
+				if( folder.getSelection().length > 0 && folder.getSelection()[0] == diagnosticItem && diagnosticTable.getItemCount() == 0) {
+					refreshDiagnosticView() ;
+				}
+			}
+		}) ;
 	}
 
 	//--------------------------------------------------------------------------
@@ -380,10 +449,11 @@ public class TinyWinNfsSwtManager {
 	 * @param control	タブ内容
 	 */
 	//--------------------------------------------------------------------------
-	private void addTab(TabFolder folder, String text, Composite control) {
+	private TabItem addTab(TabFolder folder, String text, Composite control) {
 		TabItem item = new TabItem( folder, SWT.NONE) ;
 		item.setText( text) ;
 		item.setControl( control) ;
+		return item ;
 	}
 
 	//--------------------------------------------------------------------------
@@ -438,14 +508,36 @@ public class TinyWinNfsSwtManager {
 		createButton( shareButtons, text( "button.apply"), event -> applyShare()) ;
 		createButton( shareButtons, text( "button.remove"), event -> removeShare()) ;
 
-		Group mountGroup = createGroup( panel, text( "group.mount"), 2) ;
+		Group mountGroup = createGroup( panel, text( "group.mount"), 4) ;
+		createLabel( mountGroup, text( "label.mountClient")) ;
+		mountClientCombo = new Combo( mountGroup, SWT.DROP_DOWN | SWT.READ_ONLY) ;
+		mountClientCombo.setItems( new String[] { text( "mount.client.qnx"), text( "mount.client.windows"), text( "mount.client.linux") }) ;
+		mountClientCombo.setLayoutData( new GridData( SWT.FILL, SWT.CENTER, true, false)) ;
+		mountClientCombo.addSelectionListener( new SelectionAdapter() {
+			@Override
+			public void widgetSelected(SelectionEvent event) {
+				updateMountCommand() ;
+			}
+		}) ;
+		createLabel( mountGroup, text( "label.mountProtocol")) ;
+		mountProtocolCombo = new Combo( mountGroup, SWT.DROP_DOWN | SWT.READ_ONLY) ;
+		mountProtocolCombo.setItems( new String[] { text( "mount.protocol.v2udp"), text( "mount.protocol.v3udp"), text( "mount.protocol.v3tcp") }) ;
+		mountProtocolCombo.setLayoutData( new GridData( SWT.FILL, SWT.CENTER, true, false)) ;
+		mountProtocolCombo.addSelectionListener( new SelectionAdapter() {
+			@Override
+			public void widgetSelected(SelectionEvent event) {
+				updateMountCommand() ;
+			}
+		}) ;
 		mountCommandText = createText( mountGroup, SWT.BORDER | SWT.MULTI | SWT.READ_ONLY | SWT.WRAP | SWT.V_SCROLL) ;
 		GridData commandData = new GridData( SWT.FILL, SWT.FILL, true, true) ;
-		commandData.horizontalSpan = 2 ;
+		commandData.horizontalSpan = 4 ;
 		commandData.heightHint = 88 ;
 		mountCommandText.setLayoutData( commandData) ;
 		createButton( mountGroup, text( "button.copyCommand"), event -> copyMountCommand()) ;
 		createButton( mountGroup, text( "button.update"), event -> updateMountCommand()) ;
+		new Label( mountGroup, SWT.NONE) ;
+		new Label( mountGroup, SWT.NONE) ;
 
 		Composite buttons = createButtonRow( panel) ;
 		createButton( buttons, text( "button.reload"), event -> loadConfig()) ;
@@ -517,6 +609,59 @@ public class TinyWinNfsSwtManager {
 		createButton( buttons, text( "button.reload"), event -> loadConfig()) ;
 		createButton( buttons, text( "button.save"), event -> saveConfig()) ;
 		createButton( buttons, text( "button.saveRestart"), event -> saveConfigAndRestart()) ;
+		createButton( buttons, text( "button.exportConfig"), event -> exportConfig()) ;
+		createButton( buttons, text( "button.importConfig"), event -> importConfig()) ;
+		createButton( buttons, text( "button.resetDefaults"), event -> resetDefaultConfig()) ;
+		return panel ;
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * 診断Compositeを作成します。<br><br>
+	 *
+	 * <p>メソッド名称： 診断Composite作成</p>
+	 *
+	 * @param parent	親Composite
+	 * @return 診断Composite
+	 */
+	//--------------------------------------------------------------------------
+	private Composite createDiagnosticComposite(Composite parent) {
+		Composite panel = new Composite( parent, SWT.NONE) ;
+		panel.setLayout( createGridLayout( 1, false, 8, 8)) ;
+
+		Composite filter = new Composite( panel, SWT.NONE) ;
+		filter.setLayoutData( new GridData( SWT.FILL, SWT.TOP, true, false)) ;
+		filter.setLayout( createGridLayout( 8, false, 6, 6)) ;
+		createLabel( filter, text( "label.severity")) ;
+		diagnosticSeverityCombo = new Combo( filter, SWT.DROP_DOWN | SWT.READ_ONLY) ;
+		diagnosticSeverityCombo.setItems( new String[] { text( "diagnostic.severity.all"), text( "diagnostic.severity.error"), text( "diagnostic.severity.warning"), text( "diagnostic.severity.info") }) ;
+		diagnosticSeverityCombo.select( 0) ;
+		diagnosticSeverityCombo.addSelectionListener( new SelectionAdapter() {
+			@Override
+			public void widgetSelected(SelectionEvent event) {
+				refreshDiagnosticView() ;
+			}
+		}) ;
+		createButton( filter, text( "button.update"), event -> refreshDiagnosticView()) ;
+		createButton( filter, text( "button.openConfig"), event -> openPath( configPath)) ;
+		createButton( filter, text( "button.openLog"), event -> openPath( TinyWinNfsPaths.getLogPath( rootPath))) ;
+		createButton( filter, text( "button.createDiagnostics"), event -> createDiagnosticPackage()) ;
+		new Label( filter, SWT.NONE).setLayoutData( new GridData( SWT.FILL, SWT.CENTER, true, false)) ;
+
+		diagnosticTable = new Table( panel, SWT.BORDER | SWT.FULL_SELECTION | SWT.SINGLE) ;
+		diagnosticTable.setHeaderVisible( true) ;
+		diagnosticTable.setLinesVisible( true) ;
+		diagnosticTable.setLayoutData( new GridData( SWT.FILL, SWT.FILL, true, true)) ;
+		createTableColumn( diagnosticTable, text( "column.severity"), 90) ;
+		createTableColumn( diagnosticTable, text( "column.source"), 160) ;
+		createTableColumn( diagnosticTable, text( "column.code"), 220) ;
+		createTableColumn( diagnosticTable, text( "column.message"), 520) ;
+
+		diagnosticDetailText = createText( panel, SWT.BORDER | SWT.MULTI | SWT.READ_ONLY | SWT.H_SCROLL | SWT.V_SCROLL) ;
+		GridData detailData = new GridData( SWT.FILL, SWT.FILL, true, true) ;
+		detailData.heightHint = 160 ;
+		diagnosticDetailText.setLayoutData( detailData) ;
+		diagnosticDetailText.setText( text( "diagnostic.notRun")) ;
 		return panel ;
 	}
 
@@ -537,13 +682,13 @@ public class TinyWinNfsSwtManager {
 		Composite buttons = new Composite( panel, SWT.NONE) ;
 		buttons.setLayoutData( new GridData( SWT.FILL, SWT.TOP, true, false)) ;
 		buttons.setLayout( createGridLayout( 11, false, 6, 6)) ;
-		createButton( buttons, text( "button.install"), event -> runPrivilegedScriptAsync( "install-service.ps1")) ;
-		createButton( buttons, text( "button.start"), event -> runPrivilegedScriptAsync( "start-service.ps1")) ;
-		createButton( buttons, text( "button.stop"), event -> runPrivilegedScriptAsync( "stop-service.ps1")) ;
-		createButton( buttons, text( "button.restart"), event -> runPrivilegedScriptAsync( "restart-service.ps1")) ;
-		createButton( buttons, text( "button.uninstall"), event -> confirmAndRun( text( "dialog.uninstallService"), "uninstall-service.ps1")) ;
-		createButton( buttons, text( "button.firewall"), event -> runPrivilegedScriptAsync( "add-firewall-rules.ps1")) ;
-		createButton( buttons, text( "button.smokeTest"), event -> runSmokeTestAsync()) ;
+		createServiceButton( buttons, text( "button.install"), event -> runPrivilegedScriptAsync( "install-service.ps1")) ;
+		createServiceButton( buttons, text( "button.start"), event -> runPrivilegedScriptAsync( "start-service.ps1")) ;
+		createServiceButton( buttons, text( "button.stop"), event -> runPrivilegedScriptAsync( "stop-service.ps1")) ;
+		createServiceButton( buttons, text( "button.restart"), event -> runPrivilegedScriptAsync( "restart-service.ps1")) ;
+		createServiceButton( buttons, text( "button.uninstall"), event -> confirmAndRun( text( "dialog.uninstallService"), "uninstall-service.ps1")) ;
+		createServiceButton( buttons, text( "button.firewall"), event -> runPrivilegedScriptAsync( "add-firewall-rules.ps1")) ;
+		createServiceButton( buttons, text( "button.smokeTest"), event -> runSmokeTestAsync()) ;
 		createButton( buttons, text( "button.status"), event -> refreshStatus()) ;
 		createButton( buttons, text( "button.openLog"), event -> openPath( TinyWinNfsPaths.getLogPath( rootPath))) ;
 		createButton( buttons, text( "button.openWinswLog"), event -> openPath( getWinswLogPath())) ;
@@ -551,6 +696,10 @@ public class TinyWinNfsSwtManager {
 
 		serviceInfoText = createText( panel, SWT.BORDER | SWT.MULTI | SWT.READ_ONLY | SWT.WRAP | SWT.V_SCROLL) ;
 		serviceInfoText.setLayoutData( new GridData( SWT.FILL, SWT.FILL, true, true)) ;
+		serviceResultText = createText( panel, SWT.BORDER | SWT.MULTI | SWT.READ_ONLY | SWT.WRAP | SWT.V_SCROLL) ;
+		GridData resultData = new GridData( SWT.FILL, SWT.FILL, true, true) ;
+		resultData.heightHint = 130 ;
+		serviceResultText.setLayoutData( resultData) ;
 		updateServiceInfoText() ;
 		return panel ;
 	}
@@ -568,11 +717,51 @@ public class TinyWinNfsSwtManager {
 	private Composite createLogComposite(Composite parent) {
 		Composite panel = new Composite( parent, SWT.NONE) ;
 		panel.setLayout( createGridLayout( 1, false, 8, 8)) ;
-		logText = createText( panel, SWT.BORDER | SWT.MULTI | SWT.READ_ONLY | SWT.H_SCROLL | SWT.V_SCROLL) ;
+
+		Group serverLogGroup = createGroup( panel, text( "group.serverLog"), 1) ;
+		serverLogGroup.setLayoutData( new GridData( SWT.FILL, SWT.FILL, true, true)) ;
+		Composite filters = new Composite( serverLogGroup, SWT.NONE) ;
+		filters.setLayoutData( new GridData( SWT.FILL, SWT.TOP, true, false)) ;
+		filters.setLayout( createGridLayout( 8, false, 6, 6)) ;
+		createLabel( filters, text( "label.search")) ;
+		logSearchText = createText( filters, SWT.BORDER) ;
+		logSearchText.setLayoutData( new GridData( SWT.FILL, SWT.CENTER, true, false)) ;
+		logSearchText.addModifyListener( event -> applyServerLogFilter()) ;
+		createLabel( filters, text( "label.logFilter")) ;
+		logFilterCombo = new Combo( filters, SWT.DROP_DOWN | SWT.READ_ONLY) ;
+		logFilterCombo.setItems( new String[] { text( "log.filter.all"), text( "log.filter.error"), text( "log.filter.mutation"), text( "log.filter.rpc") }) ;
+		logFilterCombo.select( 0) ;
+		logFilterCombo.addSelectionListener( new SelectionAdapter() {
+			@Override
+			public void widgetSelected(SelectionEvent event) {
+				applyServerLogFilter() ;
+			}
+		}) ;
+		logAutoRefreshButton = new Button( filters, SWT.CHECK) ;
+		logAutoRefreshButton.setText( text( "label.autoRefresh")) ;
+		logAutoRefreshButton.addSelectionListener( new SelectionAdapter() {
+			@Override
+			public void widgetSelected(SelectionEvent event) {
+				// 自動更新が有効になった場合
+				if( logAutoRefreshButton.getSelection()) {
+					refreshServerLogView() ;
+					scheduleLogAutoRefresh() ;
+				}
+			}
+		}) ;
+		createButton( filters, text( "button.update"), event -> refreshServerLogView()) ;
+		createButton( filters, text( "button.openLog"), event -> openPath( TinyWinNfsPaths.getLogPath( rootPath))) ;
+		serverLogText = createText( serverLogGroup, SWT.BORDER | SWT.MULTI | SWT.READ_ONLY | SWT.H_SCROLL | SWT.V_SCROLL) ;
+		serverLogText.setLayoutData( new GridData( SWT.FILL, SWT.FILL, true, true)) ;
+
+		Group managerLogGroup = createGroup( panel, text( "group.managerLog"), 1) ;
+		managerLogGroup.setLayoutData( new GridData( SWT.FILL, SWT.FILL, true, true)) ;
+		logText = createText( managerLogGroup, SWT.BORDER | SWT.MULTI | SWT.READ_ONLY | SWT.H_SCROLL | SWT.V_SCROLL) ;
 		logText.setLayoutData( new GridData( SWT.FILL, SWT.FILL, true, true)) ;
 
 		Composite buttons = createButtonRow( panel) ;
 		createButton( buttons, text( "button.clear"), event -> logText.setText( "")) ;
+		refreshServerLogView() ;
 		return panel ;
 	}
 
@@ -730,6 +919,24 @@ public class TinyWinNfsSwtManager {
 				listener.widgetSelected( event) ;
 			}
 		}) ;
+		return button ;
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * サービス操作ボタンを作成します。<br><br>
+	 *
+	 * <p>メソッド名称： サービス操作ボタン作成</p>
+	 *
+	 * @param parent	親Composite
+	 * @param text		表示文字
+	 * @param listener	選択リスナー
+	 * @return ボタン
+	 */
+	//--------------------------------------------------------------------------
+	private Button createServiceButton(Composite parent, String text, SwtSelectionListener listener) {
+		Button button = createButton( parent, text, listener) ;
+		serviceActionButtons.add( button) ;
 		return button ;
 	}
 
@@ -1368,36 +1575,78 @@ public class TinyWinNfsSwtManager {
 				}
 			}
 
-			loadShareEntries( properties) ;
-			setLanguageSelection( ManagerMessages.normalizeLanguage( properties.getProperty( "ui.language", messages.getLanguageCode()))) ;
-			serverHostText.setText( properties.getProperty( "client.server.host", detectLocalHostName())) ;
-			clientMountPointText.setText( properties.getProperty( "client.mount.point", "/mnt")) ;
-			portmapPortText.setText( properties.getProperty( "portmap.port", "111")) ;
-			nfsPortText.setText( properties.getProperty( "nfs.port", "2049")) ;
-			mountPortText.setText( properties.getProperty( "mount.port", "20048")) ;
-			uidText.setText( properties.getProperty( "uid", "0")) ;
-			gidText.setText( properties.getProperty( "gid", "0")) ;
-			fileModeText.setText( properties.getProperty( "file.mode", "0644")) ;
-			directoryModeText.setText( properties.getProperty( "directory.mode", "0755")) ;
-			blockSizeText.setText( properties.getProperty( "block.size", "4096")) ;
-			readSizeText.setText( properties.getProperty( "read.size", "8192")) ;
-			writeSizeText.setText( properties.getProperty( "write.size", readSizeText.getText())) ;
-			directoryPreferredSizeText.setText( properties.getProperty( "directory.preferred.size", blockSizeText.getText())) ;
-			maxFileSizeText.setText( properties.getProperty( "max.file.size", "9223372036854775807")) ;
-			timeDeltaNanosText.setText( properties.getProperty( "time.delta.nanos", "1000000")) ;
-			pathconfLinkMaxText.setText( properties.getProperty( "pathconf.link.max", "1024")) ;
-			pathconfNameMaxText.setText( properties.getProperty( "pathconf.name.max", "255")) ;
-			filenameCharsetText.setText( properties.getProperty( "filename.charset", "UTF-8")) ;
-			writeSyncButton.setSelection( Boolean.parseBoolean( properties.getProperty( "write.sync", "false"))) ;
-			writeCacheEnabledButton.setSelection( Boolean.parseBoolean( properties.getProperty( "write.cache.enabled", "true"))) ;
-			writeCacheMaxOpenText.setText( properties.getProperty( "write.cache.max.open", "64")) ;
-			writeCacheIdleMillisText.setText( properties.getProperty( "write.cache.idle.millis", "3000")) ;
-			updateMountCommand() ;
+			applyProperties( properties) ;
 			appendLog( text( "log.configurationLoaded")) ;
 		} catch( IOException ioex) {
 			appendLog( format( "log.configurationLoadFailed", ioex.getMessage())) ;
 			showError( text( "error.configurationLoadFailed"), ioex) ;
 		}
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * 設定値をUIへ反映します。<br><br>
+	 *
+	 * <p>メソッド名称： 設定値UI反映</p>
+	 *
+	 * @param properties	設定値
+	 */
+	//--------------------------------------------------------------------------
+	private void applyProperties(Properties properties) {
+		loadShareEntries( properties) ;
+		setLanguageSelection( ManagerMessages.normalizeLanguage( properties.getProperty( "ui.language", messages.getLanguageCode()))) ;
+		serverHostText.setText( properties.getProperty( "client.server.host", detectLocalHostName())) ;
+		clientMountPointText.setText( properties.getProperty( "client.mount.point", "/mnt")) ;
+		setComboSelection( mountClientCombo, parseInt( properties.getProperty( "client.mount.profile"), MOUNT_CLIENT_QNX), MOUNT_CLIENT_QNX) ;
+		setComboSelection( mountProtocolCombo, parseInt( properties.getProperty( "client.mount.protocol"), MOUNT_PROTOCOL_V2_UDP), MOUNT_PROTOCOL_V2_UDP) ;
+		portmapPortText.setText( properties.getProperty( "portmap.port", "111")) ;
+		nfsPortText.setText( properties.getProperty( "nfs.port", "2049")) ;
+		mountPortText.setText( properties.getProperty( "mount.port", "20048")) ;
+		uidText.setText( properties.getProperty( "uid", "0")) ;
+		gidText.setText( properties.getProperty( "gid", "0")) ;
+		fileModeText.setText( properties.getProperty( "file.mode", "0644")) ;
+		directoryModeText.setText( properties.getProperty( "directory.mode", "0755")) ;
+		blockSizeText.setText( properties.getProperty( "block.size", "4096")) ;
+		readSizeText.setText( properties.getProperty( "read.size", "8192")) ;
+		writeSizeText.setText( properties.getProperty( "write.size", readSizeText.getText())) ;
+		directoryPreferredSizeText.setText( properties.getProperty( "directory.preferred.size", blockSizeText.getText())) ;
+		maxFileSizeText.setText( properties.getProperty( "max.file.size", "9223372036854775807")) ;
+		timeDeltaNanosText.setText( properties.getProperty( "time.delta.nanos", "1000000")) ;
+		pathconfLinkMaxText.setText( properties.getProperty( "pathconf.link.max", "1024")) ;
+		pathconfNameMaxText.setText( properties.getProperty( "pathconf.name.max", "255")) ;
+		filenameCharsetText.setText( properties.getProperty( "filename.charset", "UTF-8")) ;
+		writeSyncButton.setSelection( Boolean.parseBoolean( properties.getProperty( "write.sync", "false"))) ;
+		writeCacheEnabledButton.setSelection( Boolean.parseBoolean( properties.getProperty( "write.cache.enabled", "true"))) ;
+		writeCacheMaxOpenText.setText( properties.getProperty( "write.cache.max.open", "64")) ;
+		writeCacheIdleMillisText.setText( properties.getProperty( "write.cache.idle.millis", "3000")) ;
+		updateMountCommand() ;
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * Combo選択値を設定します。<br><br>
+	 *
+	 * <p>メソッド名称： Combo選択値設定</p>
+	 *
+	 * @param combo			Combo
+	 * @param value			選択値
+	 * @param defaultValue	既定値
+	 */
+	//--------------------------------------------------------------------------
+	private void setComboSelection(Combo combo, int value, int defaultValue) {
+		// Comboが存在しない場合
+		if( combo == null || combo.isDisposed()) {
+			return ;
+		}
+
+		int selection = value ;
+
+		// 選択値が範囲外の場合
+		if( value < 0 || value >= combo.getItemCount()) {
+			selection = defaultValue ;
+		}
+
+		combo.select( selection) ;
 	}
 
 	//--------------------------------------------------------------------------
@@ -1422,53 +1671,7 @@ public class TinyWinNfsSwtManager {
 			}
 
 			Files.createDirectories( configDirectory) ;
-			List<String> lines = new ArrayList<String>() ;
-			ShareEntry firstShare = shareEntries.get( 0) ;
-			lines.add( "# " + PRODUCT_NAME + " configuration.") ;
-			lines.add( "" ) ;
-			lines.add( "portmap.port=" + portmapPortText.getText().trim()) ;
-			lines.add( "nfs.port=" + nfsPortText.getText().trim()) ;
-			lines.add( "mount.port=" + mountPortText.getText().trim()) ;
-			lines.add( "" ) ;
-			lines.add( "export.name=" + firstShare.getName()) ;
-			lines.add( "export.path=" + escapePath( firstShare.getPath()) ) ;
-			lines.add( "export.writable=" + firstShare.isWritable()) ;
-			lines.add( "export.allowed.clients=" + firstShare.getAllowedClients()) ;
-			lines.add( "" ) ;
-			lines.add( "exports.count=" + shareEntries.size()) ;
-
-			for( int i = 0; i < shareEntries.size(); i++) {
-				ShareEntry entry = shareEntries.get( i) ;
-				String prefix = "exports." + (i + 1) + "." ;
-				lines.add( prefix + "name=" + entry.getName()) ;
-				lines.add( prefix + "path=" + escapePath( entry.getPath()) ) ;
-				lines.add( prefix + "writable=" + entry.isWritable()) ;
-				lines.add( prefix + "allowed.clients=" + entry.getAllowedClients()) ;
-			}
-
-			lines.add( "" ) ;
-			lines.add( "client.server.host=" + serverHostText.getText().trim()) ;
-			lines.add( "client.mount.point=" + clientMountPointText.getText().trim()) ;
-			lines.add( "ui.language=" + getSelectedLanguage()) ;
-			lines.add( "" ) ;
-			lines.add( "uid=" + uidText.getText().trim()) ;
-			lines.add( "gid=" + gidText.getText().trim()) ;
-			lines.add( "file.mode=" + fileModeText.getText().trim()) ;
-			lines.add( "directory.mode=" + directoryModeText.getText().trim()) ;
-			lines.add( "block.size=" + blockSizeText.getText().trim()) ;
-			lines.add( "read.size=" + readSizeText.getText().trim()) ;
-			lines.add( "write.size=" + writeSizeText.getText().trim()) ;
-			lines.add( "directory.preferred.size=" + directoryPreferredSizeText.getText().trim()) ;
-			lines.add( "max.file.size=" + maxFileSizeText.getText().trim()) ;
-			lines.add( "time.delta.nanos=" + timeDeltaNanosText.getText().trim()) ;
-			lines.add( "pathconf.link.max=" + pathconfLinkMaxText.getText().trim()) ;
-			lines.add( "pathconf.name.max=" + pathconfNameMaxText.getText().trim()) ;
-			lines.add( "write.sync=" + writeSyncButton.getSelection()) ;
-			lines.add( "write.cache.enabled=" + writeCacheEnabledButton.getSelection()) ;
-			lines.add( "write.cache.max.open=" + writeCacheMaxOpenText.getText().trim()) ;
-			lines.add( "write.cache.idle.millis=" + writeCacheIdleMillisText.getText().trim()) ;
-			lines.add( "filename.charset=" + filenameCharsetText.getText().trim()) ;
-			Path backupPath = writeValidatedConfig( configDirectory, lines) ;
+			Path backupPath = writeValidatedConfig( configDirectory, buildConfigLines()) ;
 			updateMountCommand() ;
 			appendLog( text( "log.configurationSaved")) ;
 			appendConfigurationWarnings() ;
@@ -1487,6 +1690,88 @@ public class TinyWinNfsSwtManager {
 			showError( text( "error.configurationSaveFailed"), ex) ;
 			return false ;
 		}
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * 設定行を作成します。<br><br>
+	 *
+	 * <p>メソッド名称： 設定行作成</p>
+	 *
+	 * @return 設定行
+	 */
+	//--------------------------------------------------------------------------
+	private List<String> buildConfigLines() {
+		List<String> lines = new ArrayList<String>() ;
+		ShareEntry firstShare = shareEntries.get( 0) ;
+		lines.add( "# " + PRODUCT_NAME + " configuration.") ;
+		lines.add( "" ) ;
+		lines.add( "portmap.port=" + portmapPortText.getText().trim()) ;
+		lines.add( "nfs.port=" + nfsPortText.getText().trim()) ;
+		lines.add( "mount.port=" + mountPortText.getText().trim()) ;
+		lines.add( "" ) ;
+		lines.add( "export.name=" + firstShare.getName()) ;
+		lines.add( "export.path=" + escapePath( firstShare.getPath()) ) ;
+		lines.add( "export.writable=" + firstShare.isWritable()) ;
+		lines.add( "export.allowed.clients=" + firstShare.getAllowedClients()) ;
+		lines.add( "" ) ;
+		lines.add( "exports.count=" + shareEntries.size()) ;
+
+		// 共有定義を出力する
+		for( int i = 0; i < shareEntries.size(); i++) {
+			ShareEntry entry = shareEntries.get( i) ;
+			String prefix = "exports." + (i + 1) + "." ;
+			lines.add( prefix + "name=" + entry.getName()) ;
+			lines.add( prefix + "path=" + escapePath( entry.getPath()) ) ;
+			lines.add( prefix + "writable=" + entry.isWritable()) ;
+			lines.add( prefix + "allowed.clients=" + entry.getAllowedClients()) ;
+		}
+
+		lines.add( "" ) ;
+		lines.add( "client.server.host=" + serverHostText.getText().trim()) ;
+		lines.add( "client.mount.point=" + clientMountPointText.getText().trim()) ;
+		lines.add( "client.mount.profile=" + selectedComboIndex( mountClientCombo, MOUNT_CLIENT_QNX)) ;
+		lines.add( "client.mount.protocol=" + selectedComboIndex( mountProtocolCombo, MOUNT_PROTOCOL_V2_UDP)) ;
+		lines.add( "ui.language=" + getSelectedLanguage()) ;
+		lines.add( "" ) ;
+		lines.add( "uid=" + uidText.getText().trim()) ;
+		lines.add( "gid=" + gidText.getText().trim()) ;
+		lines.add( "file.mode=" + fileModeText.getText().trim()) ;
+		lines.add( "directory.mode=" + directoryModeText.getText().trim()) ;
+		lines.add( "block.size=" + blockSizeText.getText().trim()) ;
+		lines.add( "read.size=" + readSizeText.getText().trim()) ;
+		lines.add( "write.size=" + writeSizeText.getText().trim()) ;
+		lines.add( "directory.preferred.size=" + directoryPreferredSizeText.getText().trim()) ;
+		lines.add( "max.file.size=" + maxFileSizeText.getText().trim()) ;
+		lines.add( "time.delta.nanos=" + timeDeltaNanosText.getText().trim()) ;
+		lines.add( "pathconf.link.max=" + pathconfLinkMaxText.getText().trim()) ;
+		lines.add( "pathconf.name.max=" + pathconfNameMaxText.getText().trim()) ;
+		lines.add( "write.sync=" + writeSyncButton.getSelection()) ;
+		lines.add( "write.cache.enabled=" + writeCacheEnabledButton.getSelection()) ;
+		lines.add( "write.cache.max.open=" + writeCacheMaxOpenText.getText().trim()) ;
+		lines.add( "write.cache.idle.millis=" + writeCacheIdleMillisText.getText().trim()) ;
+		lines.add( "filename.charset=" + filenameCharsetText.getText().trim()) ;
+		return lines ;
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * Combo選択位置を取得します。<br><br>
+	 *
+	 * <p>メソッド名称： Combo選択位置取得</p>
+	 *
+	 * @param combo			Combo
+	 * @param defaultValue	既定値
+	 * @return 選択位置
+	 */
+	//--------------------------------------------------------------------------
+	private int selectedComboIndex(Combo combo, int defaultValue) {
+		// Comboが存在しない場合
+		if( combo == null || combo.isDisposed() || combo.getSelectionIndex() < 0) {
+			return defaultValue ;
+		}
+
+		return combo.getSelectionIndex() ;
 	}
 
 	//--------------------------------------------------------------------------
@@ -1511,6 +1796,120 @@ public class TinyWinNfsSwtManager {
 			return backupPath ;
 		} finally {
 			Files.deleteIfExists( temporaryPath) ;
+		}
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * 設定をエクスポートします。<br><br>
+	 *
+	 * <p>メソッド名称： 設定エクスポート</p>
+	 */
+	//--------------------------------------------------------------------------
+	private void exportConfig() {
+		try {
+			applySelectedShare() ;
+			validateFields() ;
+			FileDialog dialog = new FileDialog( shell, SWT.SAVE) ;
+			dialog.setText( text( "dialog.exportConfig")) ;
+			dialog.setFileName( "nfs-server.properties") ;
+			String selected = dialog.open() ;
+
+			// 保存先が選択されなかった場合
+			if( selected == null) {
+				return ;
+			}
+
+			Path targetPath = Path.of( selected).toAbsolutePath().normalize() ;
+			Files.write( targetPath, buildConfigLines(), StandardCharsets.UTF_8) ;
+			NfsServerConfig.load( targetPath) ;
+			appendLog( format( "log.configurationExported", targetPath)) ;
+		} catch( Exception ex) {
+			showError( text( "error.configurationExportFailed"), ex) ;
+		}
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * 設定をインポートします。<br><br>
+	 *
+	 * <p>メソッド名称： 設定インポート</p>
+	 */
+	//--------------------------------------------------------------------------
+	private void importConfig() {
+		try {
+			FileDialog dialog = new FileDialog( shell, SWT.OPEN) ;
+			dialog.setText( text( "dialog.importConfig")) ;
+			dialog.setFilterExtensions( new String[] { "*.properties", "*.*" }) ;
+			String selected = dialog.open() ;
+
+			// インポート元が選択されなかった場合
+			if( selected == null) {
+				return ;
+			}
+
+			Path sourcePath = Path.of( selected).toAbsolutePath().normalize() ;
+			importConfigFromPath( sourcePath) ;
+		} catch( Exception ex) {
+			showError( text( "error.configurationImportFailed"), ex) ;
+		}
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * 指定パスから設定をインポートします。<br><br>
+	 *
+	 * <p>メソッド名称： 指定パス設定インポート</p>
+	 *
+	 * @param sourcePath	インポート元
+	 * @throws IOException インポート異常
+	 */
+	//--------------------------------------------------------------------------
+	private void importConfigFromPath(Path sourcePath) throws IOException {
+		Path configDirectory = configPath.getParent() ;
+		Files.createDirectories( configDirectory) ;
+		Path temporaryPath = Files.createTempFile( configDirectory, "nfs-server-import-", ".properties") ;
+
+		try {
+			Files.copy( sourcePath, temporaryPath, StandardCopyOption.REPLACE_EXISTING) ;
+			NfsServerConfig.load( temporaryPath) ;
+			Path backupPath = ConfigBackup.backupIfExists( configPath) ;
+			moveConfigIntoPlace( temporaryPath) ;
+			loadConfig() ;
+			appendLog( format( "log.configurationImported", sourcePath)) ;
+
+			// バックアップを作成した場合
+			if( backupPath != null) {
+				appendLog( format( "log.configurationBackupCreated", backupPath)) ;
+			}
+		} finally {
+			Files.deleteIfExists( temporaryPath) ;
+		}
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * 既定設定へ戻します。<br><br>
+	 *
+	 * <p>メソッド名称： 既定設定復元</p>
+	 */
+	//--------------------------------------------------------------------------
+	private void resetDefaultConfig() {
+		MessageBox dialog = new MessageBox( shell, SWT.ICON_QUESTION | SWT.YES | SWT.NO) ;
+		dialog.setText( text( "dialog.confirm") ) ;
+		dialog.setMessage( text( "dialog.resetDefaults")) ;
+		int result = dialog.open() ;
+
+		// はいが選択されなかった場合
+		if( result != SWT.YES) {
+			return ;
+		}
+
+		applyProperties( new Properties()) ;
+
+		// 既定設定の保存に成功した場合
+		if( saveConfig()) {
+			appendLog( text( "log.configurationReset")) ;
 		}
 	}
 
@@ -1701,7 +2100,7 @@ public class TinyWinNfsSwtManager {
 		}
 
 		// クライアント側マウントポイントが不正な場合
-		if( !clientMountPointText.getText().trim().startsWith( "/")) {
+		if( !isValidClientMountPoint( clientMountPointText.getText().trim())) {
 			throw new IllegalArgumentException( text( "error.clientMountPointRequired") ) ;
 		}
 
@@ -1709,6 +2108,25 @@ public class TinyWinNfsSwtManager {
 		if( serverHostText.getText().trim().isEmpty()) {
 			throw new IllegalArgumentException( text( "error.serverHostRequired") ) ;
 		}
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * クライアント側mount pointを検証します。<br><br>
+	 *
+	 * <p>メソッド名称： クライアント側mount point検証</p>
+	 *
+	 * @param value	値
+	 * @return true:正常 false:異常
+	 */
+	//--------------------------------------------------------------------------
+	private boolean isValidClientMountPoint(String value) {
+		// Windowsクライアントの場合
+		if( selectedComboIndex( mountClientCombo, MOUNT_CLIENT_QNX) == MOUNT_CLIENT_WINDOWS) {
+			return value.matches( "[A-Za-z]:" ) || value.startsWith( "\\\\" ) ;
+		}
+
+		return value.startsWith( "/" ) ;
 	}
 
 	//--------------------------------------------------------------------------
@@ -1989,14 +2407,131 @@ public class TinyWinNfsSwtManager {
 			mountPoint = "/mnt" ;
 		}
 
-		mountCommandText.setText(
-				"mount_nfs " + host + ":" + exportName + " " + mountPoint + System.lineSeparator()
-				+ System.lineSeparator()
-				+ text( "mount.serverExportPath") + " " + share.getPath() + System.lineSeparator()
-				+ text( "mount.writable") + " " + boolText( share.isWritable()) + System.lineSeparator()
-				+ System.lineSeparator()
-				+ text( "mount.availableExports") + System.lineSeparator()
-				+ buildExportSummary()) ;
+		mountCommandText.setText( buildMountCommandText( host, exportName, mountPoint, share)) ;
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * mountコマンド表示を作成します。<br><br>
+	 *
+	 * <p>メソッド名称： mountコマンド表示作成</p>
+	 *
+	 * @param host			サーバーホスト
+	 * @param exportName	export名
+	 * @param mountPoint	mount point
+	 * @param share			共有定義
+	 * @return mountコマンド表示
+	 */
+	//--------------------------------------------------------------------------
+	private String buildMountCommandText(String host, String exportName, String mountPoint, ShareEntry share) {
+		String command = buildMountCommand( host, exportName, mountPoint) ;
+		StringBuilder builder = new StringBuilder() ;
+		builder.append( command).append( System.lineSeparator()) ;
+		builder.append( System.lineSeparator()) ;
+		builder.append( text( "mount.client") ).append( " " ).append( selectedMountClientLabel()).append( System.lineSeparator()) ;
+		builder.append( text( "mount.protocol") ).append( " " ).append( selectedMountProtocolLabel()).append( System.lineSeparator()) ;
+		builder.append( text( "mount.serverExportPath") ).append( " " ).append( share.getPath()).append( System.lineSeparator()) ;
+		builder.append( text( "mount.writable") ).append( " " ).append( boolText( share.isWritable())).append( System.lineSeparator()) ;
+		builder.append( System.lineSeparator()) ;
+		builder.append( text( "mount.availableExports") ).append( System.lineSeparator()) ;
+		builder.append( buildExportSummary()) ;
+		return builder.toString() ;
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * mountコマンドを作成します。<br><br>
+	 *
+	 * <p>メソッド名称： mountコマンド作成</p>
+	 *
+	 * @param host			サーバーホスト
+	 * @param exportName	export名
+	 * @param mountPoint	mount point
+	 * @return mountコマンド
+	 */
+	//--------------------------------------------------------------------------
+	private String buildMountCommand(String host, String exportName, String mountPoint) {
+		int client = selectedComboIndex( mountClientCombo, MOUNT_CLIENT_QNX) ;
+		int protocol = selectedComboIndex( mountProtocolCombo, MOUNT_PROTOCOL_V2_UDP) ;
+
+		// Windows Client for NFSの場合
+		if( client == MOUNT_CLIENT_WINDOWS) {
+			String windowsMountPoint = isValidWindowsMountPoint( mountPoint) ? mountPoint : "Z:" ;
+			return "mount -o anon \\\\" + host + "\\" + exportName.replaceFirst( "^/+", "" ) + " " + windowsMountPoint ;
+		}
+
+		// Linux/WSLの場合
+		if( client == MOUNT_CLIENT_LINUX) {
+			return "sudo mount -t nfs -o " + linuxMountOptions( protocol) + " " + host + ":" + exportName + " " + mountPoint ;
+		}
+
+		return "mount_nfs " + host + ":" + exportName + " " + mountPoint ;
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * Windows mount pointか確認します。<br><br>
+	 *
+	 * <p>メソッド名称： Windows mount point確認</p>
+	 *
+	 * @param value	値
+	 * @return true:Windows mount point false:その他
+	 */
+	//--------------------------------------------------------------------------
+	private boolean isValidWindowsMountPoint(String value) {
+		return value.matches( "[A-Za-z]:" ) || value.startsWith( "\\\\" ) ;
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * Linux mountオプションを作成します。<br><br>
+	 *
+	 * <p>メソッド名称： Linux mountオプション作成</p>
+	 *
+	 * @param protocol	プロトコル選択
+	 * @return mountオプション
+	 */
+	//--------------------------------------------------------------------------
+	private String linuxMountOptions(int protocol) {
+		// NFSv3/TCPの場合
+		if( protocol == MOUNT_PROTOCOL_V3_TCP) {
+			return "vers=3,proto=tcp" ;
+		}
+
+		// NFSv3/UDPの場合
+		if( protocol == MOUNT_PROTOCOL_V3_UDP) {
+			return "vers=3,proto=udp" ;
+		}
+
+		return "vers=2,proto=udp" ;
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * 選択中mountクライアント名を取得します。<br><br>
+	 *
+	 * <p>メソッド名称： 選択mountクライアント名取得</p>
+	 *
+	 * @return mountクライアント名
+	 */
+	//--------------------------------------------------------------------------
+	private String selectedMountClientLabel() {
+		int index = selectedComboIndex( mountClientCombo, MOUNT_CLIENT_QNX) ;
+		return mountClientCombo == null || mountClientCombo.isDisposed() ? "" : mountClientCombo.getItem( index) ;
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * 選択中mountプロトコル名を取得します。<br><br>
+	 *
+	 * <p>メソッド名称： 選択mountプロトコル名取得</p>
+	 *
+	 * @return mountプロトコル名
+	 */
+	//--------------------------------------------------------------------------
+	private String selectedMountProtocolLabel() {
+		int index = selectedComboIndex( mountProtocolCombo, MOUNT_PROTOCOL_V2_UDP) ;
+		return mountProtocolCombo == null || mountProtocolCombo.isDisposed() ? "" : mountProtocolCombo.getItem( index) ;
 	}
 
 	//--------------------------------------------------------------------------
@@ -2035,7 +2570,7 @@ public class TinyWinNfsSwtManager {
 	private void copyMountCommand() {
 		updateMountCommand() ;
 		String command = mountCommandText.getText().split( "\\R", 2)[0] ;
-			Clipboard clipboard = new Clipboard( display) ;
+		Clipboard clipboard = new Clipboard( display) ;
 
 		try {
 			clipboard.setContents( new Object[] { command }, new Transfer[] { TextTransfer.getInstance() }) ;
@@ -2114,6 +2649,206 @@ public class TinyWinNfsSwtManager {
 				describePortStatus( mountPortText),
 				getWindowsNfsClientStatus(),
 				configPath.getParent().resolve( "backups"))) ;
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * 診断ビューを更新します。<br><br>
+	 *
+	 * <p>メソッド名称： 診断ビュー更新</p>
+	 */
+	//--------------------------------------------------------------------------
+	private void refreshDiagnosticView() {
+		// 診断ビューが存在しない場合
+		if( diagnosticTable == null || diagnosticTable.isDisposed()) {
+			return ;
+		}
+
+		String serviceStatus = statusValueLabel == null || statusValueLabel.isDisposed() ? text( "status.unknown") : statusValueLabel.getText() ;
+		String portmapStatus = describePortStatus( portmapPortText) ;
+		String nfsStatus = describePortStatus( nfsPortText) ;
+		String mountStatus = describePortStatus( mountPortText) ;
+		diagnosticTable.removeAll() ;
+		diagnosticDetailText.setText( text( "diagnostic.loading")) ;
+
+		new Thread( () -> {
+			try {
+				NfsServerConfig config = NfsServerConfig.load( configPath) ;
+				DiagnosticReport report = NfsDiagnostics.collect( config) ;
+				List<DiagnosticRow> rows = buildDiagnosticRows( report, serviceStatus, portmapStatus, nfsStatus, mountStatus) ;
+				runOnUi( () -> showDiagnosticRows( rows, report.formatText())) ;
+			} catch( Exception ex) {
+				runOnUi( () -> {
+					diagnosticTable.removeAll() ;
+					addDiagnosticRow( diagnosticTable, new DiagnosticRow( "ERROR", text( "diagnostic.source.config"), "DIAGNOSTIC_FAILED", ex.getMessage())) ;
+					diagnosticDetailText.setText( ex.getClass().getSimpleName() + ": " + ex.getMessage()) ;
+				}) ;
+			}
+		}, "diagnostic-view").start() ;
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * 診断行を作成します。<br><br>
+	 *
+	 * <p>メソッド名称： 診断行作成</p>
+	 *
+	 * @param report		診断レポート
+	 * @param serviceStatus	サービス状態
+	 * @param portmapStatus	Portmap状態
+	 * @param nfsStatus		NFS状態
+	 * @param mountStatus	MOUNT状態
+	 * @return 診断行
+	 */
+	//--------------------------------------------------------------------------
+	private List<DiagnosticRow> buildDiagnosticRows(DiagnosticReport report, String serviceStatus, String portmapStatus, String nfsStatus, String mountStatus) {
+		List<DiagnosticRow> rows = new ArrayList<DiagnosticRow>() ;
+		rows.add( new DiagnosticRow( "INFO", text( "diagnostic.source.service"), "SERVICE_STATUS", serviceStatus)) ;
+		rows.add( new DiagnosticRow( "INFO", text( "diagnostic.source.port"), "PORTMAP_PORT", portmapStatus)) ;
+		rows.add( new DiagnosticRow( "INFO", text( "diagnostic.source.port"), "NFS_PORT", nfsStatus)) ;
+		rows.add( new DiagnosticRow( "INFO", text( "diagnostic.source.port"), "MOUNT_PORT", mountStatus)) ;
+
+		// 設定診断を追加する
+		for( DiagnosticMessage message : report.getConfigurationMessages()) {
+			rows.add( new DiagnosticRow( message.getSeverity(), text( "diagnostic.source.config"), message.getCode(), message.getMessage())) ;
+		}
+
+		// export診断を追加する
+		for( NfsDiagnostics.ExportReport exportReport : report.getExportReports()) {
+			rows.add( createExportSummaryRow( exportReport)) ;
+
+			for( DiagnosticMessage message : exportReport.getMessages()) {
+				rows.add( new DiagnosticRow( message.getSeverity(), exportReport.getExport().getName(), message.getCode(), message.getMessage())) ;
+			}
+		}
+
+		return rows ;
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * export概要診断行を作成します。<br><br>
+	 *
+	 * <p>メソッド名称： export概要診断行作成</p>
+	 *
+	 * @param exportReport	export診断
+	 * @return 診断行
+	 */
+	//--------------------------------------------------------------------------
+	private DiagnosticRow createExportSummaryRow(NfsDiagnostics.ExportReport exportReport) {
+		String severity = exportReport.getMessages().stream().anyMatch( message -> "ERROR".equals( message.getSeverity())) ? "ERROR" : "INFO" ;
+
+		// エラーがなく警告がある場合
+		if( "INFO".equals( severity) && exportReport.getMessages().stream().anyMatch( message -> "WARNING".equals( message.getSeverity()))) {
+			severity = "WARNING" ;
+		}
+
+		String message = "path=" + exportReport.getExport().getPath()
+				+ ", exists=" + exportReport.exists()
+				+ ", directory=" + exportReport.isDirectory()
+				+ ", readable=" + exportReport.isReadable()
+				+ ", writable=" + exportReport.isWritable()
+				+ ", files=" + exportReport.getFileCount()
+				+ ", directories=" + exportReport.getDirectoryCount()
+				+ ", bytes=" + exportReport.getTotalBytes()
+				+ ", caseCollisions=" + exportReport.getCaseCollisions().size() ;
+		return new DiagnosticRow( severity, exportReport.getExport().getName(), "EXPORT_SUMMARY", message) ;
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * 診断行を表示します。<br><br>
+	 *
+	 * <p>メソッド名称： 診断行表示</p>
+	 *
+	 * @param rows		診断行
+	 * @param detail	詳細
+	 */
+	//--------------------------------------------------------------------------
+	private void showDiagnosticRows(List<DiagnosticRow> rows, String detail) {
+		diagnosticTable.removeAll() ;
+
+		// 診断行を表示する
+		for( DiagnosticRow row : rows) {
+			// 重大度フィルタに一致しない場合
+			if( !matchesDiagnosticSeverity( row)) {
+				continue ;
+			}
+
+			addDiagnosticRow( diagnosticTable, row) ;
+		}
+
+		diagnosticDetailText.setText( detail) ;
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * 診断重大度フィルタ一致を確認します。<br><br>
+	 *
+	 * <p>メソッド名称： 診断重大度フィルタ一致確認</p>
+	 *
+	 * @param row	診断行
+	 * @return true:一致 false:不一致
+	 */
+	//--------------------------------------------------------------------------
+	private boolean matchesDiagnosticSeverity(DiagnosticRow row) {
+		int selection = selectedComboIndex( diagnosticSeverityCombo, 0) ;
+
+		// すべて表示の場合
+		if( selection == 0) {
+			return true ;
+		}
+
+		// エラーのみの場合
+		if( selection == 1) {
+			return "ERROR".equals( row.getSeverity()) ;
+		}
+
+		// 警告のみの場合
+		if( selection == 2) {
+			return "WARNING".equals( row.getSeverity()) ;
+		}
+
+		return "INFO".equals( row.getSeverity()) ;
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * 診断行を追加します。<br><br>
+	 *
+	 * <p>メソッド名称： 診断行追加</p>
+	 *
+	 * @param table	診断Table
+	 * @param row	診断行
+	 */
+	//--------------------------------------------------------------------------
+	private void addDiagnosticRow(Table table, DiagnosticRow row) {
+		TableItem item = new TableItem( table, SWT.NONE) ;
+		item.setText( new String[] { severityText( row.getSeverity()), row.getSource(), row.getCode(), row.getMessage() }) ;
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * 重大度表示文字を取得します。<br><br>
+	 *
+	 * <p>メソッド名称： 重大度表示文字取得</p>
+	 *
+	 * @param severity	重大度
+	 * @return 表示文字
+	 */
+	//--------------------------------------------------------------------------
+	private String severityText(String severity) {
+		// エラーの場合
+		if( "ERROR".equals( severity)) {
+			return text( "diagnostic.severity.error") ;
+		}
+
+		// 警告の場合
+		if( "WARNING".equals( severity)) {
+			return text( "diagnostic.severity.warning") ;
+		}
+
+		return text( "diagnostic.severity.info") ;
 	}
 
 	//--------------------------------------------------------------------------
@@ -2482,7 +3217,7 @@ public class TinyWinNfsSwtManager {
 					+ "if($s -eq $null){'Not installed'}else{$s.Status.ToString()}") ;
 			builder.redirectErrorStream( true) ;
 			Process process = builder.start() ;
-			String output = readProcessOutput( process).trim() ;
+			String output = readStreamOutput( process.getInputStream()).trim() ;
 			process.waitFor() ;
 
 			// 状態が空の場合
@@ -2565,6 +3300,206 @@ public class TinyWinNfsSwtManager {
 
 	//--------------------------------------------------------------------------
 	/**
+	 * サーバーログビューを更新します。<br><br>
+	 *
+	 * <p>メソッド名称： サーバーログビュー更新</p>
+	 */
+	//--------------------------------------------------------------------------
+	private void refreshServerLogView() {
+		// サーバーログビューが存在しない場合
+		if( serverLogText == null || serverLogText.isDisposed()) {
+			return ;
+		}
+
+		Path logPath = TinyWinNfsPaths.getLogPath( rootPath) ;
+		serverLogText.setText( text( "log.loading") ) ;
+
+		new Thread( () -> {
+			String content = readLogTail( logPath) ;
+			runOnUi( () -> {
+				serverLogContent = content ;
+				applyServerLogFilter() ;
+			}) ;
+		}, "server-log-view").start() ;
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * ログ末尾を読み込みます。<br><br>
+	 *
+	 * <p>メソッド名称： ログ末尾読込</p>
+	 *
+	 * @param logPath	ログパス
+	 * @return ログ内容
+	 */
+	//--------------------------------------------------------------------------
+	private String readLogTail(Path logPath) {
+		try {
+			// ログファイルが存在しない場合
+			if( !Files.isRegularFile( logPath)) {
+				return format( "log.serverLogMissing", logPath) ;
+			}
+
+			long size = Files.size( logPath) ;
+			long skip = Math.max( 0L, size - MAX_LOG_READ_BYTES) ;
+
+			try( InputStream input = Files.newInputStream( logPath)) {
+				long skipped = input.skip( skip) ;
+
+				// skipが不足した場合
+				while( skipped < skip) {
+					long additional = input.skip( skip - skipped) ;
+
+					// これ以上skipできない場合
+					if( additional <= 0L) {
+						break ;
+					}
+
+					skipped += additional ;
+				}
+
+				String content = new String( input.readAllBytes(), StandardCharsets.UTF_8) ;
+
+				// 途中から読んだ場合
+				if( skip > 0L) {
+					int lineBreak = content.indexOf( '\n' ) ;
+
+					// 先頭の途中行を除去できる場合
+					if( lineBreak >= 0 && lineBreak + 1 < content.length()) {
+						content = content.substring( lineBreak + 1) ;
+					}
+				}
+
+				return content ;
+			}
+		} catch( IOException ioex) {
+			return format( "log.serverLogReadFailed", ioex.getMessage()) ;
+		}
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * サーバーログフィルタを適用します。<br><br>
+	 *
+	 * <p>メソッド名称： サーバーログフィルタ適用</p>
+	 */
+	//--------------------------------------------------------------------------
+	private void applyServerLogFilter() {
+		// サーバーログビューが存在しない場合
+		if( serverLogText == null || serverLogText.isDisposed()) {
+			return ;
+		}
+
+		String search = logSearchText == null || logSearchText.isDisposed() ? "" : logSearchText.getText().trim().toLowerCase() ;
+		int filter = selectedComboIndex( logFilterCombo, 0) ;
+		StringBuilder builder = new StringBuilder() ;
+		String[] lines = serverLogContent.split( "\\R" ) ;
+
+		// ログ行をフィルタする
+		for( String line : lines) {
+			// 空行の場合
+			if( line.isBlank()) {
+				continue ;
+			}
+
+			// 検索文字列に一致しない場合
+			if( !search.isEmpty() && !line.toLowerCase().contains( search)) {
+				continue ;
+			}
+
+			// 種別フィルタに一致しない場合
+			if( !matchesLogFilter( line, filter)) {
+				continue ;
+			}
+
+			builder.append( line).append( System.lineSeparator()) ;
+		}
+
+		serverLogText.setText( builder.toString()) ;
+
+		// 末尾追従が有効な場合
+		if( logAutoRefreshButton != null && !logAutoRefreshButton.isDisposed() && logAutoRefreshButton.getSelection()) {
+			serverLogText.setSelection( serverLogText.getCharCount()) ;
+		}
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * ログ種別フィルタ一致を確認します。<br><br>
+	 *
+	 * <p>メソッド名称： ログ種別フィルタ一致確認</p>
+	 *
+	 * @param line		ログ行
+	 * @param filter	フィルタ
+	 * @return true:一致 false:不一致
+	 */
+	//--------------------------------------------------------------------------
+	private boolean matchesLogFilter(String line, int filter) {
+		// すべて表示の場合
+		if( filter == 0) {
+			return true ;
+		}
+
+		// エラー系の場合
+		if( filter == 1) {
+			return line.contains( "parse-error" )
+					|| line.contains( "denied" )
+					|| line.contains( "error" )
+					|| line.matches( ".*status=(?!0\\b)\\d+.*" ) ;
+		}
+
+		// 変更操作の場合
+		if( filter == 2) {
+			return containsAny( line, "WRITE", "CREATE", "REMOVE", "RENAME", "MKDIR", "RMDIR", "SYMLINK", "LINK", "SETATTR", "COMMIT") ;
+		}
+
+		return line.contains( "program=" ) || line.contains( "procedure=" ) || line.contains( "MOUNT" ) ;
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * 文字列がいずれかの語を含むか確認します。<br><br>
+	 *
+	 * <p>メソッド名称： 文字列語句包含確認</p>
+	 *
+	 * @param value		値
+	 * @param keywords	語句
+	 * @return true:含む false:含まない
+	 */
+	//--------------------------------------------------------------------------
+	private boolean containsAny(String value, String... keywords) {
+		// 語句を確認する
+		for( String keyword : keywords) {
+			// 語句を含む場合
+			if( value.contains( keyword)) {
+				return true ;
+			}
+		}
+
+		return false ;
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * ログ自動更新を予約します。<br><br>
+	 *
+	 * <p>メソッド名称： ログ自動更新予約</p>
+	 */
+	//--------------------------------------------------------------------------
+	private void scheduleLogAutoRefresh() {
+		display.timerExec( 5000, () -> {
+			// 自動更新が無効な場合
+			if( logAutoRefreshButton == null || logAutoRefreshButton.isDisposed() || !logAutoRefreshButton.getSelection()) {
+				return ;
+			}
+
+			refreshServerLogView() ;
+			scheduleLogAutoRefresh() ;
+		}) ;
+	}
+
+	//--------------------------------------------------------------------------
+	/**
 	 * 確認後にスクリプトを実行します。<br><br>
 	 *
 	 * <p>メソッド名称： 確認スクリプト実行</p>
@@ -2594,6 +3529,7 @@ public class TinyWinNfsSwtManager {
 	//--------------------------------------------------------------------------
 	private void runSmokeTestAsync() {
 		appendLog( text( "log.startSmokeTest")) ;
+		setServiceOperationRunning( true) ;
 		new Thread( () -> {
 			try {
 				List<String> messages = runSmokeTest() ;
@@ -2604,11 +3540,15 @@ public class TinyWinNfsSwtManager {
 					}
 
 					appendLog( text( "log.endSmokeTest")) ;
+					showServiceResult( "smoke test", new ProcessResult( 0, String.join( System.lineSeparator(), messages), "")) ;
+					setServiceOperationRunning( false) ;
 				}) ;
 			} catch( Exception ex) {
 				runOnUi( () -> {
 					appendLog( format( "log.smokeTestFailed", ex.getMessage())) ;
 					showError( text( "error.smokeTestFailed"), ex) ;
+					showServiceResult( "smoke test", new ProcessResult( 1, "", ex.getMessage())) ;
+					setServiceOperationRunning( false) ;
 				}) ;
 			}
 		}, "manager-smoke-test").start() ;
@@ -2876,13 +3816,111 @@ public class TinyWinNfsSwtManager {
 			return ;
 		}
 
+		setServiceOperationRunning( true) ;
 		runCommandAsync( scriptName, List.of(
 				"powershell.exe",
 				"-NoProfile",
 				"-ExecutionPolicy",
 				"Bypass",
 				"-File",
-				scriptPath.toString()), callback) ;
+				scriptPath.toString()), result -> {
+					setServiceOperationRunning( false) ;
+					showServiceResult( scriptName, result) ;
+
+					// コールバックが存在する場合
+					if( callback != null) {
+						callback.completed( result) ;
+					}
+				}) ;
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * サービス操作中状態を設定します。<br><br>
+	 *
+	 * <p>メソッド名称： サービス操作中状態設定</p>
+	 *
+	 * @param running	true:実行中 false:停止中
+	 */
+	//--------------------------------------------------------------------------
+	private void setServiceOperationRunning(boolean running) {
+		// サービス操作ボタンを切り替える
+		for( Button button : serviceActionButtons) {
+			// ボタンが破棄済みではない場合
+			if( !button.isDisposed()) {
+				button.setEnabled( !running) ;
+			}
+		}
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * サービス操作結果を表示します。<br><br>
+	 *
+	 * <p>メソッド名称： サービス操作結果表示</p>
+	 *
+	 * @param title		タイトル
+	 * @param result	結果
+	 */
+	//--------------------------------------------------------------------------
+	private void showServiceResult(String title, ProcessResult result) {
+		// サービス結果表示が存在しない場合
+		if( serviceResultText == null || serviceResultText.isDisposed()) {
+			return ;
+		}
+
+		StringBuilder builder = new StringBuilder() ;
+		builder.append( format( "service.resultHeader", title, result.getExitCode())) ;
+		builder.append( System.lineSeparator()) ;
+		builder.append( classifyServiceResult( result)).append( System.lineSeparator()) ;
+
+		// 標準出力が存在する場合
+		if( !result.getOutput().isBlank()) {
+			builder.append( System.lineSeparator()).append( "stdout:" ).append( System.lineSeparator()).append( result.getOutput()) ;
+		}
+
+		// 標準エラーが存在する場合
+		if( !result.getErrorOutput().isBlank()) {
+			builder.append( System.lineSeparator()).append( "stderr:" ).append( System.lineSeparator()).append( result.getErrorOutput()) ;
+		}
+
+		serviceResultText.setText( builder.toString()) ;
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * サービス操作結果を分類します。<br><br>
+	 *
+	 * <p>メソッド名称： サービス操作結果分類</p>
+	 *
+	 * @param result	結果
+	 * @return 分類結果
+	 */
+	//--------------------------------------------------------------------------
+	private String classifyServiceResult(ProcessResult result) {
+		// 成功の場合
+		if( result.getExitCode() == 0) {
+			return text( "service.result.success") ;
+		}
+
+		String output = result.getCombinedOutput().toLowerCase() ;
+
+		// 管理者権限不足の場合
+		if( output.contains( "access is denied" ) || output.contains( "administrator" ) || output.contains( "管理者" )) {
+			return text( "service.result.adminRequired") ;
+		}
+
+		// ポート使用中の場合
+		if( output.contains( "address already in use" ) || output.contains( "bind" ) || output.contains( "port" ) || output.contains( "ポート" )) {
+			return text( "service.result.portInUse") ;
+		}
+
+		// サービス未登録の場合
+		if( output.contains( "does not exist" ) || output.contains( "not installed" ) || output.contains( "not found" ) || output.contains( "見つかりません" )) {
+			return text( "service.result.notInstalled") ;
+		}
+
+		return text( "service.result.failed") ;
 	}
 
 	//--------------------------------------------------------------------------
@@ -2901,7 +3939,7 @@ public class TinyWinNfsSwtManager {
 		new Thread( () -> {
 			ProcessResult result = runCommand( command) ;
 			runOnUi( () -> {
-				appendLog( result.getOutput()) ;
+				appendLog( result.getCombinedOutput()) ;
 				appendLog( format( "log.end", title, result.getExitCode())) ;
 
 				// コマンドが失敗した場合
@@ -2929,40 +3967,66 @@ public class TinyWinNfsSwtManager {
 	//--------------------------------------------------------------------------
 	private ProcessResult runCommand(List<String> command) {
 		StringBuilder output = new StringBuilder() ;
+		StringBuilder errorOutput = new StringBuilder() ;
 
 		try {
 			ProcessBuilder builder = new ProcessBuilder( command) ;
 			builder.directory( rootPath.toFile()) ;
-			builder.redirectErrorStream( true) ;
 			Process process = builder.start() ;
-			output.append( readProcessOutput( process)) ;
+			Thread outputThread = readProcessOutputAsync( process.getInputStream(), output) ;
+			Thread errorThread = readProcessOutputAsync( process.getErrorStream(), errorOutput) ;
 			int exitCode = process.waitFor() ;
-			return new ProcessResult( exitCode, output.toString()) ;
+			outputThread.join() ;
+			errorThread.join() ;
+			return new ProcessResult( exitCode, output.toString(), errorOutput.toString()) ;
 		} catch( IOException ioex) {
-			output.append( ioex.getMessage()) ;
-			return new ProcessResult( 1, output.toString()) ;
+			errorOutput.append( ioex.getMessage()) ;
+			return new ProcessResult( 1, output.toString(), errorOutput.toString()) ;
 		} catch( InterruptedException iex) {
 			Thread.currentThread().interrupt() ;
-			output.append( iex.getMessage()) ;
-			return new ProcessResult( 1, output.toString()) ;
+			errorOutput.append( iex.getMessage()) ;
+			return new ProcessResult( 1, output.toString(), errorOutput.toString()) ;
 		}
 	}
 
 	//--------------------------------------------------------------------------
 	/**
-	 * プロセス出力を読み取ります。<br><br>
+	 * プロセス出力を非同期に読み取ります。<br><br>
 	 *
-	 * <p>メソッド名称： プロセス出力読取</p>
+	 * <p>メソッド名称： プロセス出力非同期読取</p>
 	 *
-	 * @param process	プロセス
+	 * @param input		入力ストリーム
+	 * @param output	出力先
+	 * @return 読取Thread
+	 */
+	//--------------------------------------------------------------------------
+	private Thread readProcessOutputAsync(InputStream input, StringBuilder output) {
+		Thread thread = new Thread( () -> {
+			try {
+				output.append( readStreamOutput( input)) ;
+			} catch( IOException ioex) {
+				output.append( ioex.getMessage()).append( System.lineSeparator()) ;
+			}
+		}, "process-output-reader") ;
+		thread.start() ;
+		return thread ;
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * ストリーム出力を読み取ります。<br><br>
+	 *
+	 * <p>メソッド名称： ストリーム出力読取</p>
+	 *
+	 * @param input	入力ストリーム
 	 * @return 出力
 	 * @throws IOException 読取異常
 	 */
 	//--------------------------------------------------------------------------
-	private String readProcessOutput(Process process) throws IOException {
+	private String readStreamOutput(InputStream input) throws IOException {
 		StringBuilder output = new StringBuilder() ;
 
-		try( BufferedReader reader = new BufferedReader( new InputStreamReader( process.getInputStream(), Charset.defaultCharset()))) {
+		try( BufferedReader reader = new BufferedReader( new InputStreamReader( input, Charset.defaultCharset()))) {
 			String line ;
 
 			while( (line = reader.readLine()) != null) {
@@ -3339,6 +4403,9 @@ public class TinyWinNfsSwtManager {
 		/** 出力 */
 		private final String				output ;
 
+		/** エラー出力 */
+		private final String				errorOutput ;
+
 		//----------------------------------------------------------------------
 		/**
 		 * インスタンスを生成します。<br><br>
@@ -3346,12 +4413,14 @@ public class TinyWinNfsSwtManager {
 		 * <p>メソッド名称： コンストラクタ</p>
 		 *
 		 * @param exitCode	終了コード
-		 * @param output	出力
+		 * @param output		出力
+		 * @param errorOutput	エラー出力
 		 */
 		//----------------------------------------------------------------------
-		ProcessResult(int exitCode, String output) {
+		ProcessResult(int exitCode, String output, String errorOutput) {
 			this.exitCode = exitCode ;
-			this.output = output ;
+			this.output = output == null ? "" : output ;
+			this.errorOutput = errorOutput == null ? "" : errorOutput ;
 		}
 
 		//----------------------------------------------------------------------
@@ -3378,6 +4447,138 @@ public class TinyWinNfsSwtManager {
 		//----------------------------------------------------------------------
 		String getOutput() {
 			return output ;
+		}
+
+		//----------------------------------------------------------------------
+		/**
+		 * エラー出力を取得します。<br><br>
+		 *
+		 * <p>メソッド名称： エラー出力取得</p>
+		 *
+		 * @return エラー出力
+		 */
+		//----------------------------------------------------------------------
+		String getErrorOutput() {
+			return errorOutput ;
+		}
+
+		//----------------------------------------------------------------------
+		/**
+		 * 結合出力を取得します。<br><br>
+		 *
+		 * <p>メソッド名称： 結合出力取得</p>
+		 *
+		 * @return 結合出力
+		 */
+		//----------------------------------------------------------------------
+		String getCombinedOutput() {
+			// エラー出力がない場合
+			if( errorOutput.isBlank()) {
+				return output ;
+			}
+
+			// 標準出力がない場合
+			if( output.isBlank()) {
+				return errorOutput ;
+			}
+
+			return output + System.lineSeparator() + errorOutput ;
+		}
+	}
+
+	//------------------------------------------------------------------------------
+	/**
+	 * 診断行クラスです。<br><br>
+	 *
+	 * <p>クラス名称： 診断行</p>
+	 *
+	 * @author Shunji Ogawa
+	 * @version 01.00.00
+	 */
+	//------------------------------------------------------------------------------
+	private static class DiagnosticRow {
+		//	内部定義	--------------------------------------------------------
+		/** 重大度 */
+		private final String				severity ;
+
+		/** 発生元 */
+		private final String				source ;
+
+		/** コード */
+		private final String				code ;
+
+		/** メッセージ */
+		private final String				message ;
+
+		//----------------------------------------------------------------------
+		/**
+		 * インスタンスを生成します。<br><br>
+		 *
+		 * <p>メソッド名称： コンストラクタ</p>
+		 *
+		 * @param severity	重大度
+		 * @param source	発生元
+		 * @param code		コード
+		 * @param message	メッセージ
+		 */
+		//----------------------------------------------------------------------
+		DiagnosticRow(String severity, String source, String code, String message) {
+			this.severity = severity == null ? "" : severity ;
+			this.source = source == null ? "" : source ;
+			this.code = code == null ? "" : code ;
+			this.message = message == null ? "" : message ;
+		}
+
+		//----------------------------------------------------------------------
+		/**
+		 * 重大度を取得します。<br><br>
+		 *
+		 * <p>メソッド名称： 重大度取得</p>
+		 *
+		 * @return 重大度
+		 */
+		//----------------------------------------------------------------------
+		String getSeverity() {
+			return severity ;
+		}
+
+		//----------------------------------------------------------------------
+		/**
+		 * 発生元を取得します。<br><br>
+		 *
+		 * <p>メソッド名称： 発生元取得</p>
+		 *
+		 * @return 発生元
+		 */
+		//----------------------------------------------------------------------
+		String getSource() {
+			return source ;
+		}
+
+		//----------------------------------------------------------------------
+		/**
+		 * コードを取得します。<br><br>
+		 *
+		 * <p>メソッド名称： コード取得</p>
+		 *
+		 * @return コード
+		 */
+		//----------------------------------------------------------------------
+		String getCode() {
+			return code ;
+		}
+
+		//----------------------------------------------------------------------
+		/**
+		 * メッセージを取得します。<br><br>
+		 *
+		 * <p>メソッド名称： メッセージ取得</p>
+		 *
+		 * @return メッセージ
+		 */
+		//----------------------------------------------------------------------
+		String getMessage() {
+			return message ;
 		}
 	}
 

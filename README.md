@@ -6,7 +6,7 @@ QNX 4.25 を重要な検証対象にしていますが、製品自体は QNX 専
 
 ## 対応範囲
 
-| 項目 | v1.10.0 の状態 |
+| 項目 | v1.11.0 開発版の状態 |
 |---|---|
 | NFS | NFSv2 / NFSv3 |
 | MOUNT | MOUNT v1-v3 |
@@ -17,6 +17,7 @@ QNX 4.25 を重要な検証対象にしていますが、製品自体は QNX 専
 | symlink | `READLINK` / `SYMLINK` 対応。ただし Windows の symlink 作成権限とファイルシステム機能に依存 |
 | NFSv3互換情報 | `FSINFO` / `FSSTAT` / `PATHCONF` の主要値を設定・Windows容量情報から応答 |
 | 運用診断 | export状態、設定警告、大文字小文字衝突、環境・サービス情報を診断パッケージに出力 |
+| 管理ツール | 診断ビュー、サーバーログ検索、設定インポート/エクスポート、クライアント別mount支援 |
 | 検証対象 | QNX 4.25: NFSv2/UDP、Windows Client for NFS: NFSv3/UDP と NFSv3/TCP |
 | 対応外 | NFSv3 `MKNOD` などの特殊デバイスノード作成、NLM/file locking、NFSv4 |
 
@@ -163,6 +164,8 @@ exports.2.allowed.clients=192.168.1.30
 | `mount.port` | `20048` | MOUNT の UDP/TCP ポート |
 | `client.server.host` | `windows-host` | 管理ツールが表示する mount コマンド用のホスト名 |
 | `client.mount.point` | `/mnt` | 管理ツールが表示する mount コマンド用のクライアント側マウント先 |
+| `client.mount.profile` | `0` | 管理ツールの mount 表示。`0`: QNX、`1`: Windows Client for NFS、`2`: Linux/WSL |
+| `client.mount.protocol` | `0` | 管理ツールの protocol 表示。`0`: NFSv2 UDP、`1`: NFSv3 UDP、`2`: NFSv3 TCP |
 
 ### 権限/属性設定
 
