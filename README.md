@@ -6,7 +6,7 @@ QNX 4.25 を重要な検証対象にしていますが、製品自体は QNX 専
 
 ## 対応範囲
 
-| 項目 | v1.14.0 の状態 |
+| 項目 | v2.0.0 の状態 |
 |---|---|
 | NFS | NFSv2 / NFSv3 |
 | MOUNT | MOUNT v1-v3 |
@@ -21,7 +21,7 @@ QNX 4.25 を重要な検証対象にしていますが、製品自体は QNX 専
 | 性能/負荷検証 | ローカルRPCベンチマーク、長時間負荷ループ、大量READDIR回帰テスト |
 | 検証対象 | QNX 4.25: NFSv2/UDP、Windows Client for NFS: NFSv3/UDP と NFSv3/TCP、Linux/WSL: 任意回帰 |
 | 互換性回帰 | NFSエラー応答、属性応答、複数クライアント相当の相互編集、Windows NFS検証マトリクス、export境界検証 |
-| 正式版候補文書 | サポート範囲、設定互換性、セキュリティ、インストール/更新/アンインストール |
+| 正式版文書 | サポート範囲、設定互換性、セキュリティ、インストール/更新/アンインストール |
 | 対応外 | NFSv3 `MKNOD` などの特殊デバイスノード作成、NLM/file locking、NFSv4 |
 
 ## 画面
@@ -244,6 +244,7 @@ mount -o anon \\127.0.0.1\export Z:
 | 設定互換性 | [docs/configuration_compatibility.md](docs/configuration_compatibility.md) |
 | セキュリティとアクセス制限 | [docs/security_model.md](docs/security_model.md) |
 | インストール/更新/アンインストール | [docs/install_upgrade_uninstall.md](docs/install_upgrade_uninstall.md) |
+| v2.0.0 リリース確認 | [docs/release_checklist_v2_0_0.md](docs/release_checklist_v2_0_0.md) |
 | NFS手続きカバレッジ | [docs/nfs_procedure_coverage.md](docs/nfs_procedure_coverage.md) |
 | Windowsファイルシステム制約 | [docs/windows_filesystem_constraints.md](docs/windows_filesystem_constraints.md) |
 | 性能/負荷確認 | [docs/performance_testing.md](docs/performance_testing.md) |
@@ -281,7 +282,7 @@ mount -o anon \\127.0.0.1\export Z:
 | NFSv4 | 未実装です |
 | 特殊デバイス | NFSv3 `MKNOD` などの特殊デバイスノード作成は未対応です |
 
-正式版に向けた詳細なサポート範囲と既知制限は [docs/support_scope.md](docs/support_scope.md) を参照してください。
+正式版の詳細なサポート範囲と既知制限は [docs/support_scope.md](docs/support_scope.md) を参照してください。
 
 ## ライセンス
 

@@ -31,7 +31,7 @@ dist\installer\TinyWinNfsSetup.exe
 
 ## アップグレード確認
 
-正式版候補としての新規インストール、上書き更新、アンインストール、サービス再登録の総点検は [install_upgrade_uninstall.md](install_upgrade_uninstall.md) を参照してください。
+正式版としての新規インストール、上書き更新、アンインストール、サービス再登録の総点検は [install_upgrade_uninstall.md](install_upgrade_uninstall.md) を参照してください。
 
 リリース前に、直前の公開インストーラーからのアップグレード動作を確認します。
 

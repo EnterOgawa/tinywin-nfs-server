@@ -1,6 +1,6 @@
 # NFS 手続きカバレッジ
 
-この表は TinyWinNFS Server v1.14.0 正式版候補時点の実装状況です。
+この表は TinyWinNFS Server v2.0.0 正式版時点の実装状況です。
 
 ## 区分
 
@@ -110,3 +110,12 @@
 | セキュリティ | `docs/security_model.md` に export 境界、allowed clients、AUTH_SYS の限界を整理 |
 | 配布/更新 | `docs/install_upgrade_uninstall.md` に新規、上書き、アンインストール確認を整理 |
 | export 境界 | 重複 export 名、重複パス、ネストパスを単体テストで拒否確認 |
+
+## v2.0.0 正式版レビュー
+
+| 観点 | 確認 |
+|---|---|
+| バージョン表記 | 管理ツール、インストーラー、パッケージスクリプトを `2.0.0` に統一 |
+| 正式版文書 | README と主要 docs を正式版表現に整理 |
+| リリースゲート | `docs/release_checklist_v2_0_0.md` に確認、署名、公開手順を整理 |
+| 公開条件 | ユーザー側の動作確認と署名完了後に tag push と GitHub Release を実施 |

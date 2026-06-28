@@ -86,7 +86,7 @@ public class TinyWinNfsSwtManager {
 	private static final String			PRODUCT_NAME = "TinyWinNFS Server" ;
 
 	/** 製品バージョン */
-	private static final String			PRODUCT_VERSION = "1.14.0" ;
+	private static final String			PRODUCT_VERSION = "2.0.0" ;
 
 	/** ログ読込最大バイト数 */
 	private static final long			MAX_LOG_READ_BYTES = 1024L * 1024L ;
