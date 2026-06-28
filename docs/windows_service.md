@@ -13,6 +13,9 @@
 
 パッケージ同梱の管理ツールとサービスは同じ Java runtime を共有します。
 
+設定とデータ配置の互換性は [configuration_compatibility.md](configuration_compatibility.md) を参照してください。
+allowed clients、AUTH_SYS、Windows 権限の扱いは [security_model.md](security_model.md) を参照してください。
+
 ## インストール
 
 PowerShell を管理者として実行します。

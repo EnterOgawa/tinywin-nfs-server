@@ -1,5 +1,14 @@
 # 変更履歴
 
+## 1.14.0 - 未リリース
+
+- 2.0.0 正式版候補として、サポート範囲、制限付き機能、対象外機能を整理した `docs/support_scope.md` を追加しました。
+- 設定互換性、`ProgramData` 配置、アップグレード時に維持するデータを整理した `docs/configuration_compatibility.md` を追加しました。
+- allowed clients、AUTH_SYS、NFS mode、Windows 権限の限界を整理した `docs/security_model.md` を追加しました。
+- 新規インストール、上書き更新、アンインストール、サービス再登録の確認手順を `docs/install_upgrade_uninstall.md` に追加しました。
+- 重複 export 名、重複 export パス、ネストした export パスを拒否する単体回帰確認を追加しました。
+- README、NFS手続きカバレッジ、v1.14.0リリースチェックリストを正式版候補の構成へ更新しました。
+
 ## 1.13.0 - 2026-06-28
 
 - Windows Client for NFS の UDP/TCP 検証をまとめて実行する `test-windows-nfs-client-matrix.ps1` を追加しました。

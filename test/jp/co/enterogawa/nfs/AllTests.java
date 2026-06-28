@@ -453,6 +453,11 @@ public class AllTests {
 		Files.createDirectories( root) ;
 
 		try {
+			Path secondRoot = root.resolve( "second-export") ;
+			Path nestedRoot = root.resolve( "nested-export") ;
+			Files.createDirectories( secondRoot) ;
+			Files.createDirectories( nestedRoot) ;
+
 			Path validConfig = writeConfig(
 					"test-valid-config.properties",
 					root,
@@ -521,6 +526,30 @@ public class AllTests {
 					Files.readString( invalidTcpTimeoutConfig, StandardCharsets.UTF_8) + "rpc.tcp.timeout.millis=0\n",
 					StandardCharsets.UTF_8) ;
 			assertThrows( "invalid tcp timeout", () -> NfsServerConfig.load( invalidTcpTimeoutConfig)) ;
+
+			Path duplicateNameConfig = writeMultiExportConfig(
+					"test-duplicate-name-config.properties",
+					"/export",
+					root,
+					"/export",
+					secondRoot) ;
+			assertThrows( "duplicate export name", () -> NfsServerConfig.load( duplicateNameConfig)) ;
+
+			Path duplicatePathConfig = writeMultiExportConfig(
+					"test-duplicate-path-config.properties",
+					"/export",
+					root,
+					"/second",
+					root) ;
+			assertThrows( "duplicate export path", () -> NfsServerConfig.load( duplicatePathConfig)) ;
+
+			Path nestedPathConfig = writeMultiExportConfig(
+					"test-nested-path-config.properties",
+					"/export",
+					root,
+					"/nested",
+					nestedRoot) ;
+			assertThrows( "nested export path", () -> NfsServerConfig.load( nestedPathConfig)) ;
 		} finally {
 			deleteDirectory( root) ;
 		}
@@ -3334,6 +3363,46 @@ public class AllTests {
 				+ "time.delta.nanos=1000000\n"
 				+ "pathconf.link.max=1024\n"
 				+ "pathconf.name.max=255\n"
+				+ "write.sync=true\n"
+				+ "filename.charset=UTF-8\n" ;
+		Files.writeString( configPath, configText, StandardCharsets.UTF_8) ;
+		return configPath ;
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * 複数公開定義の設定ファイルを書き込みます。<br><br>
+	 *
+	 * <p>メソッド名称： 複数公開定義設定ファイル書込</p>
+	 *
+	 * @param fileName	ファイル名
+	 * @param firstName	1件目公開名
+	 * @param firstPath	1件目公開パス
+	 * @param secondName	2件目公開名
+	 * @param secondPath	2件目公開パス
+	 * @return 設定ファイル
+	 * @throws IOException 書込異常
+	 */
+	//--------------------------------------------------------------------------
+	private Path writeMultiExportConfig(String fileName, String firstName, Path firstPath, String secondName, Path secondPath) throws IOException {
+		Path configPath = Path.of( "work", "tmp", fileName).toAbsolutePath().normalize() ;
+		String configText = ""
+				+ "portmap.port=" + TEST_PORTMAP_PORT + "\n"
+				+ "nfs.port=" + TEST_NFS_PORT + "\n"
+				+ "mount.port=" + TEST_MOUNT_PORT + "\n"
+				+ "exports.count=2\n"
+				+ "exports.1.name=" + firstName + "\n"
+				+ "exports.1.path=" + firstPath.toString().replace( "\\", "\\\\") + "\n"
+				+ "exports.1.writable=true\n"
+				+ "exports.2.name=" + secondName + "\n"
+				+ "exports.2.path=" + secondPath.toString().replace( "\\", "\\\\") + "\n"
+				+ "exports.2.writable=true\n"
+				+ "uid=0\n"
+				+ "gid=0\n"
+				+ "file.mode=0644\n"
+				+ "directory.mode=0755\n"
+				+ "block.size=4096\n"
+				+ "read.size=8192\n"
 				+ "write.sync=true\n"
 				+ "filename.charset=UTF-8\n" ;
 		Files.writeString( configPath, configText, StandardCharsets.UTF_8) ;

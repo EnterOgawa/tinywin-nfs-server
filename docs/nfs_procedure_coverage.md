@@ -1,6 +1,6 @@
 # NFS 手続きカバレッジ
 
-この表は TinyWinNFS Server v1.13.0 開発版時点の実装状況です。
+この表は TinyWinNFS Server v1.14.0 正式版候補時点の実装状況です。
 
 ## 区分
 
@@ -100,3 +100,13 @@
 | 属性応答 | NFSv2/NFSv3 の type、mode、uid、gid、size |
 | 相互編集 | Windows 側直接編集と NFSv2/NFSv3 経由編集の反映 |
 | Windows Client for NFS | UDP/TCP マトリクス実行と transport 別 Markdown レポート |
+
+## v1.14.0 正式版候補レビュー
+
+| 観点 | 確認 |
+|---|---|
+| サポート範囲 | `docs/support_scope.md` に保証範囲、制限付き機能、対象外機能を整理 |
+| 設定互換性 | `docs/configuration_compatibility.md` に配置、設定キー、アップグレード方針を整理 |
+| セキュリティ | `docs/security_model.md` に export 境界、allowed clients、AUTH_SYS の限界を整理 |
+| 配布/更新 | `docs/install_upgrade_uninstall.md` に新規、上書き、アンインストール確認を整理 |
+| export 境界 | 重複 export 名、重複パス、ネストパスを単体テストで拒否確認 |

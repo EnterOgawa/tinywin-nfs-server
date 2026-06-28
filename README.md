@@ -6,7 +6,7 @@ QNX 4.25 を重要な検証対象にしていますが、製品自体は QNX 専
 
 ## 対応範囲
 
-| 項目 | v1.13.0 の状態 |
+| 項目 | v1.14.0 の状態 |
 |---|---|
 | NFS | NFSv2 / NFSv3 |
 | MOUNT | MOUNT v1-v3 |
@@ -20,7 +20,8 @@ QNX 4.25 を重要な検証対象にしていますが、製品自体は QNX 専
 | 管理ツール | 診断ビュー、サーバーログ検索、設定インポート/エクスポート、クライアント別mount支援 |
 | 性能/負荷検証 | ローカルRPCベンチマーク、長時間負荷ループ、大量READDIR回帰テスト |
 | 検証対象 | QNX 4.25: NFSv2/UDP、Windows Client for NFS: NFSv3/UDP と NFSv3/TCP、Linux/WSL: 任意回帰 |
-| 互換性回帰 | NFSエラー応答、属性応答、複数クライアント相当の相互編集、Windows NFS検証マトリクス |
+| 互換性回帰 | NFSエラー応答、属性応答、複数クライアント相当の相互編集、Windows NFS検証マトリクス、export境界検証 |
+| 正式版候補文書 | サポート範囲、設定互換性、セキュリティ、インストール/更新/アンインストール |
 | 対応外 | NFSv3 `MKNOD` などの特殊デバイスノード作成、NLM/file locking、NFSv4 |
 
 ## 画面
@@ -51,11 +52,7 @@ v1.7.1 以降、アプリ本体と可変データを分離しています。
 
 このフォルダを既存ワークスペースへ `Existing Projects into Workspace` で取り込みます。
 
-Java は以下の Java 21 を使用します。
-
-```text
-C:\develop\tools\eclipse202503\eclipse\jdk-21.0.8+9
-```
+Eclipse では JavaSE-21 の実行環境を設定してください。
 
 ### コンパイル
 
@@ -243,6 +240,10 @@ mount -o anon \\127.0.0.1\export Z:
 | QNX 4.25 | [docs/qnx425_mount.md](docs/qnx425_mount.md) |
 | Windows Client for NFS | [docs/windows_nfs_client_test.md](docs/windows_nfs_client_test.md) |
 | WSL/Linux | [docs/wsl_mount_test.md](docs/wsl_mount_test.md) |
+| サポート範囲 | [docs/support_scope.md](docs/support_scope.md) |
+| 設定互換性 | [docs/configuration_compatibility.md](docs/configuration_compatibility.md) |
+| セキュリティとアクセス制限 | [docs/security_model.md](docs/security_model.md) |
+| インストール/更新/アンインストール | [docs/install_upgrade_uninstall.md](docs/install_upgrade_uninstall.md) |
 | NFS手続きカバレッジ | [docs/nfs_procedure_coverage.md](docs/nfs_procedure_coverage.md) |
 | Windowsファイルシステム制約 | [docs/windows_filesystem_constraints.md](docs/windows_filesystem_constraints.md) |
 | 性能/負荷確認 | [docs/performance_testing.md](docs/performance_testing.md) |
@@ -279,6 +280,8 @@ mount -o anon \\127.0.0.1\export Z:
 | file locking | NLM/file locking は未実装です |
 | NFSv4 | 未実装です |
 | 特殊デバイス | NFSv3 `MKNOD` などの特殊デバイスノード作成は未対応です |
+
+正式版に向けた詳細なサポート範囲と既知制限は [docs/support_scope.md](docs/support_scope.md) を参照してください。
 
 ## ライセンス
 
