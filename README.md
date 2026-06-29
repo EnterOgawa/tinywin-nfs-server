@@ -31,7 +31,7 @@ v2.0.0 は正式版です。インストーラーには Java runtime、管理ツ
 
 ## 対応範囲
 
-| 項目 | v2.0.0 の状態 |
+| 項目 | v2.1.0 の状態 |
 |---|---|
 | NFS | NFSv2 / NFSv3 |
 | MOUNT | MOUNT v1-v3 |
@@ -221,8 +221,8 @@ exports.2.allowed.clients=192.168.1.30
 | `permission.identity` | `auto` | `auto`: AUTH_SYS の UID/GID を属性応答に反映、`fixed`: `uid` / `gid` を固定返却 |
 | `uid` | `0` | `permission.identity=fixed` 時の UID |
 | `gid` | `0` | `permission.identity=fixed` 時の GID |
-| `file.mode` | `0644` | 通常ファイルの mode |
-| `directory.mode` | `0755` | ディレクトリの mode |
+| `file.mode` | `0644` | 通常ファイルの既定 mode |
+| `directory.mode` | `0755` | ディレクトリの既定 mode |
 | `block.size` | `4096` | 属性/FS 情報で返すブロックサイズ |
 | `read.size` | `8192` | NFS READ の最大応答サイズ |
 | `write.size` | `8192` | NFSv3 `FSINFO` で返す write 最大/推奨サイズ |
@@ -243,6 +243,8 @@ exports.2.allowed.clients=192.168.1.30
 | `write.cache.idle.millis` | `3000` | アイドル状態の書込ファイルを保持する時間 |
 
 性能設定の調整時は、通常の単体テストに加えて [docs/performance_testing.md](docs/performance_testing.md) のローカルRPCベンチマークを実行してください。
+
+NFS クライアントから `chmod` / `SETATTR mode`、`chown` / `chgrp` 相当の `SETATTR uid/gid` が実行された場合、TinyWinNFS Server は NFS mode/UID/GID をメタデータとして保持し、後続の属性応答へ反映します。これは Windows ACL や Windows ファイル所有者の完全変換ではありません。
 
 ## マウント例
 

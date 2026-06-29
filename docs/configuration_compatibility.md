@@ -1,6 +1,6 @@
 # 設定互換性とデータ配置
 
-この文書は、TinyWinNFS Server v2.0.0 正式版で固定する設定ファイル、データ配置、アップグレード方針を整理します。
+この文書は、TinyWinNFS Server v2.1.0 時点の設定ファイル、データ配置、アップグレード方針を整理します。
 
 ## 標準配置
 
@@ -12,6 +12,7 @@
 | 既定 export | `C:\ProgramData\EnterOgawa\TinyWinNFS Server\export` | `onlyifdoesntexist` で初回のみ作成 |
 | TinyWinNFS ログ | `C:\ProgramData\EnterOgawa\TinyWinNFS Server\logs\nfs-server.log` | 維持 |
 | 診断パッケージ | `C:\ProgramData\EnterOgawa\TinyWinNFS Server\diagnostics` | 維持 |
+| NFS 属性メタデータ | `C:\ProgramData\EnterOgawa\TinyWinNFS Server\data\modes.properties` | mode、UID/GID を維持 |
 | WinSW ログ | `C:\Program Files\EnterOgawa\TinyWinNFS Server\service\winsw` | アプリ本体側 |
 | 同梱デフォルト設定 | `C:\Program Files\EnterOgawa\TinyWinNFS Server\defaults\conf` | インストーラーで置換 |
 
@@ -42,8 +43,8 @@
 | `exports.N.allowed.clients` | 空欄 | 空欄は全クライアント許可 |
 | `uid` / `gid` | `0` | `permission.identity=fixed` 時の属性値 |
 | `permission.identity` | `auto` | `auto` または `fixed` |
-| `file.mode` | `0644` | NFS属性応答値 |
-| `directory.mode` | `0755` | NFS属性応答値 |
+| `file.mode` | `0644` | 通常ファイルの既定NFS属性応答値 |
+| `directory.mode` | `0755` | ディレクトリの既定NFS属性応答値 |
 | `read.size` | `8192` | NFS READ 応答上限 |
 | `write.size` | `read.size` | NFSv3 FSINFO 応答値 |
 | `write.sync` | `false` | 性能優先の既定値を維持 |
@@ -56,6 +57,7 @@
 - `conf\backups` 配下のバックアップ。
 - export フォルダ内の利用者データ。
 - `logs` と `diagnostics` 配下の運用ファイル。
+- NFSクライアントから変更した mode、UID/GID メタデータ。
 - 管理ツールから設定した複数 export。
 - 許可クライアント、UID/GID、ファイル名文字コードなどの運用設定。
 

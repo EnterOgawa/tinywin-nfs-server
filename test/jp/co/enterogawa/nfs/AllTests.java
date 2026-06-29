@@ -779,6 +779,7 @@ public class AllTests {
 		assertQnxUnpaddedOpaqueWriteFile( program, fileHandle, context.getRoot()) ;
 		assertSetAttrFile( program, fileHandle, context.getRoot()) ;
 		assertSetAttrMode( program, fileHandle) ;
+		assertSetAttrOwner( program, fileHandle) ;
 		assertSetAttrTime( program, fileHandle) ;
 		assertBidirectionalEditFile( program, fileHandle, context.getRoot()) ;
 		assertTempRenameOverwriteFile( program, rootHandle, context.getRoot()) ;
@@ -870,6 +871,8 @@ public class AllTests {
 			assertReadLinkOnRegularFileV3( program, fileHandle) ;
 			assertWriteAndCommitV3( program, fileHandle, context.getRoot()) ;
 			assertSetAttrV3( program, fileHandle, context.getRoot()) ;
+			assertSetAttrModeV3( program, fileHandle) ;
+			assertSetAttrOwnerV3( program, fileHandle) ;
 			assertCreateRemoveV3( program, rootHandle, context.getRoot()) ;
 			assertMkdirRmdirV3( program, rootHandle, context.getRoot()) ;
 			assertRenameV3( program, rootHandle, context.getRoot()) ;
@@ -1299,12 +1302,12 @@ public class AllTests {
 		writeDiropargsV3( createArguments, rootHandle, "v3-created.txt") ;
 		createArguments.writeInt( 0) ;
 		writeSattr3Unset( createArguments) ;
-		XdrReader createReader = new XdrReader( handle( program, RpcConstants.PROGRAM_NFS, 3, 8, createArguments).toByteArray()) ;
+		XdrReader createReader = new XdrReader( handleWithAuthSys( program, RpcConstants.PROGRAM_NFS, 3, 8, createArguments, 1234, 5678).toByteArray()) ;
 
 		assertEquals( "v3 create status", NfsStatus.OK, createReader.readInt()) ;
 		assertTrue( "v3 create handle follows", createReader.readBoolean()) ;
 		assertEquals( "v3 create handle", FileHandle.LENGTH, createReader.readOpaque().length) ;
-		skipPostOpAttrV3( createReader) ;
+		assertPostOpAttrOwnerV3( createReader, "v3 create owner", 1234, 5678) ;
 		skipWccDataV3( createReader) ;
 		assertTrue( "v3 create exists", Files.exists( root.resolve( "v3-created.txt"), LinkOption.NOFOLLOW_LINKS)) ;
 
@@ -1333,12 +1336,12 @@ public class AllTests {
 		XdrWriter mkdirArguments = new XdrWriter() ;
 		writeDiropargsV3( mkdirArguments, rootHandle, "v3-dir") ;
 		writeSattr3Unset( mkdirArguments) ;
-		XdrReader mkdirReader = new XdrReader( handle( program, RpcConstants.PROGRAM_NFS, 3, 9, mkdirArguments).toByteArray()) ;
+		XdrReader mkdirReader = new XdrReader( handleWithAuthSys( program, RpcConstants.PROGRAM_NFS, 3, 9, mkdirArguments, 2234, 6678).toByteArray()) ;
 
 		assertEquals( "v3 mkdir status", NfsStatus.OK, mkdirReader.readInt()) ;
 		assertTrue( "v3 mkdir handle follows", mkdirReader.readBoolean()) ;
 		mkdirReader.readOpaque() ;
-		skipPostOpAttrV3( mkdirReader) ;
+		assertPostOpAttrOwnerV3( mkdirReader, "v3 mkdir owner", 2234, 6678) ;
 		skipWccDataV3( mkdirReader) ;
 		assertTrue( "v3 mkdir exists", Files.isDirectory( root.resolve( "v3-dir"), LinkOption.NOFOLLOW_LINKS)) ;
 
@@ -2226,13 +2229,93 @@ public class AllTests {
 
 		XdrWriter writableArguments = new XdrWriter() ;
 		writableArguments.writeFixedOpaque( handle.getValue()) ;
-		writeSattrMode( writableArguments, 0644) ;
+		writeSattrMode( writableArguments, 0755) ;
 		XdrWriter writableResponse = handle( program, RpcConstants.PROGRAM_NFS, 2, 2, writableArguments) ;
 		XdrReader writableReader = new XdrReader( writableResponse.toByteArray()) ;
 
 		assertEquals( "setattr writable status", NfsStatus.OK, writableReader.readInt()) ;
 		writableReader.readInt() ;
-		assertEquals( "setattr writable mode", 0200, writableReader.readInt() & 0200) ;
+		assertEquals( "setattr writable mode", 0755, writableReader.readInt() & 0777) ;
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * ファイルSETATTR UID/GIDを確認します。<br><br>
+	 *
+	 * <p>メソッド名称： ファイルSETATTR UID/GID確認</p>
+	 *
+	 * @param program	NFSプログラム
+	 * @param handle	ファイルハンドル
+	 * @throws IOException 処理異常
+	 */
+	//--------------------------------------------------------------------------
+	private void assertSetAttrOwner(NfsV2Program program, FileHandle handle) throws IOException {
+		XdrWriter arguments = new XdrWriter() ;
+		arguments.writeFixedOpaque( handle.getValue()) ;
+		writeSattrOwner( arguments, 1001, 1002) ;
+		XdrReader reader = new XdrReader( handle( program, RpcConstants.PROGRAM_NFS, 2, 2, arguments).toByteArray()) ;
+
+		assertEquals( "setattr owner status", NfsStatus.OK, reader.readInt()) ;
+		assertAttributesOwner( reader, "setattr owner", 1001, 1002) ;
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * NFSv3ファイルSETATTR modeを確認します。<br><br>
+	 *
+	 * <p>メソッド名称： NFSv3ファイルSETATTR mode確認</p>
+	 *
+	 * @param program	NFSv3プログラム
+	 * @param handle	ファイルハンドル
+	 * @throws IOException 処理異常
+	 */
+	//--------------------------------------------------------------------------
+	private void assertSetAttrModeV3(NfsV3Program program, FileHandle handle) throws IOException {
+		XdrWriter arguments = new XdrWriter() ;
+		arguments.writeOpaque( handle.getValue()) ;
+		writeSattr3Mode( arguments, 0755) ;
+		arguments.writeBoolean( false) ;
+		XdrReader reader = new XdrReader( handle( program, RpcConstants.PROGRAM_NFS, 3, 2, arguments).toByteArray()) ;
+
+		assertEquals( "v3 setattr mode status", NfsStatus.OK, reader.readInt()) ;
+		skipWccDataV3( reader) ;
+
+		XdrWriter getattrArguments = new XdrWriter() ;
+		getattrArguments.writeOpaque( handle.getValue()) ;
+		XdrReader getattrReader = new XdrReader( handle( program, RpcConstants.PROGRAM_NFS, 3, 1, getattrArguments).toByteArray()) ;
+
+		assertEquals( "v3 getattr chmod status", NfsStatus.OK, getattrReader.readInt()) ;
+		getattrReader.readInt() ;
+		assertEquals( "v3 getattr chmod mode", 0755, getattrReader.readInt() & 0777) ;
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * NFSv3ファイルSETATTR UID/GIDを確認します。<br><br>
+	 *
+	 * <p>メソッド名称： NFSv3ファイルSETATTR UID/GID確認</p>
+	 *
+	 * @param program	NFSv3プログラム
+	 * @param handle	ファイルハンドル
+	 * @throws IOException 処理異常
+	 */
+	//--------------------------------------------------------------------------
+	private void assertSetAttrOwnerV3(NfsV3Program program, FileHandle handle) throws IOException {
+		XdrWriter arguments = new XdrWriter() ;
+		arguments.writeOpaque( handle.getValue()) ;
+		writeSattr3Owner( arguments, 1001, 1002) ;
+		arguments.writeBoolean( false) ;
+		XdrReader reader = new XdrReader( handle( program, RpcConstants.PROGRAM_NFS, 3, 2, arguments).toByteArray()) ;
+
+		assertEquals( "v3 setattr owner status", NfsStatus.OK, reader.readInt()) ;
+		skipWccDataV3( reader) ;
+
+		XdrWriter getattrArguments = new XdrWriter() ;
+		getattrArguments.writeOpaque( handle.getValue()) ;
+		XdrReader getattrReader = new XdrReader( handle( program, RpcConstants.PROGRAM_NFS, 3, 1, getattrArguments).toByteArray()) ;
+
+		assertEquals( "v3 getattr owner status", NfsStatus.OK, getattrReader.readInt()) ;
+		assertAttributesOwnerV3( getattrReader, "v3 getattr owner", 1001, 1002) ;
 	}
 
 	//--------------------------------------------------------------------------
@@ -2377,12 +2460,12 @@ public class AllTests {
 		XdrWriter createArguments = new XdrWriter() ;
 		writeDiropargs( createArguments, rootHandle, "created.txt") ;
 		writeSattrUnset( createArguments) ;
-		XdrWriter createResponse = handle( program, RpcConstants.PROGRAM_NFS, 2, 9, createArguments) ;
+		XdrWriter createResponse = handleWithAuthSys( program, RpcConstants.PROGRAM_NFS, 2, 9, createArguments, 1234, 5678) ;
 		XdrReader createReader = new XdrReader( createResponse.toByteArray()) ;
 
 		assertEquals( "create status", NfsStatus.OK, createReader.readInt()) ;
 		assertEquals( "create handle length", FileHandle.LENGTH, createReader.readFixedOpaque( FileHandle.LENGTH).length) ;
-		skipAttributes( createReader) ;
+		assertAttributesOwner( createReader, "create owner", 1234, 5678) ;
 		assertTrue( "create exists", Files.exists( root.resolve( "created.txt"), LinkOption.NOFOLLOW_LINKS)) ;
 
 		XdrWriter removeArguments = new XdrWriter() ;
@@ -2435,12 +2518,12 @@ public class AllTests {
 		XdrWriter mkdirArguments = new XdrWriter() ;
 		writeDiropargs( mkdirArguments, rootHandle, "created-dir") ;
 		writeSattrUnset( mkdirArguments) ;
-		XdrWriter mkdirResponse = handle( program, RpcConstants.PROGRAM_NFS, 2, 14, mkdirArguments) ;
+		XdrWriter mkdirResponse = handleWithAuthSys( program, RpcConstants.PROGRAM_NFS, 2, 14, mkdirArguments, 2234, 6678) ;
 		XdrReader mkdirReader = new XdrReader( mkdirResponse.toByteArray()) ;
 
 		assertEquals( "mkdir status", NfsStatus.OK, mkdirReader.readInt()) ;
 		assertEquals( "mkdir handle length", FileHandle.LENGTH, mkdirReader.readFixedOpaque( FileHandle.LENGTH).length) ;
-		skipAttributes( mkdirReader) ;
+		assertAttributesOwner( mkdirReader, "mkdir owner", 2234, 6678) ;
 		assertTrue( "mkdir exists", Files.isDirectory( root.resolve( "created-dir"), LinkOption.NOFOLLOW_LINKS)) ;
 
 		XdrWriter rmdirArguments = new XdrWriter() ;
@@ -3453,6 +3536,26 @@ public class AllTests {
 
 	//--------------------------------------------------------------------------
 	/**
+	 * NFSv2属性のUID/GIDを確認します。<br><br>
+	 *
+	 * <p>メソッド名称： NFSv2属性UID/GID確認</p>
+	 *
+	 * @param reader	XDR読込
+	 * @param label		ラベル
+	 * @param uid		UID
+	 * @param gid		GID
+	 */
+	//--------------------------------------------------------------------------
+	private void assertAttributesOwner(XdrReader reader, String label, int uid, int gid) {
+		reader.readInt() ;
+		reader.readInt() ;
+		reader.readInt() ;
+		assertEquals( label + " uid", uid, reader.readInt()) ;
+		assertEquals( label + " gid", gid, reader.readInt()) ;
+	}
+
+	//--------------------------------------------------------------------------
+	/**
 	 * NFSv3 post_op_attrを読み飛ばします。<br><br>
 	 *
 	 * <p>メソッド名称： NFSv3 post_op_attr読飛</p>
@@ -3467,6 +3570,23 @@ public class AllTests {
 		}
 
 		skipAttributesV3( reader) ;
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * NFSv3 post_op_attrのUID/GIDを確認します。<br><br>
+	 *
+	 * <p>メソッド名称： NFSv3 post_op_attr UID/GID確認</p>
+	 *
+	 * @param reader	XDR読込
+	 * @param label		ラベル
+	 * @param uid		UID
+	 * @param gid		GID
+	 */
+	//--------------------------------------------------------------------------
+	private void assertPostOpAttrOwnerV3(XdrReader reader, String label, int uid, int gid) {
+		assertTrue( label + " follows", reader.readBoolean()) ;
+		assertAttributesOwnerV3( reader, label, uid, gid) ;
 	}
 
 	//--------------------------------------------------------------------------
@@ -3538,6 +3658,27 @@ public class AllTests {
 		reader.readUnsignedInt() ;
 		reader.readUnsignedInt() ;
 		reader.readUnsignedInt() ;
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * NFSv3属性のUID/GIDを確認します。<br><br>
+	 *
+	 * <p>メソッド名称： NFSv3属性UID/GID確認</p>
+	 *
+	 * @param reader	XDR読込
+	 * @param label		ラベル
+	 * @param uid		UID
+	 * @param gid		GID
+	 */
+	//--------------------------------------------------------------------------
+	private void assertAttributesOwnerV3(XdrReader reader, String label, int uid, int gid) {
+		reader.readInt() ;
+		reader.readInt() ;
+		reader.readInt() ;
+		assertEquals( label + " uid", uid, reader.readInt()) ;
+		assertEquals( label + " gid", gid, reader.readInt()) ;
+		skipAttributesV3Remainder( reader) ;
 	}
 
 	//--------------------------------------------------------------------------
@@ -3673,6 +3814,48 @@ public class AllTests {
 
 	//--------------------------------------------------------------------------
 	/**
+	 * NFSv3モード指定sattrを書き込みます。<br><br>
+	 *
+	 * <p>メソッド名称： NFSv3モード指定sattr書込</p>
+	 *
+	 * @param writer	書込
+	 * @param mode		モード
+	 */
+	//--------------------------------------------------------------------------
+	private void writeSattr3Mode(XdrWriter writer, int mode) {
+		writer.writeBoolean( true) ;
+		writer.writeUnsignedInt( mode) ;
+		writer.writeBoolean( false) ;
+		writer.writeBoolean( false) ;
+		writer.writeBoolean( false) ;
+		writer.writeInt( 0) ;
+		writer.writeInt( 0) ;
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * NFSv3 UID/GID指定sattrを書き込みます。<br><br>
+	 *
+	 * <p>メソッド名称： NFSv3 UID/GID指定sattr書込</p>
+	 *
+	 * @param writer	書込
+	 * @param uid		UID
+	 * @param gid		GID
+	 */
+	//--------------------------------------------------------------------------
+	private void writeSattr3Owner(XdrWriter writer, int uid, int gid) {
+		writer.writeBoolean( false) ;
+		writer.writeBoolean( true) ;
+		writer.writeUnsignedInt( Integer.toUnsignedLong( uid)) ;
+		writer.writeBoolean( true) ;
+		writer.writeUnsignedInt( Integer.toUnsignedLong( gid)) ;
+		writer.writeBoolean( false) ;
+		writer.writeInt( 0) ;
+		writer.writeInt( 0) ;
+	}
+
+	//--------------------------------------------------------------------------
+	/**
 	 * サイズ指定sattrを書き込みます。<br><br>
 	 *
 	 * <p>メソッド名称： サイズ指定sattr書込</p>
@@ -3706,6 +3889,28 @@ public class AllTests {
 		writer.writeUnsignedInt( mode) ;
 		writer.writeInt( -1) ;
 		writer.writeInt( -1) ;
+		writer.writeInt( -1) ;
+		writer.writeInt( -1) ;
+		writer.writeInt( -1) ;
+		writer.writeInt( -1) ;
+		writer.writeInt( -1) ;
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * UID/GID指定sattrを書き込みます。<br><br>
+	 *
+	 * <p>メソッド名称： UID/GID指定sattr書込</p>
+	 *
+	 * @param writer	書込
+	 * @param uid		UID
+	 * @param gid		GID
+	 */
+	//--------------------------------------------------------------------------
+	private void writeSattrOwner(XdrWriter writer, int uid, int gid) {
+		writer.writeInt( -1) ;
+		writer.writeUnsignedInt( Integer.toUnsignedLong( uid)) ;
+		writer.writeUnsignedInt( Integer.toUnsignedLong( gid)) ;
 		writer.writeInt( -1) ;
 		writer.writeInt( -1) ;
 		writer.writeInt( -1) ;

@@ -14,6 +14,7 @@ $dataRoot = if( [string]::IsNullOrWhiteSpace($env:TINYWIN_NFS_DATA)) { Join-Path
 $dataConfDir = Join-Path $dataRoot "conf"
 $dataExportDir = Join-Path $dataRoot "export"
 $dataLogDir = Join-Path $dataRoot "logs"
+$dataStoreDir = Join-Path $dataRoot "data"
 $dataConfigPath = Join-Path $dataConfDir "nfs-server.properties"
 
 function Test-Administrator {
@@ -42,6 +43,7 @@ function Initialize-DataLayout {
 	New-Item -ItemType Directory -Path $dataConfDir -Force | Out-Null
 	New-Item -ItemType Directory -Path $dataExportDir -Force | Out-Null
 	New-Item -ItemType Directory -Path $dataLogDir -Force | Out-Null
+	New-Item -ItemType Directory -Path $dataStoreDir -Force | Out-Null
 
 	$configCandidates = @(
 		(Join-Path $root "conf\nfs-server.properties"),

@@ -1,5 +1,5 @@
 #define AppName "TinyWinNFS Server"
-#define AppVersion "2.0.0"
+#define AppVersion "2.1.0"
 #define AppPublisher "EnterOgawa"
 #define AppExeName "TinyWinNfsManager.exe"
 #define SourceDir "..\dist\TinyWinNfsManager"
@@ -54,6 +54,7 @@ Source: "{#SourceDir}\service\*"; DestDir: "{app}\service"; Flags: ignoreversion
 [Dirs]
 Name: "{commonappdata}\EnterOgawa\TinyWinNFS Server\conf"
 Name: "{commonappdata}\EnterOgawa\TinyWinNFS Server\logs"
+Name: "{commonappdata}\EnterOgawa\TinyWinNFS Server\data"
 
 [Registry]
 Root: HKLM; Subkey: "Software\Microsoft\Windows NT\CurrentVersion\AppCompatFlags\Layers"; ValueType: string; ValueName: "{app}\{#AppExeName}"; ValueData: "~ RUNASADMIN"; Flags: uninsdeletevalue

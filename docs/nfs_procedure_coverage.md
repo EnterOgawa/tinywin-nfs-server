@@ -1,6 +1,6 @@
 # NFS 手続きカバレッジ
 
-この表は TinyWinNFS Server v2.0.0 正式版時点の実装状況です。
+この表は TinyWinNFS Server v2.1.0 時点の実装状況です。
 
 ## 区分
 
@@ -27,20 +27,20 @@
 | 手続き | 状態 | 備考 |
 |---|---|---|
 | `NULL` | 実装済み | 疎通確認 |
-| `GETATTR` | 実装済み | AUTH_SYS UID/GID 反映に対応 |
-| `SETATTR` | 実装済み | サイズ、mode、mtime を中心に対応 |
+| `GETATTR` | 実装済み | 保存済み mode/UID/GID メタデータと AUTH_SYS UID/GID 反映に対応 |
+| `SETATTR` | 実装済み | サイズ、mode、uid/gid、mtime を中心に対応。mode/UID/GID は NFS メタデータとして保持 |
 | `ROOT` | 互換 no-op | 旧仕様互換 |
 | `LOOKUP` | 実装済み | export 外参照と Windows 禁止名を拒否 |
 | `READLINK` | 制限付き | Windows symlink のリンク先を返す。通常ファイルは `INVAL` |
 | `READ` | 実装済み | 通常ファイル読込 |
 | `WRITECACHE` | 互換 no-op | NFSv2互換の成功応答 |
 | `WRITE` | 実装済み | QNX 4.25 互換のパディング差異に対応 |
-| `CREATE` | 実装済み | 通常ファイル作成 |
+| `CREATE` | 実装済み | 通常ファイル作成。初期 owner/group を保持 |
 | `REMOVE` | 実装済み | QNX の `.nfsX*` ディレクトリ削除互換を含む |
 | `RENAME` | 実装済み | 上書き rename に対応 |
 | `LINK` | 制限付き | Windows の hard link 機能に依存 |
 | `SYMLINK` | 制限付き | Windows の symlink 作成権限に依存 |
-| `MKDIR` | 実装済み | ディレクトリ作成 |
+| `MKDIR` | 実装済み | ディレクトリ作成。初期 owner/group を保持 |
 | `RMDIR` | 実装済み | 空ディレクトリ削除。通常ファイルは `NOTDIR` |
 | `READDIR` | 実装済み | cookie 分割に対応 |
 | `STATFS` | 実装済み | Windows の `FileStore` 情報を元に応答 |
@@ -50,15 +50,15 @@
 | 手続き | 状態 | 備考 |
 |---|---|---|
 | `NULL` | 実装済み | 疎通確認 |
-| `GETATTR` | 実装済み | post-op属性形式で応答 |
-| `SETATTR` | 実装済み | サイズ、mode、mtime を中心に対応 |
+| `GETATTR` | 実装済み | post-op属性形式で応答。保存済み mode/UID/GID メタデータに対応 |
+| `SETATTR` | 実装済み | サイズ、mode、uid/gid、mtime を中心に対応。mode/UID/GID は NFS メタデータとして保持 |
 | `LOOKUP` | 実装済み | export 外参照と Windows 禁止名を拒否 |
 | `ACCESS` | 実装済み | 読込、lookup、書込、削除可否を返す |
 | `READLINK` | 制限付き | Windows symlink のリンク先を返す |
 | `READ` | 実装済み | 通常ファイル読込 |
 | `WRITE` | 実装済み | stable/unstable 応答と書込キャッシュに対応 |
-| `CREATE` | 実装済み | unchecked、guarded、exclusive の基本挙動に対応 |
-| `MKDIR` | 実装済み | ディレクトリ作成 |
+| `CREATE` | 実装済み | unchecked、guarded、exclusive の基本挙動と初期 owner/group 保持に対応 |
+| `MKDIR` | 実装済み | ディレクトリ作成。初期 owner/group を保持 |
 | `SYMLINK` | 制限付き | Windows の symlink 作成権限に依存 |
 | `MKNOD` | 未対応 | 特殊デバイスノードは `NOTSUPP` |
 | `REMOVE` | 実装済み | 通常ファイル削除、QNX 互換削除を含む |
@@ -78,7 +78,7 @@
 |---|---|---|
 | NLM / file locking | 未対応 | QNX 4.25 と Windows Client for NFS では `nolock` 前提 |
 | NFSv4 | 未対応 | NFSv2/NFSv3 を対象 |
-| ACL / Windows権限完全変換 | 未対応 | NFS mode は設定値と AUTH_SYS を元に応答 |
+| ACL / Windows権限完全変換 | 未対応 | NFS mode/UID/GID は既定値、SETATTR、AUTH_SYS、メタデータを元に応答 |
 | 特殊ファイル | 未対応 | Windows 上の通常ファイル/ディレクトリ/symlink/hard link を対象 |
 | symlink 作成 | 制限付き | 管理者権限、Developer Mode、ファイルシステム機能に依存 |
 | 日本語ファイル名 | 制限付き | クライアントごとに `filename.charset` と mount option を合わせる |

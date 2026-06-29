@@ -1,6 +1,6 @@
 # サポート範囲と既知制限
 
-この文書は、TinyWinNFS Server v2.0.0 正式版で保証するサポート範囲と既知制限を整理します。
+この文書は、TinyWinNFS Server v2.1.0 時点のサポート範囲と既知制限を整理します。
 
 ## 正式版で保証する範囲
 
@@ -33,8 +33,8 @@
 |---|---|
 | symlink | `READLINK` / `SYMLINK` は実装済み。ただし Windows の symlink 作成権限、Developer Mode、ファイルシステム機能に依存します。 |
 | hard link | Windows が対象ファイルシステムで許可する場合に作成します。 |
-| ファイル mode | NFS 属性として設定値と AUTH_SYS UID/GID を返します。Windows ACL の完全変換ではありません。 |
-| UID/GID | `permission.identity=auto` ではクライアントの AUTH_SYS UID/GID を属性へ反映します。Windows の実ファイル所有者は変更しません。 |
+| ファイル mode | 既定値またはクライアントの `SETATTR mode` を NFS 属性として返します。Windows ACL の完全変換ではありません。 |
+| UID/GID | 新規作成時または `SETATTR uid/gid` で得た UID/GID を NFS メタデータとして返します。保存値がない場合は `permission.identity` に従います。Windows の実ファイル所有者は変更しません。 |
 | 大文字小文字 | Windows 側ファイルシステムの制約を受けます。大文字小文字のみ異なるパスは衝突する場合があります。 |
 | 日本語ファイル名 | `filename.charset` とクライアント側 mount option の組み合わせに依存します。 |
 

@@ -32,6 +32,7 @@ import jp.co.enterogawa.nfs.config.NfsExport;
 import jp.co.enterogawa.nfs.config.NfsServerConfig;
 import jp.co.enterogawa.nfs.export.FileHandle;
 import jp.co.enterogawa.nfs.export.FileHandleTable;
+import jp.co.enterogawa.nfs.export.NfsModeStore;
 import jp.co.enterogawa.nfs.io.WriteFileCache;
 import jp.co.enterogawa.nfs.rpc.RpcCall;
 import jp.co.enterogawa.nfs.rpc.RpcConstants;
@@ -168,6 +169,9 @@ public class NfsV3Program implements RpcProgram {
 	/** 書込ファイルキャッシュ */
 	private final WriteFileCache			writeFileCache ;
 
+	/** NFSモード管理 */
+	private final NfsModeStore			modeStore ;
+
 	/** NFS経由hard linkグループ */
 	private final Map<Path, HardLinkGroup> hardLinkGroups = new HashMap<Path, HardLinkGroup>() ;
 
@@ -182,7 +186,7 @@ public class NfsV3Program implements RpcProgram {
 	 */
 	//--------------------------------------------------------------------------
 	public NfsV3Program(NfsServerConfig config, FileHandleTable handleTable) {
-		this( config, handleTable, new WriteFileCache( config)) ;
+		this( config, handleTable, new WriteFileCache( config), new NfsModeStore( config.getExports())) ;
 	}
 
 	//--------------------------------------------------------------------------
@@ -197,9 +201,26 @@ public class NfsV3Program implements RpcProgram {
 	 */
 	//--------------------------------------------------------------------------
 	public NfsV3Program(NfsServerConfig config, FileHandleTable handleTable, WriteFileCache writeFileCache) {
+		this( config, handleTable, writeFileCache, new NfsModeStore( config.getExports())) ;
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * インスタンスを生成します。<br><br>
+	 *
+	 * <p>メソッド名称： コンストラクタ</p>
+	 *
+	 * @param config			設定
+	 * @param handleTable		ファイルハンドル管理
+	 * @param writeFileCache	書込ファイルキャッシュ
+	 * @param modeStore		NFSモード管理
+	 */
+	//--------------------------------------------------------------------------
+	public NfsV3Program(NfsServerConfig config, FileHandleTable handleTable, WriteFileCache writeFileCache, NfsModeStore modeStore) {
 		this.config = config ;
 		this.handleTable = handleTable ;
 		this.writeFileCache = writeFileCache ;
+		this.modeStore = modeStore ;
 		filenameCharset = config.getFilenameCharset() ;
 	}
 
@@ -214,6 +235,7 @@ public class NfsV3Program implements RpcProgram {
 	//--------------------------------------------------------------------------
 	public void close() throws IOException {
 		writeFileCache.close() ;
+		modeStore.flush() ;
 	}
 
 	//--------------------------------------------------------------------------
@@ -775,9 +797,17 @@ public class NfsV3Program implements RpcProgram {
 		}
 
 		try {
+			boolean created = false ;
+
 			// ファイルが存在しない場合
 			if( !Files.exists( path, LinkOption.NOFOLLOW_LINKS)) {
 				Files.createFile( path) ;
+				created = true ;
+			}
+
+			// 新規作成の場合
+			if( created) {
+				initializeOwner( path, attributes) ;
 			}
 
 			// 属性が指定されている場合
@@ -830,6 +860,7 @@ public class NfsV3Program implements RpcProgram {
 
 		try {
 			Files.createDirectory( path) ;
+			initializeOwner( path, attributes) ;
 			applySetAttributes( path, attributes, false) ;
 		} catch( IOException ioex) {
 			int status = mapIoStatus( ioex) ;
@@ -856,7 +887,7 @@ public class NfsV3Program implements RpcProgram {
 	//--------------------------------------------------------------------------
 	private void handleSymlink(XdrReader arguments, XdrWriter response) throws IOException {
 		ResolvedPath target = readOperationPath( arguments) ;
-		readSetAttributes( arguments) ;
+		SetAttributes attributes = readSetAttributes( arguments) ;
 		String linkTarget = arguments.readString( filenameCharset) ;
 
 		// 対象パスが不正な場合
@@ -877,6 +908,12 @@ public class NfsV3Program implements RpcProgram {
 
 		try {
 			Files.createSymbolicLink( path, Path.of( linkTarget)) ;
+			initializeOwner( path, attributes) ;
+
+			// mode指定がある場合
+			if( attributes.hasMode()) {
+				modeStore.setMode( path, attributes.getMode()) ;
+			}
 		} catch( InvalidPathException ipex) {
 			logMutation( "SYMLINK", path, NfsStatus.ACCES, ipex.getClass().getSimpleName()) ;
 			writeCreateResult( response, NfsStatus.ACCES, path, target.getDirectory(), directoryBefore, null) ;
@@ -948,6 +985,7 @@ public class NfsV3Program implements RpcProgram {
 			Files.delete( path) ;
 			forgetHardLink( path) ;
 			handleTable.forget( path) ;
+			modeStore.remove( path) ;
 		} catch( IOException ioex) {
 			int status = mapIoStatus( ioex) ;
 			logMutation( "REMOVE", path, status, ioex.getClass().getSimpleName()) ;
@@ -1012,6 +1050,7 @@ public class NfsV3Program implements RpcProgram {
 		try {
 			Files.delete( path) ;
 			handleTable.forget( path) ;
+			modeStore.remove( path) ;
 		} catch( IOException ioex) {
 			int status = mapIoStatus( ioex) ;
 			logMutation( "RMDIR", path, status, ioex.getClass().getSimpleName()) ;
@@ -1073,6 +1112,7 @@ public class NfsV3Program implements RpcProgram {
 			Files.move( source.getPath(), target.getPath(), StandardCopyOption.REPLACE_EXISTING) ;
 			moveHardLink( source.getPath(), target.getPath()) ;
 			handleTable.move( source.getPath(), target.getPath()) ;
+			modeStore.move( source.getPath(), target.getPath()) ;
 		} catch( IOException ioex) {
 			int status = mapIoStatus( ioex) ;
 			logMutation( "RENAME", source.getPath(), status, ioex.getClass().getSimpleName() + " target=" + target.getPath()) ;
@@ -1717,31 +1757,34 @@ public class NfsV3Program implements RpcProgram {
 		boolean directory = attributes.isDirectory() ;
 		boolean symbolicLink = attributes.isSymbolicLink() ;
 		int type = NF3REG ;
-		int mode = 0100000 | config.getFileMode() ;
+		int permissionMode = config.getFileMode() ;
 
 		// ディレクトリの場合
 		if( directory) {
 			type = NF3DIR ;
-			mode = 0040000 | config.getDirectoryMode() ;
+			permissionMode = config.getDirectoryMode() ;
 		}
 		// シンボリックリンクの場合
 		else if( symbolicLink) {
 			type = NF3LNK ;
-			mode = 0120000 | config.getFileMode() ;
+			permissionMode = config.getFileMode() ;
 		}
+
+		permissionMode = modeStore.getMode( path, permissionMode) ;
 
 		// 読込専用属性が設定されている場合
 		if( isReadOnlyPath( path)) {
-			mode &= ~MODE_WRITE_BITS ;
+			permissionMode &= ~MODE_WRITE_BITS ;
 		}
 
+		int mode = getTypeMode( type) | permissionMode ;
 		long size = attributes.size() ;
 		long used = size == 0 ? 0 : ((size + config.getBlockSize() - 1L) / config.getBlockSize()) * config.getBlockSize() ;
 		response.writeInt( type) ;
 		response.writeUnsignedInt( mode) ;
 		response.writeUnsignedInt( readLinkCount( path, directory)) ;
-		response.writeUnsignedInt( resolveAttributeUid()) ;
-		response.writeUnsignedInt( resolveAttributeGid()) ;
+		response.writeUnsignedInt( resolveAttributeUid( path)) ;
+		response.writeUnsignedInt( resolveAttributeGid( path)) ;
 		response.writeLong( size) ;
 		response.writeLong( used) ;
 		response.writeUnsignedInt( 0) ;
@@ -1755,6 +1798,29 @@ public class NfsV3Program implements RpcProgram {
 
 	//--------------------------------------------------------------------------
 	/**
+	 * 種別モードを取得します。<br><br>
+	 *
+	 * <p>メソッド名称： 種別モード取得</p>
+	 *
+	 * @param type	NFS種別
+	 * @return 種別モード
+	 */
+	//--------------------------------------------------------------------------
+	private int getTypeMode(int type) {
+		// ディレクトリの場合
+		if( type == NF3DIR) {
+			return 0040000 ;
+		}
+		// シンボリックリンクの場合
+		else if( type == NF3LNK) {
+			return 0120000 ;
+		}
+
+		return 0100000 ;
+	}
+
+	//--------------------------------------------------------------------------
+	/**
 	 * 応答属性UIDを解決します。<br><br>
 	 *
 	 * <p>メソッド名称： 応答属性UID解決</p>
@@ -1762,7 +1828,20 @@ public class NfsV3Program implements RpcProgram {
 	 * @return UID
 	 */
 	//--------------------------------------------------------------------------
-	private int resolveAttributeUid() {
+	private int resolveAttributeUid(Path path) {
+		return modeStore.getUid( path, resolveDefaultAttributeUid()) ;
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * 既定応答属性UIDを解決します。<br><br>
+	 *
+	 * <p>メソッド名称： 既定応答属性UID解決</p>
+	 *
+	 * @return UID
+	 */
+	//--------------------------------------------------------------------------
+	private int resolveDefaultAttributeUid() {
 		// クライアント資格情報を反映しない場合
 		if( !config.isClientIdentityEnabled()) {
 			return config.getUid() ;
@@ -1780,7 +1859,20 @@ public class NfsV3Program implements RpcProgram {
 	 * @return GID
 	 */
 	//--------------------------------------------------------------------------
-	private int resolveAttributeGid() {
+	private int resolveAttributeGid(Path path) {
+		return modeStore.getGid( path, resolveDefaultAttributeGid()) ;
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * 既定応答属性GIDを解決します。<br><br>
+	 *
+	 * <p>メソッド名称： 既定応答属性GID解決</p>
+	 *
+	 * @return GID
+	 */
+	//--------------------------------------------------------------------------
+	private int resolveDefaultAttributeGid() {
 		// クライアント資格情報を反映しない場合
 		if( !config.isClientIdentityEnabled()) {
 			return config.getGid() ;
@@ -1898,6 +1990,14 @@ public class NfsV3Program implements RpcProgram {
 			applyWritableMode( path, attributes.getMode()) ;
 		}
 
+		// 所有者指定がある場合
+		if( attributes.hasUid() || attributes.hasGid()) {
+			modeStore.setOwner(
+					path,
+					attributes.hasUid() ? Integer.valueOf( attributes.getUid()) : null,
+					attributes.hasGid() ? Integer.valueOf( attributes.getGid()) : null) ;
+		}
+
 		BasicFileAttributeView view = Files.getFileAttributeView( path, BasicFileAttributeView.class, LinkOption.NOFOLLOW_LINKS) ;
 
 		// 時刻指定がある場合
@@ -1926,13 +2026,46 @@ public class NfsV3Program implements RpcProgram {
 			// DOS属性が利用できる場合
 			if( view != null) {
 				view.setReadOnly( !writable) ;
+				modeStore.setMode( path, mode) ;
 				return ;
 			}
 		} catch( UnsupportedOperationException uoex) {
 			// DOS属性が利用できない場合はFile APIへフォールバックする
 		}
 
-		path.toFile().setWritable( writable, false) ;
+		// Java標準の書込属性だけが利用可能な場合
+		if( !path.toFile().setWritable( writable, false)) {
+			throw new AccessDeniedException( path.toString()) ;
+		}
+
+		modeStore.setMode( path, mode) ;
+	}
+
+	//--------------------------------------------------------------------------
+	/**
+	 * 初期所有者を反映します。<br><br>
+	 *
+	 * <p>メソッド名称： 初期所有者反映</p>
+	 *
+	 * @param path			対象パス
+	 * @param attributes	属性
+	 */
+	//--------------------------------------------------------------------------
+	private void initializeOwner(Path path, SetAttributes attributes) {
+		Integer uid = Integer.valueOf( resolveDefaultAttributeUid()) ;
+		Integer gid = Integer.valueOf( resolveDefaultAttributeGid()) ;
+
+		// UID指定がある場合
+		if( attributes != null && attributes.hasUid()) {
+			uid = Integer.valueOf( attributes.getUid()) ;
+		}
+
+		// GID指定がある場合
+		if( attributes != null && attributes.hasGid()) {
+			gid = Integer.valueOf( attributes.getGid()) ;
+		}
+
+		modeStore.setOwner( path, uid, gid) ;
 	}
 
 	//--------------------------------------------------------------------------
@@ -2593,6 +2726,32 @@ public class NfsV3Program implements RpcProgram {
 
 		//----------------------------------------------------------------------
 		/**
+		 * UID指定有無を取得します。<br><br>
+		 *
+		 * <p>メソッド名称： UID指定有無取得</p>
+		 *
+		 * @return true:指定あり false:指定なし
+		 */
+		//----------------------------------------------------------------------
+		boolean hasUid() {
+			return uid != null ;
+		}
+
+		//----------------------------------------------------------------------
+		/**
+		 * GID指定有無を取得します。<br><br>
+		 *
+		 * <p>メソッド名称： GID指定有無取得</p>
+		 *
+		 * @return true:指定あり false:指定なし
+		 */
+		//----------------------------------------------------------------------
+		boolean hasGid() {
+			return gid != null ;
+		}
+
+		//----------------------------------------------------------------------
+		/**
 		 * サイズ指定有無を取得します。<br><br>
 		 *
 		 * <p>メソッド名称： サイズ指定有無取得</p>
@@ -2615,6 +2774,32 @@ public class NfsV3Program implements RpcProgram {
 		//----------------------------------------------------------------------
 		int getMode() {
 			return mode.intValue() ;
+		}
+
+		//----------------------------------------------------------------------
+		/**
+		 * UIDを取得します。<br><br>
+		 *
+		 * <p>メソッド名称： UID取得</p>
+		 *
+		 * @return UID
+		 */
+		//----------------------------------------------------------------------
+		int getUid() {
+			return uid.intValue() ;
+		}
+
+		//----------------------------------------------------------------------
+		/**
+		 * GIDを取得します。<br><br>
+		 *
+		 * <p>メソッド名称： GID取得</p>
+		 *
+		 * @return GID
+		 */
+		//----------------------------------------------------------------------
+		int getGid() {
+			return gid.intValue() ;
 		}
 
 		//----------------------------------------------------------------------

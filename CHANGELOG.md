@@ -1,5 +1,13 @@
 # 変更履歴
 
+## 2.1.0 - 2026-06-29
+
+- NFSv2/NFSv3 `SETATTR mode` を NFS mode メタデータとして保持し、QNX などのクライアント側 `chmod` 結果を属性応答へ反映するようにしました。
+- NFSv2/NFSv3 `SETATTR uid/gid` を NFS UID/GID メタデータとして保持し、QNX などのクライアント側 owner/group を属性応答へ反映するようにしました。
+- `CREATE` / `MKDIR` 時に UID/GID が未指定の場合、要求元 AUTH_SYS の UID/GID を初期 owner/group として保持するようにしました。
+- ファイル削除、ディレクトリ削除、rename 時に NFS メタデータも削除または移動するようにしました。
+- NFSv2/NFSv3 の `SETATTR mode`、`SETATTR uid/gid`、作成時 owner/group の回帰テストを追加しました。
+
 ## 2.0.0 - 2026-06-28
 
 - TinyWinNFS Server の正式版として、NFSv2/NFSv3、MOUNT v1-v3、AUTH_SYS、UDP/TCP、複数 export、read-write 対応を公開対象として確定しました。
