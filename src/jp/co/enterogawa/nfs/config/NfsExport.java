@@ -9,6 +9,15 @@ import java.util.List;
  *
  * <p>クラス名称： NFS公開定義</p>
  *
+ * <p>著作権： Copyright (c) 2026 EnterOgawa. All Rights Reserved.</p>
+ *
+ * <p>更新履歴：
+ * <pre>
+ *     VerNo.         author        update     comment
+ *     Ver.01.00.00   Shunji Ogawa  2026/09/02 新規作成
+ * </pre>
+ * </p>
+ *
  * @author Shunji Ogawa
  * @version 01.00.00
  */
@@ -33,12 +42,12 @@ public class NfsExport {
 	 *
 	 * <p>メソッド名称： コンストラクタ</p>
 	 *
-	 * @param name		公開名
-	 * @param path		公開パス
+	 * @param name	公開名
+	 * @param path	公開パス
 	 * @param writable	書込可否
 	 */
 	//--------------------------------------------------------------------------
-	public NfsExport(String name, Path path, boolean writable) {
+	public NfsExport( String name, Path path, boolean writable) {
 		this( name, path, writable, List.of()) ;
 	}
 
@@ -48,13 +57,13 @@ public class NfsExport {
 	 *
 	 * <p>メソッド名称： コンストラクタ</p>
 	 *
-	 * @param name				公開名
-	 * @param path				公開パス
-	 * @param writable			書込可否
+	 * @param name	公開名
+	 * @param path	公開パス
+	 * @param writable	書込可否
 	 * @param allowedClients	許可クライアント
 	 */
 	//--------------------------------------------------------------------------
-	public NfsExport(String name, Path path, boolean writable, List<String> allowedClients) {
+	public NfsExport( String name, Path path, boolean writable, List<String> allowedClients) {
 		this.name = name == null ? "" : name.trim() ;
 		this.path = path.toAbsolutePath().normalize() ;
 		this.writable = writable ;
@@ -67,7 +76,7 @@ public class NfsExport {
 	 *
 	 * <p>メソッド名称： 公開名取得</p>
 	 *
-	 * @return 公開名
+	 * @return	公開名
 	 */
 	//--------------------------------------------------------------------------
 	public String getName() {
@@ -80,7 +89,7 @@ public class NfsExport {
 	 *
 	 * <p>メソッド名称： 公開パス取得</p>
 	 *
-	 * @return 公開パス
+	 * @return	公開パス
 	 */
 	//--------------------------------------------------------------------------
 	public Path getPath() {
@@ -93,7 +102,9 @@ public class NfsExport {
 	 *
 	 * <p>メソッド名称： 書込可否取得</p>
 	 *
-	 * @return true:書込可 false:読込専用
+	 * @return	判定結果<ul>
+	 * 			false	: 読込専用<br>
+	 * 			true	: 書込可</ul>
 	 */
 	//--------------------------------------------------------------------------
 	public boolean isWritable() {
@@ -106,7 +117,7 @@ public class NfsExport {
 	 *
 	 * <p>メソッド名称： 許可クライアント取得</p>
 	 *
-	 * @return 許可クライアント
+	 * @return	許可クライアント
 	 */
 	//--------------------------------------------------------------------------
 	public List<String> getAllowedClients() {
@@ -120,10 +131,12 @@ public class NfsExport {
 	 * <p>メソッド名称： クライアント許可可否取得</p>
 	 *
 	 * @param clientAddress	クライアントアドレス
-	 * @return true:許可 false:拒否
+	 * @return	判定結果<ul>
+	 * 			false	: 拒否<br>
+	 * 			true	: 許可</ul>
 	 */
 	//--------------------------------------------------------------------------
-	public boolean allowsClient(String clientAddress) {
+	public boolean allowsClient( String clientAddress) {
 		// 許可クライアントが未設定の場合
 		if( allowedClients.isEmpty()) {
 			return true ;

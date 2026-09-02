@@ -9,6 +9,15 @@ import java.util.Base64;
  *
  * <p>クラス名称： NFSファイルハンドル</p>
  *
+ * <p>著作権： Copyright (c) 2026 EnterOgawa. All Rights Reserved.</p>
+ *
+ * <p>更新履歴：
+ * <pre>
+ *     VerNo.         author        update     comment
+ *     Ver.01.00.00   Shunji Ogawa  2026/09/02 新規作成
+ * </pre>
+ * </p>
+ *
  * @author Shunji Ogawa
  * @version 01.00.00
  */
@@ -31,7 +40,7 @@ public class FileHandle {
 	 * @param value	ファイルハンドル値
 	 */
 	//--------------------------------------------------------------------------
-	public FileHandle(byte[] value) {
+	public FileHandle( byte[] value) {
 		// 長さが一致しない場合
 		if( value.length != LENGTH) {
 			throw new IllegalArgumentException( "NFSv2 file handle must be 32 bytes.") ;
@@ -46,7 +55,7 @@ public class FileHandle {
 	 *
 	 * <p>メソッド名称： ファイルハンドル値取得</p>
 	 *
-	 * @return ファイルハンドル値
+	 * @return	ファイルハンドル値
 	 */
 	//--------------------------------------------------------------------------
 	public byte[] getValue() {
@@ -59,7 +68,7 @@ public class FileHandle {
 	 *
 	 * <p>メソッド名称： マップキー取得</p>
 	 *
-	 * @return マップキー
+	 * @return	マップキー
 	 */
 	//--------------------------------------------------------------------------
 	public String key() {
@@ -72,7 +81,7 @@ public class FileHandle {
 	 *
 	 * <p>メソッド名称： ハッシュコード取得</p>
 	 *
-	 * @return ハッシュコード
+	 * @return	ハッシュコード
 	 */
 	//--------------------------------------------------------------------------
 	@Override
@@ -87,11 +96,13 @@ public class FileHandle {
 	 * <p>メソッド名称： 等価判定</p>
 	 *
 	 * @param obj	比較対象
-	 * @return true:等価 false:不一致
+	 * @return	判定結果<ul>
+	 * 			false	: 不一致<br>
+	 * 			true	: 等価</ul>
 	 */
 	//--------------------------------------------------------------------------
 	@Override
-	public boolean equals(Object obj) {
+	public boolean equals( Object obj) {
 		// 同一インスタンスの場合
 		if( this == obj) {
 			return true ;

@@ -10,6 +10,15 @@ import java.nio.charset.StandardCharsets;
  *
  * <p>クラス名称： XDR書込</p>
  *
+ * <p>著作権： Copyright (c) 2026 EnterOgawa. All Rights Reserved.</p>
+ *
+ * <p>更新履歴：
+ * <pre>
+ *     VerNo.         author        update     comment
+ *     Ver.01.00.00   Shunji Ogawa  2026/09/02 新規作成
+ * </pre>
+ * </p>
+ *
  * @author Shunji Ogawa
  * @version 01.00.00
  */
@@ -28,7 +37,7 @@ public class XdrWriter {
 	 * @param value	32bit整数
 	 */
 	//--------------------------------------------------------------------------
-	public void writeInt(int value) {
+	public void writeInt( int value) {
 		output.write( (value >>> 24) & 0xff) ;
 		output.write( (value >>> 16) & 0xff) ;
 		output.write( (value >>> 8) & 0xff) ;
@@ -44,7 +53,7 @@ public class XdrWriter {
 	 * @param value	符号なし32bit整数
 	 */
 	//--------------------------------------------------------------------------
-	public void writeUnsignedInt(long value) {
+	public void writeUnsignedInt( long value) {
 		writeInt( (int)(value & 0xffffffffL)) ;
 	}
 
@@ -57,7 +66,7 @@ public class XdrWriter {
 	 * @param value	64bit整数
 	 */
 	//--------------------------------------------------------------------------
-	public void writeLong(long value) {
+	public void writeLong( long value) {
 		writeUnsignedInt( value >>> 32) ;
 		writeUnsignedInt( value) ;
 	}
@@ -71,7 +80,7 @@ public class XdrWriter {
 	 * @param value	boolean値
 	 */
 	//--------------------------------------------------------------------------
-	public void writeBoolean(boolean value) {
+	public void writeBoolean( boolean value) {
 		writeInt( value ? 1 : 0) ;
 	}
 
@@ -84,7 +93,7 @@ public class XdrWriter {
 	 * @param value	バイト列
 	 */
 	//--------------------------------------------------------------------------
-	public void writeOpaque(byte[] value) {
+	public void writeOpaque( byte[] value) {
 		writeInt( value.length) ;
 		writeFixedOpaque( value) ;
 	}
@@ -98,7 +107,7 @@ public class XdrWriter {
 	 * @param value	バイト列
 	 */
 	//--------------------------------------------------------------------------
-	public void writeFixedOpaque(byte[] value) {
+	public void writeFixedOpaque( byte[] value) {
 		output.writeBytes( value) ;
 		writePadding( value.length) ;
 	}
@@ -112,7 +121,7 @@ public class XdrWriter {
 	 * @param value	バイト列
 	 */
 	//--------------------------------------------------------------------------
-	public void writeFixedOpaqueWithoutPadding(byte[] value) {
+	public void writeFixedOpaqueWithoutPadding( byte[] value) {
 		output.writeBytes( value) ;
 	}
 
@@ -125,7 +134,7 @@ public class XdrWriter {
 	 * @param value	文字列
 	 */
 	//--------------------------------------------------------------------------
-	public void writeString(String value) {
+	public void writeString( String value) {
 		writeOpaque( value.getBytes( StandardCharsets.UTF_8)) ;
 	}
 
@@ -135,11 +144,11 @@ public class XdrWriter {
 	 *
 	 * <p>メソッド名称： 文字列書込</p>
 	 *
-	 * @param value		文字列
+	 * @param value	文字列
 	 * @param charset	文字コード
 	 */
 	//--------------------------------------------------------------------------
-	public void writeString(String value, Charset charset) {
+	public void writeString( String value, Charset charset) {
 		writeOpaque( value.getBytes( charset)) ;
 	}
 
@@ -149,7 +158,7 @@ public class XdrWriter {
 	 *
 	 * <p>メソッド名称： バイト配列変換</p>
 	 *
-	 * @return バイト配列
+	 * @return	バイト配列
 	 */
 	//--------------------------------------------------------------------------
 	public byte[] toByteArray() {
@@ -165,7 +174,7 @@ public class XdrWriter {
 	 * @param length	実データ長
 	 */
 	//--------------------------------------------------------------------------
-	private void writePadding(int length) {
+	private void writePadding( int length) {
 		int padding = (4 - (length % 4)) % 4 ;
 
 		// パディングバイト分繰り返す

@@ -15,6 +15,13 @@ import jp.co.enterogawa.nfs.server.NfsServer;
  *
  * <p>著作権： Copyright (c) 2026 EnterOgawa. All Rights Reserved.</p>
  *
+ * <p>更新履歴：
+ * <pre>
+ *     VerNo.         author        update     comment
+ *     Ver.01.00.00   Shunji Ogawa  2026/09/02 新規作成
+ * </pre>
+ * </p>
+ *
  * @author Shunji Ogawa
  * @version 01.00.00
  */
@@ -27,10 +34,10 @@ public class NfsServerMain {
 	 * <p>メソッド名称： アプリケーション開始</p>
 	 *
 	 * @param args	起動引数
-	 * @throws Exception 起動異常
+	 * @throws Exception	起動異常
 	 */
 	//--------------------------------------------------------------------------
-	public static void main(String[] args) throws Exception {
+	public static void main( String[] args) throws Exception {
 		Path applicationRoot = Path.of( System.getProperty( "user.dir")).toAbsolutePath().normalize() ;
 		Path localConfigPath = applicationRoot.resolve( "conf").resolve( "nfs-server.properties") ;
 		Path configPath = TinyWinNfsPaths.getConfigPath( applicationRoot) ;

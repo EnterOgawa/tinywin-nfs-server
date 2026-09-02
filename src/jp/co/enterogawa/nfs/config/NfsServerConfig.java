@@ -18,6 +18,15 @@ import java.util.Set;
  *
  * <p>クラス名称： NFSサーバー設定</p>
  *
+ * <p>著作権： Copyright (c) 2026 EnterOgawa. All Rights Reserved.</p>
+ *
+ * <p>更新履歴：
+ * <pre>
+ *     VerNo.         author        update     comment
+ *     Ver.01.00.00   Shunji Ogawa  2026/09/02 新規作成
+ * </pre>
+ * </p>
+ *
  * @author Shunji Ogawa
  * @version 01.00.00
  */
@@ -127,11 +136,11 @@ public class NfsServerConfig {
 	 *
 	 * <p>メソッド名称： コンストラクタ</p>
 	 *
-	 * @param properties		設定値
+	 * @param properties	設定値
 	 * @param configBasePath	設定基準パス
 	 */
 	//--------------------------------------------------------------------------
-	private NfsServerConfig(Properties properties, Path configBasePath) {
+	private NfsServerConfig( Properties properties, Path configBasePath) {
 		portmapPort = getInt( properties, "portmap.port", DEFAULT_PORTMAP_PORT) ;
 		nfsPort = getInt( properties, "nfs.port", DEFAULT_NFS_PORT) ;
 		mountPort = getInt( properties, "mount.port", DEFAULT_MOUNT_PORT) ;
@@ -168,15 +177,16 @@ public class NfsServerConfig {
 	 * <p>メソッド名称： 公開定義読込</p>
 	 *
 	 * @param properties	設定値
-	 * @return 公開定義
+	 * @return	公開定義
 	 */
 	//--------------------------------------------------------------------------
-	private List<NfsExport> loadExports(Properties properties, Path configBasePath) {
+	private List<NfsExport> loadExports( Properties properties, Path configBasePath) {
 		int count = getInt( properties, "exports.count", 0) ;
 		List<NfsExport> result = new ArrayList<NfsExport>() ;
 
 		// 複数公開定義がある場合
 		if( count > 0) {
+			// 設定ファイル上の公開定義を順に読み込む
 			for( int i = 1; i <= count; i++) {
 				String prefix = "exports." + i + "." ;
 				String name = properties.getProperty( prefix + "name") ;
@@ -185,7 +195,7 @@ public class NfsServerConfig {
 				List<String> allowedClients = getAllowedClients( properties, prefix + "allowed.clients") ;
 
 				// 公開定義が不足している場合
-				if( name == null || name.isBlank() || path == null || path.isBlank()) {
+				if(( name == null || name.isBlank() || path == null || path.isBlank())) {
 					throw new IllegalArgumentException( prefix + "name and " + prefix + "path are required.") ;
 				}
 
@@ -210,11 +220,11 @@ public class NfsServerConfig {
 	 * <p>メソッド名称： 設定読込</p>
 	 *
 	 * @param configPath	設定ファイルパス
-	 * @return 設定
-	 * @throws IOException 読込異常
+	 * @return	設定
+	 * @throws IOException	読込異常
 	 */
 	//--------------------------------------------------------------------------
-	public static NfsServerConfig load(Path configPath) throws IOException {
+	public static NfsServerConfig load( Path configPath) throws IOException {
 		Properties properties = new Properties() ;
 		Path configBasePath = TinyWinNfsPaths.getConfigBasePath( configPath) ;
 
@@ -235,16 +245,16 @@ public class NfsServerConfig {
 	 * <p>メソッド名称： 数値設定取得</p>
 	 *
 	 * @param properties	設定値
-	 * @param key		キー
+	 * @param key	キー
 	 * @param defaultValue	デフォルト値
-	 * @return 数値設定
+	 * @return	数値設定
 	 */
 	//--------------------------------------------------------------------------
-	private static int getInt(Properties properties, String key, int defaultValue) {
+	private static int getInt( Properties properties, String key, int defaultValue) {
 		String value = properties.getProperty( key) ;
 
 		// 設定がない場合
-		if( value == null || value.isBlank()) {
+		if(( value == null || value.isBlank())) {
 			return defaultValue ;
 		}
 
@@ -257,17 +267,17 @@ public class NfsServerConfig {
 	 *
 	 * <p>メソッド名称： long設定取得</p>
 	 *
-	 * @param properties		設定値
-	 * @param key			キー
+	 * @param properties	設定値
+	 * @param key	キー
 	 * @param defaultValue	デフォルト値
-	 * @return long設定
+	 * @return	long設定
 	 */
 	//--------------------------------------------------------------------------
-	private static long getLong(Properties properties, String key, long defaultValue) {
+	private static long getLong( Properties properties, String key, long defaultValue) {
 		String value = properties.getProperty( key) ;
 
 		// 設定がない場合
-		if( value == null || value.isBlank()) {
+		if(( value == null || value.isBlank())) {
 			return defaultValue ;
 		}
 
@@ -281,16 +291,16 @@ public class NfsServerConfig {
 	 * <p>メソッド名称： 8進数設定取得</p>
 	 *
 	 * @param properties	設定値
-	 * @param key		キー
+	 * @param key	キー
 	 * @param defaultValue	デフォルト値
-	 * @return 数値設定
+	 * @return	数値設定
 	 */
 	//--------------------------------------------------------------------------
-	private static int getOctalInt(Properties properties, String key, int defaultValue) {
+	private static int getOctalInt( Properties properties, String key, int defaultValue) {
 		String value = properties.getProperty( key) ;
 
 		// 設定がない場合
-		if( value == null || value.isBlank()) {
+		if(( value == null || value.isBlank())) {
 			return defaultValue ;
 		}
 
@@ -304,16 +314,16 @@ public class NfsServerConfig {
 	 * <p>メソッド名称： 文字列設定取得</p>
 	 *
 	 * @param properties	設定値
-	 * @param key		キー
+	 * @param key	キー
 	 * @param defaultValue	デフォルト値
-	 * @return 文字列設定
+	 * @return	文字列設定
 	 */
 	//--------------------------------------------------------------------------
-	private static String getString(Properties properties, String key, String defaultValue) {
+	private static String getString( Properties properties, String key, String defaultValue) {
 		String value = properties.getProperty( key) ;
 
 		// 設定がない場合
-		if( value == null || value.isBlank()) {
+		if(( value == null || value.isBlank())) {
 			return defaultValue ;
 		}
 
@@ -327,16 +337,16 @@ public class NfsServerConfig {
 	 * <p>メソッド名称： 真偽値設定取得</p>
 	 *
 	 * @param properties	設定値
-	 * @param key		キー
+	 * @param key	キー
 	 * @param defaultValue	デフォルト値
-	 * @return 真偽値設定
+	 * @return	真偽値設定
 	 */
 	//--------------------------------------------------------------------------
-	private static boolean getBoolean(Properties properties, String key, boolean defaultValue) {
+	private static boolean getBoolean( Properties properties, String key, boolean defaultValue) {
 		String value = properties.getProperty( key) ;
 
 		// 設定がない場合
-		if( value == null || value.isBlank()) {
+		if(( value == null || value.isBlank())) {
 			return defaultValue ;
 		}
 
@@ -362,15 +372,15 @@ public class NfsServerConfig {
 	 * <p>メソッド名称： 許可クライアント取得</p>
 	 *
 	 * @param properties	設定値
-	 * @param key		キー
-	 * @return 許可クライアント
+	 * @param key	キー
+	 * @return	許可クライアント
 	 */
 	//--------------------------------------------------------------------------
-	private static List<String> getAllowedClients(Properties properties, String key) {
+	private static List<String> getAllowedClients( Properties properties, String key) {
 		String value = properties.getProperty( key) ;
 
 		// 設定がない場合
-		if( value == null || value.isBlank()) {
+		if(( value == null || value.isBlank())) {
 			return List.of() ;
 		}
 
@@ -450,6 +460,7 @@ public class NfsServerConfig {
 
 		// 公開パスの入れ子を検証する
 		for( NfsExport first : exports) {
+			// 比較対象の公開定義を順次確認する
 			for( NfsExport second : exports) {
 				// 同一公開定義の場合
 				if( first == second) {
@@ -489,7 +500,7 @@ public class NfsServerConfig {
 		}
 
 		// 時刻精度が不正な場合
-		if( timeDeltaNanos <= 0 || timeDeltaNanos > 999999999) {
+		if(( timeDeltaNanos <= 0 || timeDeltaNanos > 999999999)) {
 			throw new IllegalArgumentException( "time.delta.nanos must be between 1 and 999999999.") ;
 		}
 
@@ -499,12 +510,12 @@ public class NfsServerConfig {
 		}
 
 		// PATHCONF name最大値が不正な場合
-		if( pathconfNameMax <= 0 || pathconfNameMax > 255) {
+		if(( pathconfNameMax <= 0 || pathconfNameMax > 255)) {
 			throw new IllegalArgumentException( "pathconf.name.max must be between 1 and 255.") ;
 		}
 
 		// 権限ID反映設定が不正な場合
-		if( !clientIdentityEnabled && !"fixed".equalsIgnoreCase( permissionIdentity)) {
+		if(( !clientIdentityEnabled && !"fixed".equalsIgnoreCase( permissionIdentity))) {
 			throw new IllegalArgumentException( "permission.identity must be auto or fixed.") ;
 		}
 
@@ -528,7 +539,7 @@ public class NfsServerConfig {
 	 * @param export	公開定義
 	 */
 	//--------------------------------------------------------------------------
-	private void validateExportPath(NfsExport export) {
+	private void validateExportPath( NfsExport export) {
 		Path path = export.getPath() ;
 
 		// 公開パスが存在しない場合
@@ -547,7 +558,7 @@ public class NfsServerConfig {
 		}
 
 		// 書込共有だが公開パスが書込不可の場合
-		if( export.isWritable() && !Files.isWritable( path)) {
+		if(( export.isWritable() && !Files.isWritable( path))) {
 			throw new IllegalArgumentException( "export path is not writable: " + path) ;
 		}
 	}
@@ -561,9 +572,9 @@ public class NfsServerConfig {
 	 * @param name	公開名
 	 */
 	//--------------------------------------------------------------------------
-	private void validateExportName(String name) {
+	private void validateExportName( String name) {
 		// 公開名が絶対パス形式ではない場合
-		if( name == null || name.isBlank() || !name.startsWith( "/")) {
+		if(( name == null || name.isBlank() || !name.startsWith( "/"))) {
 			throw new IllegalArgumentException( "export name must start with '/': " + name) ;
 		}
 
@@ -573,7 +584,7 @@ public class NfsServerConfig {
 		}
 
 		// 公開名が不正な文字を含む場合
-		if( name.contains( "\\" ) || name.contains( "//") || containsWhitespace( name) || hasParentSegment( name)) {
+		if(( name.contains( "\\" ) || name.contains( "//") || containsWhitespace( name) || hasParentSegment( name))) {
 			throw new IllegalArgumentException( "export name is invalid: " + name) ;
 		}
 	}
@@ -585,10 +596,12 @@ public class NfsServerConfig {
 	 * <p>メソッド名称： 空白文字有無確認</p>
 	 *
 	 * @param value	値
-	 * @return true:あり false:なし
+	 * @return	判定結果<ul>
+	 * 			false	: なし<br>
+	 * 			true	: あり</ul>
 	 */
 	//--------------------------------------------------------------------------
-	private boolean containsWhitespace(String value) {
+	private boolean containsWhitespace( String value) {
 		// 文字列の空白文字を確認する
 		for( int i = 0; i < value.length(); i++) {
 			// 空白文字の場合
@@ -607,10 +620,12 @@ public class NfsServerConfig {
 	 * <p>メソッド名称： 親ディレクトリセグメント有無確認</p>
 	 *
 	 * @param value	値
-	 * @return true:あり false:なし
+	 * @return	判定結果<ul>
+	 * 			false	: なし<br>
+	 * 			true	: あり</ul>
 	 */
 	//--------------------------------------------------------------------------
-	private boolean hasParentSegment(String value) {
+	private boolean hasParentSegment( String value) {
 		String[] segments = value.split( "/" ) ;
 
 		// パスセグメントを検証する
@@ -631,10 +646,12 @@ public class NfsServerConfig {
 	 * <p>メソッド名称： IPv4アドレス確認</p>
 	 *
 	 * @param value	値
-	 * @return true:IPv4 false:IPv4以外
+	 * @return	判定結果<ul>
+	 * 			false	: IPv4以外<br>
+	 * 			true	: IPv4</ul>
 	 */
 	//--------------------------------------------------------------------------
-	private static boolean isExactIpv4Address(String value) {
+	private static boolean isExactIpv4Address( String value) {
 		String[] parts = value.split( "\\.", -1) ;
 
 		// 4オクテットではない場合
@@ -653,7 +670,7 @@ public class NfsServerConfig {
 				int octet = Integer.parseInt( part) ;
 
 				// 範囲外の場合
-				if( octet < 0 || octet > 255) {
+				if(( octet < 0 || octet > 255)) {
 					return false ;
 				}
 			} catch( NumberFormatException nfex) {
@@ -674,9 +691,9 @@ public class NfsServerConfig {
 	 * @param port	ポート
 	 */
 	//--------------------------------------------------------------------------
-	private void validatePort(String key, int port) {
+	private void validatePort( String key, int port) {
 		// ポート番号が範囲外の場合
-		if( port <= 0 || port > 65535) {
+		if(( port <= 0 || port > 65535)) {
 			throw new IllegalArgumentException( key + " is out of range.") ;
 		}
 	}
@@ -687,7 +704,7 @@ public class NfsServerConfig {
 	 *
 	 * <p>メソッド名称： Portmapポート取得</p>
 	 *
-	 * @return Portmapポート
+	 * @return	Portmapポート
 	 */
 	//--------------------------------------------------------------------------
 	public int getPortmapPort() {
@@ -700,7 +717,7 @@ public class NfsServerConfig {
 	 *
 	 * <p>メソッド名称： NFSポート取得</p>
 	 *
-	 * @return NFSポート
+	 * @return	NFSポート
 	 */
 	//--------------------------------------------------------------------------
 	public int getNfsPort() {
@@ -713,7 +730,7 @@ public class NfsServerConfig {
 	 *
 	 * <p>メソッド名称： MOUNTポート取得</p>
 	 *
-	 * @return MOUNTポート
+	 * @return	MOUNTポート
 	 */
 	//--------------------------------------------------------------------------
 	public int getMountPort() {
@@ -726,7 +743,7 @@ public class NfsServerConfig {
 	 *
 	 * <p>メソッド名称： UDPワーカー数取得</p>
 	 *
-	 * @return UDPワーカー数
+	 * @return	UDPワーカー数
 	 */
 	//--------------------------------------------------------------------------
 	public int getRpcUdpWorkers() {
@@ -739,7 +756,7 @@ public class NfsServerConfig {
 	 *
 	 * <p>メソッド名称： UDPワーカーキューサイズ取得</p>
 	 *
-	 * @return UDPワーカーキューサイズ
+	 * @return	UDPワーカーキューサイズ
 	 */
 	//--------------------------------------------------------------------------
 	public int getRpcUdpQueueSize() {
@@ -752,7 +769,7 @@ public class NfsServerConfig {
 	 *
 	 * <p>メソッド名称： TCPクライアントタイムアウト取得</p>
 	 *
-	 * @return TCPクライアントタイムアウト
+	 * @return	TCPクライアントタイムアウト
 	 */
 	//--------------------------------------------------------------------------
 	public int getRpcTcpTimeoutMillis() {
@@ -765,7 +782,7 @@ public class NfsServerConfig {
 	 *
 	 * <p>メソッド名称： 公開定義一覧取得</p>
 	 *
-	 * @return 公開定義一覧
+	 * @return	公開定義一覧
 	 */
 	//--------------------------------------------------------------------------
 	public List<NfsExport> getExports() {
@@ -779,10 +796,10 @@ public class NfsServerConfig {
 	 * <p>メソッド名称： 公開定義取得</p>
 	 *
 	 * @param name	公開名
-	 * @return 公開定義
+	 * @return	公開定義
 	 */
 	//--------------------------------------------------------------------------
-	public NfsExport findExport(String name) {
+	public NfsExport findExport( String name) {
 		// 公開定義を検索する
 		for( NfsExport export : exports) {
 			// 公開名が一致する場合
@@ -800,7 +817,7 @@ public class NfsServerConfig {
 	 *
 	 * <p>メソッド名称： 公開名取得</p>
 	 *
-	 * @return 公開名
+	 * @return	公開名
 	 */
 	//--------------------------------------------------------------------------
 	public String getExportName() {
@@ -813,7 +830,7 @@ public class NfsServerConfig {
 	 *
 	 * <p>メソッド名称： 公開パス取得</p>
 	 *
-	 * @return 公開パス
+	 * @return	公開パス
 	 */
 	//--------------------------------------------------------------------------
 	public Path getExportPath() {
@@ -826,7 +843,9 @@ public class NfsServerConfig {
 	 *
 	 * <p>メソッド名称： 公開書込可否取得</p>
 	 *
-	 * @return true:書込可 false:読込専用
+	 * @return	判定結果<ul>
+	 * 			false	: 読込専用<br>
+	 * 			true	: 書込可</ul>
 	 */
 	//--------------------------------------------------------------------------
 	public boolean isExportWritable() {
@@ -839,7 +858,7 @@ public class NfsServerConfig {
 	 *
 	 * <p>メソッド名称： UID取得</p>
 	 *
-	 * @return UID
+	 * @return	UID
 	 */
 	//--------------------------------------------------------------------------
 	public int getUid() {
@@ -852,7 +871,7 @@ public class NfsServerConfig {
 	 *
 	 * <p>メソッド名称： GID取得</p>
 	 *
-	 * @return GID
+	 * @return	GID
 	 */
 	//--------------------------------------------------------------------------
 	public int getGid() {
@@ -865,7 +884,9 @@ public class NfsServerConfig {
 	 *
 	 * <p>メソッド名称： クライアント資格情報属性反映有無取得</p>
 	 *
-	 * @return true:反映 false:固定
+	 * @return	判定結果<ul>
+	 * 			false	: 固定<br>
+	 * 			true	: 反映</ul>
 	 */
 	//--------------------------------------------------------------------------
 	public boolean isClientIdentityEnabled() {
@@ -878,7 +899,7 @@ public class NfsServerConfig {
 	 *
 	 * <p>メソッド名称： ファイルモード取得</p>
 	 *
-	 * @return ファイルモード
+	 * @return	ファイルモード
 	 */
 	//--------------------------------------------------------------------------
 	public int getFileMode() {
@@ -891,7 +912,7 @@ public class NfsServerConfig {
 	 *
 	 * <p>メソッド名称： ディレクトリモード取得</p>
 	 *
-	 * @return ディレクトリモード
+	 * @return	ディレクトリモード
 	 */
 	//--------------------------------------------------------------------------
 	public int getDirectoryMode() {
@@ -904,7 +925,7 @@ public class NfsServerConfig {
 	 *
 	 * <p>メソッド名称： ブロックサイズ取得</p>
 	 *
-	 * @return ブロックサイズ
+	 * @return	ブロックサイズ
 	 */
 	//--------------------------------------------------------------------------
 	public int getBlockSize() {
@@ -917,7 +938,7 @@ public class NfsServerConfig {
 	 *
 	 * <p>メソッド名称： 読込サイズ取得</p>
 	 *
-	 * @return 読込サイズ
+	 * @return	読込サイズ
 	 */
 	//--------------------------------------------------------------------------
 	public int getReadSize() {
@@ -930,7 +951,7 @@ public class NfsServerConfig {
 	 *
 	 * <p>メソッド名称： 書込サイズ取得</p>
 	 *
-	 * @return 書込サイズ
+	 * @return	書込サイズ
 	 */
 	//--------------------------------------------------------------------------
 	public int getWriteSize() {
@@ -943,7 +964,7 @@ public class NfsServerConfig {
 	 *
 	 * <p>メソッド名称： ディレクトリ推奨サイズ取得</p>
 	 *
-	 * @return ディレクトリ推奨サイズ
+	 * @return	ディレクトリ推奨サイズ
 	 */
 	//--------------------------------------------------------------------------
 	public int getDirectoryPreferredSize() {
@@ -956,7 +977,7 @@ public class NfsServerConfig {
 	 *
 	 * <p>メソッド名称： 最大ファイルサイズ取得</p>
 	 *
-	 * @return 最大ファイルサイズ
+	 * @return	最大ファイルサイズ
 	 */
 	//--------------------------------------------------------------------------
 	public long getMaxFileSize() {
@@ -969,7 +990,7 @@ public class NfsServerConfig {
 	 *
 	 * <p>メソッド名称： 時刻精度ナノ秒取得</p>
 	 *
-	 * @return 時刻精度ナノ秒
+	 * @return	時刻精度ナノ秒
 	 */
 	//--------------------------------------------------------------------------
 	public int getTimeDeltaNanos() {
@@ -982,7 +1003,7 @@ public class NfsServerConfig {
 	 *
 	 * <p>メソッド名称： PATHCONF link最大値取得</p>
 	 *
-	 * @return PATHCONF link最大値
+	 * @return	PATHCONF link最大値
 	 */
 	//--------------------------------------------------------------------------
 	public int getPathconfLinkMax() {
@@ -995,7 +1016,7 @@ public class NfsServerConfig {
 	 *
 	 * <p>メソッド名称： PATHCONF name最大値取得</p>
 	 *
-	 * @return PATHCONF name最大値
+	 * @return	PATHCONF name最大値
 	 */
 	//--------------------------------------------------------------------------
 	public int getPathconfNameMax() {
@@ -1008,7 +1029,9 @@ public class NfsServerConfig {
 	 *
 	 * <p>メソッド名称： 同期書込有無取得</p>
 	 *
-	 * @return true:同期書込 false:非同期書込
+	 * @return	判定結果<ul>
+	 * 			false	: 非同期書込<br>
+	 * 			true	: 同期書込</ul>
 	 */
 	//--------------------------------------------------------------------------
 	public boolean isWriteSync() {
@@ -1021,7 +1044,9 @@ public class NfsServerConfig {
 	 *
 	 * <p>メソッド名称： 書込ファイルキャッシュ有効有無取得</p>
 	 *
-	 * @return true:有効 false:無効
+	 * @return	判定結果<ul>
+	 * 			false	: 無効<br>
+	 * 			true	: 有効</ul>
 	 */
 	//--------------------------------------------------------------------------
 	public boolean isWriteCacheEnabled() {
@@ -1034,7 +1059,7 @@ public class NfsServerConfig {
 	 *
 	 * <p>メソッド名称： 書込ファイルキャッシュ最大オープン数取得</p>
 	 *
-	 * @return 最大オープン数
+	 * @return	最大オープン数
 	 */
 	//--------------------------------------------------------------------------
 	public int getWriteCacheMaxOpenFiles() {
@@ -1047,7 +1072,7 @@ public class NfsServerConfig {
 	 *
 	 * <p>メソッド名称： 書込ファイルキャッシュアイドル保持時間取得</p>
 	 *
-	 * @return アイドル保持時間
+	 * @return	アイドル保持時間
 	 */
 	//--------------------------------------------------------------------------
 	public long getWriteCacheIdleMillis() {
@@ -1060,7 +1085,7 @@ public class NfsServerConfig {
 	 *
 	 * <p>メソッド名称： ファイル名文字コード取得</p>
 	 *
-	 * @return ファイル名文字コード
+	 * @return	ファイル名文字コード
 	 */
 	//--------------------------------------------------------------------------
 	public Charset getFilenameCharset() {

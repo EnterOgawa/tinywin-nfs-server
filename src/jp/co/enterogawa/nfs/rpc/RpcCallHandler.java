@@ -11,6 +11,15 @@ import jp.co.enterogawa.nfs.xdr.XdrWriter;
  *
  * <p>クラス名称： RPC呼出処理</p>
  *
+ * <p>著作権： Copyright (c) 2026 EnterOgawa. All Rights Reserved.</p>
+ *
+ * <p>更新履歴：
+ * <pre>
+ *     VerNo.         author        update     comment
+ *     Ver.01.00.00   Shunji Ogawa  2026/09/02 新規作成
+ * </pre>
+ * </p>
+ *
  * @author Shunji Ogawa
  * @version 01.00.00
  */
@@ -29,11 +38,11 @@ public class RpcCallHandler {
 	 *
 	 * <p>メソッド名称： コンストラクタ</p>
 	 *
-	 * @param name		サーバー名
+	 * @param name	サーバー名
 	 * @param program	RPCプログラム
 	 */
 	//--------------------------------------------------------------------------
-	public RpcCallHandler(String name, RpcProgram program) {
+	public RpcCallHandler( String name, RpcProgram program) {
 		this.name = name ;
 		this.program = program ;
 	}
@@ -44,14 +53,14 @@ public class RpcCallHandler {
 	 *
 	 * <p>メソッド名称： RPC要求処理</p>
 	 *
-	 * @param request		要求
-	 * @param length		有効長
+	 * @param request	要求
+	 * @param length	有効長
 	 * @param clientAddress	クライアントアドレス
 	 * @param clientPort	クライアントポート
-	 * @return RPC応答
+	 * @return	RPC応答
 	 */
 	//--------------------------------------------------------------------------
-	public byte[] handle(byte[] request, int length, String clientAddress, int clientPort) {
+	public byte[] handle( byte[] request, int length, String clientAddress, int clientPort) {
 		int xid = RpcCall.readXid( request, length) ;
 
 		try {
@@ -84,7 +93,7 @@ public class RpcCallHandler {
 			Integer resultStatus = null ;
 
 			// NFS/MOUNTの結果ステータスが存在する場合
-			if( acceptStatus == RpcConstants.ACCEPT_SUCCESS && bodyBytes.length >= Integer.BYTES) {
+			if(( acceptStatus == RpcConstants.ACCEPT_SUCCESS && bodyBytes.length >= Integer.BYTES)) {
 				resultStatus = ByteBuffer.wrap( bodyBytes).getInt() ;
 			}
 
@@ -123,13 +132,15 @@ public class RpcCallHandler {
 	 *
 	 * <p>メソッド名称： 要求ログ出力要否判定</p>
 	 *
-	 * @param call			RPC呼出
+	 * @param call	RPC呼出
 	 * @param acceptStatus	ACCEPTステータス
 	 * @param resultStatus	結果ステータス
-	 * @return true:出力 false:抑制
+	 * @return	判定結果<ul>
+	 * 			false	: 抑制<br>
+	 * 			true	: 出力</ul>
 	 */
 	//--------------------------------------------------------------------------
-	private boolean shouldLogRequest(RpcCall call, int acceptStatus, Integer resultStatus) {
+	private boolean shouldLogRequest( RpcCall call, int acceptStatus, Integer resultStatus) {
 		// デバッグログが有効な場合
 		if( ServerLog.isDebugEnabled()) {
 			return true ;
@@ -162,10 +173,10 @@ public class RpcCallHandler {
 	 * <p>メソッド名称： 結果ステータス整形</p>
 	 *
 	 * @param resultStatus	結果ステータス
-	 * @return 結果ステータス文字列
+	 * @return	結果ステータス文字列
 	 */
 	//--------------------------------------------------------------------------
-	private String formatResultStatus(Integer resultStatus) {
+	private String formatResultStatus( Integer resultStatus) {
 		// 結果ステータスが存在しない場合
 		if( resultStatus == null) {
 			return "" ;

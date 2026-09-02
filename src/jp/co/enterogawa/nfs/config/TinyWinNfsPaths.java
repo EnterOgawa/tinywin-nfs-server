@@ -8,6 +8,15 @@ import java.nio.file.Path;
  *
  * <p>クラス名称： TinyWinNFS標準パス定義</p>
  *
+ * <p>著作権： Copyright (c) 2026 EnterOgawa. All Rights Reserved.</p>
+ *
+ * <p>更新履歴：
+ * <pre>
+ *     VerNo.         author        update     comment
+ *     Ver.01.00.00   Shunji Ogawa  2026/09/02 新規作成
+ * </pre>
+ * </p>
+ *
  * @author Shunji Ogawa
  * @version 01.00.00
  */
@@ -40,21 +49,21 @@ public final class TinyWinNfsPaths {
 	 * <p>メソッド名称： データルート取得</p>
 	 *
 	 * @param applicationRoot	アプリケーションルート
-	 * @return データルート
+	 * @return	データルート
 	 */
 	//--------------------------------------------------------------------------
-	public static Path getDataRoot(Path applicationRoot) {
+	public static Path getDataRoot( Path applicationRoot) {
 		String configuredRoot = System.getenv( DATA_ROOT_ENVIRONMENT) ;
 
 		// データルート環境変数が指定されている場合
-		if( configuredRoot != null && !configuredRoot.isBlank()) {
+		if(( configuredRoot != null && !configuredRoot.isBlank())) {
 			return Path.of( configuredRoot).toAbsolutePath().normalize() ;
 		}
 
 		String programData = System.getenv( "ProgramData") ;
 
 		// ProgramDataが取得できる場合
-		if( programData != null && !programData.isBlank()) {
+		if(( programData != null && !programData.isBlank())) {
 			return Path.of( programData, PUBLISHER_NAME, PRODUCT_NAME).toAbsolutePath().normalize() ;
 		}
 
@@ -68,10 +77,10 @@ public final class TinyWinNfsPaths {
 	 * <p>メソッド名称： 標準設定ファイルパス取得</p>
 	 *
 	 * @param applicationRoot	アプリケーションルート
-	 * @return 設定ファイルパス
+	 * @return	設定ファイルパス
 	 */
 	//--------------------------------------------------------------------------
-	public static Path getConfigPath(Path applicationRoot) {
+	public static Path getConfigPath( Path applicationRoot) {
 		return getDataRoot( applicationRoot).resolve( "conf").resolve( "nfs-server.properties") ;
 	}
 
@@ -82,10 +91,10 @@ public final class TinyWinNfsPaths {
 	 * <p>メソッド名称： 標準ログファイルパス取得</p>
 	 *
 	 * @param applicationRoot	アプリケーションルート
-	 * @return ログファイルパス
+	 * @return	ログファイルパス
 	 */
 	//--------------------------------------------------------------------------
-	public static Path getLogPath(Path applicationRoot) {
+	public static Path getLogPath( Path applicationRoot) {
 		return getDataRoot( applicationRoot).resolve( "logs").resolve( "nfs-server.log") ;
 	}
 
@@ -96,10 +105,10 @@ public final class TinyWinNfsPaths {
 	 * <p>メソッド名称： 標準公開フォルダパス取得</p>
 	 *
 	 * @param applicationRoot	アプリケーションルート
-	 * @return 公開フォルダパス
+	 * @return	公開フォルダパス
 	 */
 	//--------------------------------------------------------------------------
-	public static Path getExportPath(Path applicationRoot) {
+	public static Path getExportPath( Path applicationRoot) {
 		return getDataRoot( applicationRoot).resolve( "export") ;
 	}
 
@@ -110,10 +119,10 @@ public final class TinyWinNfsPaths {
 	 * <p>メソッド名称： 旧設定ファイルパス取得</p>
 	 *
 	 * @param applicationRoot	アプリケーションルート
-	 * @return 旧設定ファイルパス
+	 * @return	旧設定ファイルパス
 	 */
 	//--------------------------------------------------------------------------
-	public static Path getLegacyConfigPath(Path applicationRoot) {
+	public static Path getLegacyConfigPath( Path applicationRoot) {
 		return applicationRoot.toAbsolutePath().normalize().resolve( "conf").resolve( "nfs-server.properties") ;
 	}
 
@@ -124,10 +133,10 @@ public final class TinyWinNfsPaths {
 	 * <p>メソッド名称： 設定ファイル基準パス取得</p>
 	 *
 	 * @param configPath	設定ファイルパス
-	 * @return 基準パス
+	 * @return	基準パス
 	 */
 	//--------------------------------------------------------------------------
-	public static Path getConfigBasePath(Path configPath) {
+	public static Path getConfigBasePath( Path configPath) {
 		Path absoluteConfigPath = configPath.toAbsolutePath().normalize() ;
 		Path configDirectory = absoluteConfigPath.getParent() ;
 
@@ -139,7 +148,7 @@ public final class TinyWinNfsPaths {
 		Path directoryName = configDirectory.getFileName() ;
 
 		// confディレクトリ配下の設定ファイルの場合
-		if( directoryName != null && "conf".equalsIgnoreCase( directoryName.toString()) && configDirectory.getParent() != null) {
+		if(( directoryName != null && "conf".equalsIgnoreCase( directoryName.toString()) && configDirectory.getParent() != null)) {
 			return configDirectory.getParent().toAbsolutePath().normalize() ;
 		}
 
@@ -153,11 +162,11 @@ public final class TinyWinNfsPaths {
 	 * <p>メソッド名称： 設定内パス解決</p>
 	 *
 	 * @param configBasePath	設定基準パス
-	 * @param value			設定値
-	 * @return 解決済みパス
+	 * @param value	設定値
+	 * @return	解決済みパス
 	 */
 	//--------------------------------------------------------------------------
-	public static Path resolveConfiguredPath(Path configBasePath, String value) {
+	public static Path resolveConfiguredPath( Path configBasePath, String value) {
 		Path path = Path.of( value.trim()) ;
 
 		// 絶対パスの場合

@@ -6,6 +6,15 @@ package jp.co.enterogawa.nfs.rpc;
  *
  * <p>クラス名称： RPC要求コンテキスト</p>
  *
+ * <p>著作権： Copyright (c) 2026 EnterOgawa. All Rights Reserved.</p>
+ *
+ * <p>更新履歴：
+ * <pre>
+ *     VerNo.         author        update     comment
+ *     Ver.01.00.00   Shunji Ogawa  2026/09/02 新規作成
+ * </pre>
+ * </p>
+ *
  * @author Shunji Ogawa
  * @version 01.00.00
  */
@@ -64,15 +73,15 @@ public class RpcRequestContext {
 	 * <p>メソッド名称： コンストラクタ</p>
 	 *
 	 * @param clientAddress	クライアントアドレス
-	 * @param clientPort		クライアントポート
-	 * @param serverName		サーバー名
-	 * @param xid			XID
-	 * @param program		Program
-	 * @param version		Version
-	 * @param procedure		Procedure
+	 * @param clientPort	クライアントポート
+	 * @param serverName	サーバー名
+	 * @param xid	XID
+	 * @param program	Program
+	 * @param version	Version
+	 * @param procedure	Procedure
 	 */
 	//--------------------------------------------------------------------------
-	public RpcRequestContext(String clientAddress, int clientPort, String serverName, int xid, int program, int version, int procedure) {
+	public RpcRequestContext( String clientAddress, int clientPort, String serverName, int xid, int program, int version, int procedure) {
 		this( clientAddress, clientPort, serverName, xid, program, version, procedure, null) ;
 	}
 
@@ -83,16 +92,16 @@ public class RpcRequestContext {
 	 * <p>メソッド名称： コンストラクタ</p>
 	 *
 	 * @param clientAddress	クライアントアドレス
-	 * @param clientPort		クライアントポート
-	 * @param serverName		サーバー名
-	 * @param xid			XID
-	 * @param program		Program
-	 * @param version		Version
-	 * @param procedure		Procedure
+	 * @param clientPort	クライアントポート
+	 * @param serverName	サーバー名
+	 * @param xid	XID
+	 * @param program	Program
+	 * @param version	Version
+	 * @param procedure	Procedure
 	 * @param credential	認証情報
 	 */
 	//--------------------------------------------------------------------------
-	public RpcRequestContext(String clientAddress, int clientPort, String serverName, int xid, int program, int version, int procedure, RpcCredential credential) {
+	public RpcRequestContext( String clientAddress, int clientPort, String serverName, int xid, int program, int version, int procedure, RpcCredential credential) {
 		this.clientAddress = clientAddress == null || clientAddress.isBlank() ? "unknown" : clientAddress.trim() ;
 		this.clientPort = clientPort ;
 		this.serverName = serverName == null || serverName.isBlank() ? "unknown" : serverName.trim() ;
@@ -111,7 +120,7 @@ public class RpcRequestContext {
 	 *
 	 * <p>メソッド名称： 現在コンテキスト取得</p>
 	 *
-	 * @return コンテキスト
+	 * @return	コンテキスト
 	 */
 	//--------------------------------------------------------------------------
 	public static RpcRequestContext current() {
@@ -132,10 +141,10 @@ public class RpcRequestContext {
 	 * <p>メソッド名称： 現在コンテキスト設定</p>
 	 *
 	 * @param context	コンテキスト
-	 * @return 直前のコンテキスト
+	 * @return	直前のコンテキスト
 	 */
 	//--------------------------------------------------------------------------
-	public static RpcRequestContext setCurrent(RpcRequestContext context) {
+	public static RpcRequestContext setCurrent( RpcRequestContext context) {
 		RpcRequestContext previous = CURRENT.get() ;
 		CURRENT.set( context == null ? LOCAL : context) ;
 		return previous ;
@@ -150,7 +159,7 @@ public class RpcRequestContext {
 	 * @param previous	直前のコンテキスト
 	 */
 	//--------------------------------------------------------------------------
-	public static void restore(RpcRequestContext previous) {
+	public static void restore( RpcRequestContext previous) {
 		// 直前のコンテキストが存在しない場合
 		if( previous == null) {
 			CURRENT.remove() ;
@@ -166,7 +175,7 @@ public class RpcRequestContext {
 	 *
 	 * <p>メソッド名称： クライアントアドレス取得</p>
 	 *
-	 * @return クライアントアドレス
+	 * @return	クライアントアドレス
 	 */
 	//--------------------------------------------------------------------------
 	public String getClientAddress() {
@@ -179,7 +188,7 @@ public class RpcRequestContext {
 	 *
 	 * <p>メソッド名称： クライアントポート取得</p>
 	 *
-	 * @return クライアントポート
+	 * @return	クライアントポート
 	 */
 	//--------------------------------------------------------------------------
 	public int getClientPort() {
@@ -192,7 +201,7 @@ public class RpcRequestContext {
 	 *
 	 * <p>メソッド名称： サーバー名取得</p>
 	 *
-	 * @return サーバー名
+	 * @return	サーバー名
 	 */
 	//--------------------------------------------------------------------------
 	public String getServerName() {
@@ -205,7 +214,7 @@ public class RpcRequestContext {
 	 *
 	 * <p>メソッド名称： XID取得</p>
 	 *
-	 * @return XID
+	 * @return	XID
 	 */
 	//--------------------------------------------------------------------------
 	public int getXid() {
@@ -218,7 +227,7 @@ public class RpcRequestContext {
 	 *
 	 * <p>メソッド名称： Program取得</p>
 	 *
-	 * @return Program
+	 * @return	Program
 	 */
 	//--------------------------------------------------------------------------
 	public int getProgram() {
@@ -231,7 +240,7 @@ public class RpcRequestContext {
 	 *
 	 * <p>メソッド名称： Version取得</p>
 	 *
-	 * @return Version
+	 * @return	Version
 	 */
 	//--------------------------------------------------------------------------
 	public int getVersion() {
@@ -244,7 +253,7 @@ public class RpcRequestContext {
 	 *
 	 * <p>メソッド名称： Procedure取得</p>
 	 *
-	 * @return Procedure
+	 * @return	Procedure
 	 */
 	//--------------------------------------------------------------------------
 	public int getProcedure() {
@@ -257,7 +266,9 @@ public class RpcRequestContext {
 	 *
 	 * <p>メソッド名称： AUTH_SYS資格情報有無取得</p>
 	 *
-	 * @return true:あり false:なし
+	 * @return	判定結果<ul>
+	 * 			false	: なし<br>
+	 * 			true	: あり</ul>
 	 */
 	//--------------------------------------------------------------------------
 	public boolean hasAuthSysIdentity() {
@@ -270,7 +281,7 @@ public class RpcRequestContext {
 	 *
 	 * <p>メソッド名称： AUTH_SYSホスト名取得</p>
 	 *
-	 * @return ホスト名
+	 * @return	ホスト名
 	 */
 	//--------------------------------------------------------------------------
 	public String getAuthSysMachineName() {
@@ -284,10 +295,10 @@ public class RpcRequestContext {
 	 * <p>メソッド名称： UID解決</p>
 	 *
 	 * @param fallbackUid	代替UID
-	 * @return UID
+	 * @return	UID
 	 */
 	//--------------------------------------------------------------------------
-	public int resolveUid(int fallbackUid) {
+	public int resolveUid( int fallbackUid) {
 		return authSysUid == null ? fallbackUid : authSysUid.intValue() ;
 	}
 
@@ -298,10 +309,10 @@ public class RpcRequestContext {
 	 * <p>メソッド名称： GID解決</p>
 	 *
 	 * @param fallbackGid	代替GID
-	 * @return GID
+	 * @return	GID
 	 */
 	//--------------------------------------------------------------------------
-	public int resolveGid(int fallbackGid) {
+	public int resolveGid( int fallbackGid) {
 		return authSysGid == null ? fallbackGid : authSysGid.intValue() ;
 	}
 
@@ -311,7 +322,7 @@ public class RpcRequestContext {
 	 *
 	 * <p>メソッド名称： ログ用XID取得</p>
 	 *
-	 * @return XID文字列
+	 * @return	XID文字列
 	 */
 	//--------------------------------------------------------------------------
 	public String formatXid() {

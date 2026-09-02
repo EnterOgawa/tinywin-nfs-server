@@ -21,6 +21,15 @@ import jp.co.enterogawa.nfs.config.NfsServerConfig;
  *
  * <p>クラス名称： NFS運用診断</p>
  *
+ * <p>著作権： Copyright (c) 2026 EnterOgawa. All Rights Reserved.</p>
+ *
+ * <p>更新履歴：
+ * <pre>
+ *     VerNo.         author        update     comment
+ *     Ver.01.00.00   Shunji Ogawa  2026/09/02 新規作成
+ * </pre>
+ * </p>
+ *
  * @author Shunji Ogawa
  * @version 01.00.00
  */
@@ -43,10 +52,10 @@ public final class NfsDiagnostics {
 	 * <p>メソッド名称： 診断レポート作成</p>
 	 *
 	 * @param config	設定
-	 * @return 診断レポート
+	 * @return	診断レポート
 	 */
 	//--------------------------------------------------------------------------
-	public static DiagnosticReport collect(NfsServerConfig config) {
+	public static DiagnosticReport collect( NfsServerConfig config) {
 		List<DiagnosticMessage> configurationMessages = inspectConfiguration( config) ;
 		List<ExportReport> exportReports = new ArrayList<ExportReport>() ;
 
@@ -65,22 +74,22 @@ public final class NfsDiagnostics {
 	 * <p>メソッド名称： 設定診断</p>
 	 *
 	 * @param config	設定
-	 * @return 診断メッセージ
+	 * @return	診断メッセージ
 	 */
 	//--------------------------------------------------------------------------
-	public static List<DiagnosticMessage> inspectConfiguration(NfsServerConfig config) {
+	public static List<DiagnosticMessage> inspectConfiguration( NfsServerConfig config) {
 		List<DiagnosticMessage> messages = new ArrayList<DiagnosticMessage>() ;
 		int portmapPort = config.getPortmapPort() ;
 		int nfsPort = config.getNfsPort() ;
 		int mountPort = config.getMountPort() ;
 
 		// ポート番号が重複している場合
-		if( portmapPort == nfsPort || portmapPort == mountPort || nfsPort == mountPort) {
+		if(( portmapPort == nfsPort || portmapPort == mountPort || nfsPort == mountPort)) {
 			messages.add( DiagnosticMessage.warning( "CONFIG_PORT_DUPLICATED", "Portmap, NFS, and MOUNT ports should be different.")) ;
 		}
 
 		// 管理者権限が必要な既定ポートを利用する場合
-		if( portmapPort <= 1024 || nfsPort <= 1024 || mountPort <= 1024) {
+		if(( portmapPort <= 1024 || nfsPort <= 1024 || mountPort <= 1024)) {
 			messages.add( DiagnosticMessage.info( "CONFIG_PRIVILEGED_PORT", "One or more service ports require Administrator privileges on Windows.")) ;
 		}
 
@@ -90,7 +99,7 @@ public final class NfsDiagnostics {
 		}
 
 		// UDPで扱いづらい転送サイズの場合
-		if( config.getReadSize() > 65536 || config.getWriteSize() > 65536) {
+		if(( config.getReadSize() > 65536 || config.getWriteSize() > 65536)) {
 			messages.add( DiagnosticMessage.warning( "CONFIG_TRANSFER_SIZE_LARGE", "Large read/write sizes may not be suitable for UDP clients.")) ;
 		}
 
@@ -117,10 +126,10 @@ public final class NfsDiagnostics {
 	 * <p>メソッド名称： 大文字小文字衝突検出</p>
 	 *
 	 * @param relativePaths	相対パス
-	 * @return 衝突一覧
+	 * @return	衝突一覧
 	 */
 	//--------------------------------------------------------------------------
-	public static List<CaseCollision> detectCaseCollisions(List<String> relativePaths) {
+	public static List<CaseCollision> detectCaseCollisions( List<String> relativePaths) {
 		Map<String, List<String>> groups = new TreeMap<String, List<String>>() ;
 
 		// 相対パスを大文字小文字非区別キーへ分類する
@@ -152,10 +161,10 @@ public final class NfsDiagnostics {
 	 * <p>メソッド名称： 公開定義診断</p>
 	 *
 	 * @param export	公開定義
-	 * @return 公開診断
+	 * @return	公開診断
 	 */
 	//--------------------------------------------------------------------------
-	private static ExportReport inspectExport(NfsExport export) {
+	private static ExportReport inspectExport( NfsExport export) {
 		Path path = export.getPath() ;
 		List<DiagnosticMessage> messages = new ArrayList<DiagnosticMessage>() ;
 		List<String> relativePaths = new ArrayList<String>() ;
@@ -185,7 +194,7 @@ public final class NfsDiagnostics {
 		}
 
 		// 書込共有だが公開パスが書込不可の場合
-		if( export.isWritable() && !writable) {
+		if(( export.isWritable() && !writable)) {
 			messages.add( DiagnosticMessage.error( "EXPORT_NOT_WRITABLE", "Writable export path is not writable: " + path)) ;
 		}
 
@@ -233,10 +242,10 @@ public final class NfsDiagnostics {
 	 * <p>メソッド名称： ファイルサイズ取得</p>
 	 *
 	 * @param path	パス
-	 * @return ファイルサイズ
+	 * @return	ファイルサイズ
 	 */
 	//--------------------------------------------------------------------------
-	private static long readSizeQuietly(Path path) {
+	private static long readSizeQuietly( Path path) {
 		try {
 			return Files.size( path) ;
 		} catch( IOException ioex) {
@@ -251,10 +260,10 @@ public final class NfsDiagnostics {
 	 * <p>メソッド名称： 相対パス表記正規化</p>
 	 *
 	 * @param value	値
-	 * @return 正規化値
+	 * @return	正規化値
 	 */
 	//--------------------------------------------------------------------------
-	private static String normalizeRelativePath(String value) {
+	private static String normalizeRelativePath( String value) {
 		return value.replace( '\\', '/' ) ;
 	}
 
@@ -279,10 +288,10 @@ public final class NfsDiagnostics {
 		 * <p>メソッド名称： コンストラクタ</p>
 		 *
 		 * @param configurationMessages	設定メッセージ
-		 * @param exportReports			公開診断
+		 * @param exportReports	公開診断
 		 */
 		//--------------------------------------------------------------------------
-		private DiagnosticReport(List<DiagnosticMessage> configurationMessages, List<ExportReport> exportReports) {
+		private DiagnosticReport( List<DiagnosticMessage> configurationMessages, List<ExportReport> exportReports) {
 			this.configurationMessages = List.copyOf( configurationMessages) ;
 			this.exportReports = List.copyOf( exportReports) ;
 		}
@@ -293,7 +302,7 @@ public final class NfsDiagnostics {
 		 *
 		 * <p>メソッド名称： 設定メッセージ取得</p>
 		 *
-		 * @return 設定メッセージ
+		 * @return	設定メッセージ
 		 */
 		//--------------------------------------------------------------------------
 		public List<DiagnosticMessage> getConfigurationMessages() {
@@ -306,7 +315,7 @@ public final class NfsDiagnostics {
 		 *
 		 * <p>メソッド名称： 公開診断取得</p>
 		 *
-		 * @return 公開診断
+		 * @return	公開診断
 		 */
 		//--------------------------------------------------------------------------
 		public List<ExportReport> getExportReports() {
@@ -319,7 +328,7 @@ public final class NfsDiagnostics {
 		 *
 		 * <p>メソッド名称： テキスト整形</p>
 		 *
-		 * @return テキスト
+		 * @return	テキスト
 		 */
 		//--------------------------------------------------------------------------
 		public String formatText() {
@@ -347,7 +356,7 @@ public final class NfsDiagnostics {
 		 * @param messages	メッセージ
 		 */
 		//--------------------------------------------------------------------------
-		private void appendMessages(StringBuilder builder, List<DiagnosticMessage> messages) {
+		private void appendMessages( StringBuilder builder, List<DiagnosticMessage> messages) {
 			// メッセージが存在しない場合
 			if( messages.isEmpty()) {
 				builder.append( "- OK" ).append( System.lineSeparator()) ;
@@ -406,7 +415,7 @@ public final class NfsDiagnostics {
 		 * <p>メソッド名称： コンストラクタ</p>
 		 */
 		//--------------------------------------------------------------------------
-		private ExportReport(NfsExport export, boolean exists, boolean directory, boolean readable, boolean writable, long fileCount, long directoryCount, long totalBytes, List<CaseCollision> caseCollisions, List<DiagnosticMessage> messages) {
+		private ExportReport( NfsExport export, boolean exists, boolean directory, boolean readable, boolean writable, long fileCount, long directoryCount, long totalBytes, List<CaseCollision> caseCollisions, List<DiagnosticMessage> messages) {
 			this.export = export ;
 			this.exists = exists ;
 			this.directory = directory ;
@@ -425,7 +434,7 @@ public final class NfsDiagnostics {
 		 *
 		 * <p>メソッド名称： 公開定義取得</p>
 		 *
-		 * @return 公開定義
+		 * @return	公開定義
 		 */
 		//--------------------------------------------------------------------------
 		public NfsExport getExport() {
@@ -438,7 +447,9 @@ public final class NfsDiagnostics {
 		 *
 		 * <p>メソッド名称： 存在有無取得</p>
 		 *
-		 * @return true:存在 false:不存在
+		 * @return	判定結果<ul>
+		 * 			false	: 不存在<br>
+		 * 			true	: 存在</ul>
 		 */
 		//--------------------------------------------------------------------------
 		public boolean exists() {
@@ -451,7 +462,9 @@ public final class NfsDiagnostics {
 		 *
 		 * <p>メソッド名称： ディレクトリ有無取得</p>
 		 *
-		 * @return true:ディレクトリ false:ディレクトリ以外
+		 * @return	判定結果<ul>
+		 * 			false	: ディレクトリ以外<br>
+		 * 			true	: ディレクトリ</ul>
 		 */
 		//--------------------------------------------------------------------------
 		public boolean isDirectory() {
@@ -464,7 +477,9 @@ public final class NfsDiagnostics {
 		 *
 		 * <p>メソッド名称： 読込可否取得</p>
 		 *
-		 * @return true:読込可 false:読込不可
+		 * @return	判定結果<ul>
+		 * 			false	: 読込不可<br>
+		 * 			true	: 読込可</ul>
 		 */
 		//--------------------------------------------------------------------------
 		public boolean isReadable() {
@@ -477,7 +492,9 @@ public final class NfsDiagnostics {
 		 *
 		 * <p>メソッド名称： 書込可否取得</p>
 		 *
-		 * @return true:書込可 false:書込不可
+		 * @return	判定結果<ul>
+		 * 			false	: 書込不可<br>
+		 * 			true	: 書込可</ul>
 		 */
 		//--------------------------------------------------------------------------
 		public boolean isWritable() {
@@ -490,7 +507,7 @@ public final class NfsDiagnostics {
 		 *
 		 * <p>メソッド名称： ファイル数取得</p>
 		 *
-		 * @return ファイル数
+		 * @return	ファイル数
 		 */
 		//--------------------------------------------------------------------------
 		public long getFileCount() {
@@ -503,7 +520,7 @@ public final class NfsDiagnostics {
 		 *
 		 * <p>メソッド名称： ディレクトリ数取得</p>
 		 *
-		 * @return ディレクトリ数
+		 * @return	ディレクトリ数
 		 */
 		//--------------------------------------------------------------------------
 		public long getDirectoryCount() {
@@ -516,7 +533,7 @@ public final class NfsDiagnostics {
 		 *
 		 * <p>メソッド名称： 総バイト数取得</p>
 		 *
-		 * @return 総バイト数
+		 * @return	総バイト数
 		 */
 		//--------------------------------------------------------------------------
 		public long getTotalBytes() {
@@ -529,7 +546,7 @@ public final class NfsDiagnostics {
 		 *
 		 * <p>メソッド名称： 大文字小文字衝突取得</p>
 		 *
-		 * @return 大文字小文字衝突
+		 * @return	大文字小文字衝突
 		 */
 		//--------------------------------------------------------------------------
 		public List<CaseCollision> getCaseCollisions() {
@@ -542,7 +559,7 @@ public final class NfsDiagnostics {
 		 *
 		 * <p>メソッド名称： 診断メッセージ取得</p>
 		 *
-		 * @return 診断メッセージ
+		 * @return	診断メッセージ
 		 */
 		//--------------------------------------------------------------------------
 		public List<DiagnosticMessage> getMessages() {
@@ -555,7 +572,7 @@ public final class NfsDiagnostics {
 		 *
 		 * <p>メソッド名称： テキスト整形</p>
 		 *
-		 * @return テキスト
+		 * @return	テキスト
 		 */
 		//--------------------------------------------------------------------------
 		public String formatText() {
@@ -610,11 +627,11 @@ public final class NfsDiagnostics {
 		 * <p>メソッド名称： コンストラクタ</p>
 		 *
 		 * @param severity	重大度
-		 * @param code		コード
+		 * @param code	コード
 		 * @param message	メッセージ
 		 */
 		//--------------------------------------------------------------------------
-		private DiagnosticMessage(String severity, String code, String message) {
+		private DiagnosticMessage( String severity, String code, String message) {
 			this.severity = severity ;
 			this.code = code ;
 			this.message = message ;
@@ -626,12 +643,12 @@ public final class NfsDiagnostics {
 		 *
 		 * <p>メソッド名称： 情報メッセージ作成</p>
 		 *
-		 * @param code		コード
+		 * @param code	コード
 		 * @param message	メッセージ
-		 * @return メッセージ
+		 * @return	メッセージ
 		 */
 		//--------------------------------------------------------------------------
-		public static DiagnosticMessage info(String code, String message) {
+		public static DiagnosticMessage info( String code, String message) {
 			return new DiagnosticMessage( "INFO", code, message) ;
 		}
 
@@ -641,12 +658,12 @@ public final class NfsDiagnostics {
 		 *
 		 * <p>メソッド名称： 警告メッセージ作成</p>
 		 *
-		 * @param code		コード
+		 * @param code	コード
 		 * @param message	メッセージ
-		 * @return メッセージ
+		 * @return	メッセージ
 		 */
 		//--------------------------------------------------------------------------
-		public static DiagnosticMessage warning(String code, String message) {
+		public static DiagnosticMessage warning( String code, String message) {
 			return new DiagnosticMessage( "WARNING", code, message) ;
 		}
 
@@ -656,12 +673,12 @@ public final class NfsDiagnostics {
 		 *
 		 * <p>メソッド名称： エラーメッセージ作成</p>
 		 *
-		 * @param code		コード
+		 * @param code	コード
 		 * @param message	メッセージ
-		 * @return メッセージ
+		 * @return	メッセージ
 		 */
 		//--------------------------------------------------------------------------
-		public static DiagnosticMessage error(String code, String message) {
+		public static DiagnosticMessage error( String code, String message) {
 			return new DiagnosticMessage( "ERROR", code, message) ;
 		}
 
@@ -671,7 +688,7 @@ public final class NfsDiagnostics {
 		 *
 		 * <p>メソッド名称： 重大度取得</p>
 		 *
-		 * @return 重大度
+		 * @return	重大度
 		 */
 		//--------------------------------------------------------------------------
 		public String getSeverity() {
@@ -684,7 +701,7 @@ public final class NfsDiagnostics {
 		 *
 		 * <p>メソッド名称： コード取得</p>
 		 *
-		 * @return コード
+		 * @return	コード
 		 */
 		//--------------------------------------------------------------------------
 		public String getCode() {
@@ -697,7 +714,7 @@ public final class NfsDiagnostics {
 		 *
 		 * <p>メソッド名称： メッセージ取得</p>
 		 *
-		 * @return メッセージ
+		 * @return	メッセージ
 		 */
 		//--------------------------------------------------------------------------
 		public String getMessage() {
@@ -710,7 +727,7 @@ public final class NfsDiagnostics {
 		 *
 		 * <p>メソッド名称： テキスト整形</p>
 		 *
-		 * @return テキスト
+		 * @return	テキスト
 		 */
 		//--------------------------------------------------------------------------
 		public String formatText() {
@@ -739,10 +756,10 @@ public final class NfsDiagnostics {
 		 * <p>メソッド名称： コンストラクタ</p>
 		 *
 		 * @param normalizedPath	正規化パス
-		 * @param paths				実パス表記
+		 * @param paths	実パス表記
 		 */
 		//--------------------------------------------------------------------------
-		private CaseCollision(String normalizedPath, List<String> paths) {
+		private CaseCollision( String normalizedPath, List<String> paths) {
 			this.normalizedPath = normalizedPath ;
 			this.paths = List.copyOf( paths) ;
 		}
@@ -753,7 +770,7 @@ public final class NfsDiagnostics {
 		 *
 		 * <p>メソッド名称： 正規化パス取得</p>
 		 *
-		 * @return 正規化パス
+		 * @return	正規化パス
 		 */
 		//--------------------------------------------------------------------------
 		public String getNormalizedPath() {
@@ -766,7 +783,7 @@ public final class NfsDiagnostics {
 		 *
 		 * <p>メソッド名称： 実パス表記取得</p>
 		 *
-		 * @return 実パス表記
+		 * @return	実パス表記
 		 */
 		//--------------------------------------------------------------------------
 		public List<String> getPaths() {

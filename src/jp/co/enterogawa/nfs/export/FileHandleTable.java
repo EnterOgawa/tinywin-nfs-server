@@ -25,6 +25,15 @@ import jp.co.enterogawa.nfs.config.NfsExport;
  *
  * <p>クラス名称： NFSファイルハンドル管理</p>
  *
+ * <p>著作権： Copyright (c) 2026 EnterOgawa. All Rights Reserved.</p>
+ *
+ * <p>更新履歴：
+ * <pre>
+ *     VerNo.         author        update     comment
+ *     Ver.01.00.00   Shunji Ogawa  2026/09/02 新規作成
+ * </pre>
+ * </p>
+ *
  * @author Shunji Ogawa
  * @version 01.00.00
  */
@@ -83,7 +92,7 @@ public class FileHandleTable {
 	 * @param rootPath	公開ルート
 	 */
 	//--------------------------------------------------------------------------
-	public FileHandleTable(Path rootPath) {
+	public FileHandleTable( Path rootPath) {
 		this( List.of( new NfsExport( "/export", rootPath, true))) ;
 	}
 
@@ -96,9 +105,9 @@ public class FileHandleTable {
 	 * @param exports	公開定義
 	 */
 	//--------------------------------------------------------------------------
-	public FileHandleTable(List<NfsExport> exports) {
+	public FileHandleTable( List<NfsExport> exports) {
 		// 公開定義が存在しない場合
-		if( exports == null || exports.isEmpty()) {
+		if(( exports == null || exports.isEmpty())) {
 			throw new IllegalArgumentException( "At least one export is required.") ;
 		}
 
@@ -136,7 +145,7 @@ public class FileHandleTable {
 	 *
 	 * <p>メソッド名称： ルートファイルハンドル取得</p>
 	 *
-	 * @return ルートファイルハンドル
+	 * @return	ルートファイルハンドル
 	 */
 	//--------------------------------------------------------------------------
 	public FileHandle getRootHandle() {
@@ -150,10 +159,10 @@ public class FileHandleTable {
 	 * <p>メソッド名称： ルートファイルハンドル取得</p>
 	 *
 	 * @param exportName	公開名
-	 * @return ルートファイルハンドル
+	 * @return	ルートファイルハンドル
 	 */
 	//--------------------------------------------------------------------------
-	public FileHandle getRootHandle(String exportName) {
+	public FileHandle getRootHandle( String exportName) {
 		return rootHandleMap.get( exportName) ;
 	}
 
@@ -163,7 +172,7 @@ public class FileHandleTable {
 	 *
 	 * <p>メソッド名称： 公開ルート取得</p>
 	 *
-	 * @return 公開ルート
+	 * @return	公開ルート
 	 */
 	//--------------------------------------------------------------------------
 	public Path getRootPath() {
@@ -177,10 +186,10 @@ public class FileHandleTable {
 	 * <p>メソッド名称： 公開ルート取得</p>
 	 *
 	 * @param path	パス
-	 * @return 公開ルート
+	 * @return	公開ルート
 	 */
 	//--------------------------------------------------------------------------
-	public Path getRootPath(Path path) {
+	public Path getRootPath( Path path) {
 		NfsExport export = findExport( path) ;
 
 		// 公開定義が存在しない場合
@@ -198,10 +207,12 @@ public class FileHandleTable {
 	 * <p>メソッド名称： 公開ルート内確認</p>
 	 *
 	 * @param path	パス
-	 * @return true:公開ルート内 false:公開ルート外
+	 * @return	判定結果<ul>
+	 * 			false	: 公開ルート外<br>
+	 * 			true	: 公開ルート内</ul>
 	 */
 	//--------------------------------------------------------------------------
-	public boolean isInExportRoot(Path path) {
+	public boolean isInExportRoot( Path path) {
 		return findExport( path) != null ;
 	}
 
@@ -211,12 +222,14 @@ public class FileHandleTable {
 	 *
 	 * <p>メソッド名称： 同一公開ルート確認</p>
 	 *
-	 * @param first		パス1
+	 * @param first	パス1
 	 * @param second	パス2
-	 * @return true:同一公開ルート false:異なる公開ルート
+	 * @return	判定結果<ul>
+	 * 			false	: 異なる公開ルート<br>
+	 * 			true	: 同一公開ルート</ul>
 	 */
 	//--------------------------------------------------------------------------
-	public boolean isSameExport(Path first, Path second) {
+	public boolean isSameExport( Path first, Path second) {
 		NfsExport firstExport = findExport( first) ;
 		NfsExport secondExport = findExport( second) ;
 		return firstExport != null && firstExport == secondExport ;
@@ -229,10 +242,12 @@ public class FileHandleTable {
 	 * <p>メソッド名称： 書込可否取得</p>
 	 *
 	 * @param path	パス
-	 * @return true:書込可 false:読込専用
+	 * @return	判定結果<ul>
+	 * 			false	: 読込専用<br>
+	 * 			true	: 書込可</ul>
 	 */
 	//--------------------------------------------------------------------------
-	public boolean isWritable(Path path) {
+	public boolean isWritable( Path path) {
 		NfsExport export = findExport( path) ;
 		return export != null && export.isWritable() ;
 	}
@@ -244,10 +259,10 @@ public class FileHandleTable {
 	 * <p>メソッド名称： 公開定義取得</p>
 	 *
 	 * @param path	パス
-	 * @return 公開定義
+	 * @return	公開定義
 	 */
 	//--------------------------------------------------------------------------
-	public NfsExport getExport(Path path) {
+	public NfsExport getExport( Path path) {
 		return findExport( path) ;
 	}
 
@@ -258,10 +273,10 @@ public class FileHandleTable {
 	 * <p>メソッド名称： パス取得</p>
 	 *
 	 * @param handle	ファイルハンドル
-	 * @return パス
+	 * @return	パス
 	 */
 	//--------------------------------------------------------------------------
-	public synchronized Path getPath(FileHandle handle) {
+	public synchronized Path getPath( FileHandle handle) {
 		return handleMap.get( handle.key()) ;
 	}
 
@@ -272,10 +287,10 @@ public class FileHandleTable {
 	 * <p>メソッド名称： ファイルハンドル取得作成</p>
 	 *
 	 * @param path	パス
-	 * @return ファイルハンドル
+	 * @return	ファイルハンドル
 	 */
 	//--------------------------------------------------------------------------
-	public synchronized FileHandle getOrCreate(Path path) {
+	public synchronized FileHandle getOrCreate( Path path) {
 		Path normalized = path.toAbsolutePath().normalize() ;
 		NfsExport export = findExport( normalized) ;
 
@@ -307,7 +322,7 @@ public class FileHandleTable {
 	 * @param path	対象パス
 	 */
 	//--------------------------------------------------------------------------
-	public synchronized void forget(Path path) {
+	public synchronized void forget( Path path) {
 		Path normalized = path.toAbsolutePath().normalize() ;
 		FileHandle handle = pathMap.remove( normalized) ;
 
@@ -327,7 +342,7 @@ public class FileHandleTable {
 	 * @param path	対象パス
 	 */
 	//--------------------------------------------------------------------------
-	public synchronized void forgetTree(Path path) {
+	public synchronized void forgetTree( Path path) {
 		Path normalized = path.toAbsolutePath().normalize() ;
 		Set<Path> removePaths = new HashSet<Path>() ;
 
@@ -375,7 +390,7 @@ public class FileHandleTable {
 	 * @param target	移動先
 	 */
 	//--------------------------------------------------------------------------
-	public synchronized void move(Path source, Path target) {
+	public synchronized void move( Path source, Path target) {
 		Path sourcePath = source.toAbsolutePath().normalize() ;
 		Path targetPath = target.toAbsolutePath().normalize() ;
 		Map<Path, Path> targetMap = new HashMap<Path, Path>() ;
@@ -449,10 +464,10 @@ public class FileHandleTable {
 	 * <p>メソッド名称： ファイルID取得</p>
 	 *
 	 * @param handle	ファイルハンドル
-	 * @return ファイルID
+	 * @return	ファイルID
 	 */
 	//--------------------------------------------------------------------------
-	public int getFileId(FileHandle handle) {
+	public int getFileId( FileHandle handle) {
 		ByteBuffer buffer = ByteBuffer.wrap( handle.getValue()) ;
 		buffer.position( 4) ;
 		return buffer.getInt() ;
@@ -465,10 +480,10 @@ public class FileHandleTable {
 	 * <p>メソッド名称： ファイルハンドル作成</p>
 	 *
 	 * @param id	ID
-	 * @return ファイルハンドル
+	 * @return	ファイルハンドル
 	 */
 	//--------------------------------------------------------------------------
-	private FileHandle createHandle(int id) {
+	private FileHandle createHandle( int id) {
 		byte[] value = new byte[FileHandle.LENGTH] ;
 		System.arraycopy( MAGIC, 0, value, 0, MAGIC.length) ;
 		ByteBuffer.wrap( value).putInt( 4, id) ;
@@ -482,10 +497,10 @@ public class FileHandleTable {
 	 * <p>メソッド名称： 永続ファイルパス解決</p>
 	 *
 	 * @param rootPath	公開ルート
-	 * @return 永続ファイルパス
+	 * @return	永続ファイルパス
 	 */
 	//--------------------------------------------------------------------------
-	private Path resolveStorePath(List<NfsExport> exports) {
+	private Path resolveStorePath( List<NfsExport> exports) {
 		String dataPath = System.getProperty( "tinywin.nfs.data", "data") ;
 		StringBuilder key = new StringBuilder() ;
 
@@ -523,6 +538,7 @@ public class FileHandleTable {
 			properties.load( input) ;
 			int maxId = ROOT_ID ;
 
+			// 永続化済みパス定義をファイルハンドル表へ復元する
 			for( String key : properties.stringPropertyNames()) {
 				// パス定義以外の場合
 				if( !key.startsWith( "path.")) {
@@ -574,6 +590,7 @@ public class FileHandleTable {
 		Properties properties = new Properties() ;
 		properties.setProperty( "nextId", Integer.toString( nextId.get())) ;
 
+		// 管理中のパスとファイルハンドルを永続化形式へ変換する
 		for( Map.Entry<Path, FileHandle> entry : pathMap.entrySet()) {
 			int id = getFileId( entry.getValue()) ;
 
@@ -643,14 +660,14 @@ public class FileHandleTable {
 	 *
 	 * <p>メソッド名称： 永続ファイル保存間隔取得</p>
 	 *
-	 * @return 保存間隔ミリ秒
+	 * @return	保存間隔ミリ秒
 	 */
 	//--------------------------------------------------------------------------
 	private long getStoreSaveIntervalMillis() {
 		String value = System.getProperty( "tinywin.nfs.handleStoreSaveIntervalMillis", "30000") ;
 
 		// 値がない場合
-		if( value == null || value.isBlank()) {
+		if(( value == null || value.isBlank())) {
 			return 30000L ;
 		}
 
@@ -667,14 +684,14 @@ public class FileHandleTable {
 	 *
 	 * <p>メソッド名称： 数値変換</p>
 	 *
-	 * @param value			値
+	 * @param value	値
 	 * @param defaultValue	デフォルト値
-	 * @return 数値
+	 * @return	数値
 	 */
 	//--------------------------------------------------------------------------
-	private int parseInt(String value, int defaultValue) {
+	private int parseInt( String value, int defaultValue) {
 		// 値がない場合
-		if( value == null || value.isBlank()) {
+		if(( value == null || value.isBlank())) {
 			return defaultValue ;
 		}
 
@@ -691,7 +708,7 @@ public class FileHandleTable {
 	 *
 	 * <p>メソッド名称： 次ファイルID取得</p>
 	 *
-	 * @return ファイルID
+	 * @return	ファイルID
 	 */
 	//--------------------------------------------------------------------------
 	private int nextFileId() {
@@ -712,10 +729,10 @@ public class FileHandleTable {
 	 * <p>メソッド名称： 公開定義取得</p>
 	 *
 	 * @param path	パス
-	 * @return 公開定義
+	 * @return	公開定義
 	 */
 	//--------------------------------------------------------------------------
-	private NfsExport findExport(Path path) {
+	private NfsExport findExport( Path path) {
 		// パスが存在しない場合
 		if( path == null) {
 			return null ;
@@ -741,10 +758,10 @@ public class FileHandleTable {
 	 * <p>メソッド名称： 公開定義取得</p>
 	 *
 	 * @param name	公開名
-	 * @return 公開定義
+	 * @return	公開定義
 	 */
 	//--------------------------------------------------------------------------
-	private NfsExport findExportByName(String name) {
+	private NfsExport findExportByName( String name) {
 		// 公開定義を検索する
 		for( NfsExport export : exports) {
 			// 公開名が一致する場合
@@ -763,15 +780,16 @@ public class FileHandleTable {
 	 * <p>メソッド名称： テキストハッシュ化</p>
 	 *
 	 * @param value	値
-	 * @return ハッシュ文字列
+	 * @return	ハッシュ文字列
 	 */
 	//--------------------------------------------------------------------------
-	private String hashText(String value) {
+	private String hashText( String value) {
 		try {
 			MessageDigest digest = MessageDigest.getInstance( "SHA-256") ;
 			byte[] hash = digest.digest( value.getBytes( StandardCharsets.UTF_8)) ;
 			StringBuilder builder = new StringBuilder() ;
 
+			// ハッシュ先頭8バイトを識別用文字列へ変換する
 			for( int i = 0; i < 8; i++) {
 				builder.append( String.format( "%02x", hash[i] & 0xff)) ;
 			}

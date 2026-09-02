@@ -70,6 +70,15 @@ import jp.co.enterogawa.nfs.xdr.XdrWriter;
  *
  * <p>クラス名称： SWT版NFSサーバー管理ツール</p>
  *
+ * <p>著作権： Copyright (c) 2026 EnterOgawa. All Rights Reserved.</p>
+ *
+ * <p>更新履歴：
+ * <pre>
+ *     VerNo.         author        update     comment
+ *     Ver.01.00.00   Shunji Ogawa  2026/09/02 新規作成
+ * </pre>
+ * </p>
+ *
  * @author Shunji Ogawa
  * @version 01.00.00
  */
@@ -299,7 +308,7 @@ public class TinyWinNfsSwtManager {
 	 * @param args	起動引数
 	 */
 	//--------------------------------------------------------------------------
-	public static void main(String[] args) {
+	public static void main( String[] args) {
 		Display display = new Display() ;
 
 		try {
@@ -319,7 +328,7 @@ public class TinyWinNfsSwtManager {
 	 * @param display	SWT Display
 	 */
 	//--------------------------------------------------------------------------
-	public TinyWinNfsSwtManager(Display display) {
+	public TinyWinNfsSwtManager( Display display) {
 		this.display = display ;
 		rootPath = detectRootPath() ;
 		dataRootPath = TinyWinNfsPaths.getDataRoot( rootPath) ;
@@ -344,6 +353,7 @@ public class TinyWinNfsSwtManager {
 		appendLog( format( "log.config", configPath)) ;
 		shell.open() ;
 
+		// Shellが破棄されるまでSWTイベント処理を継続する
 		while( !shell.isDisposed()) {
 			// SWTイベントがない場合
 			if( !display.readAndDispatch()) {
@@ -403,7 +413,7 @@ public class TinyWinNfsSwtManager {
 	 * @param parent	親Composite
 	 */
 	//--------------------------------------------------------------------------
-	private void createHeader(Composite parent) {
+	private void createHeader( Composite parent) {
 		Composite header = new Composite( parent, SWT.NONE) ;
 		header.setLayoutData( new GridData( SWT.FILL, SWT.CENTER, true, false)) ;
 		header.setLayout( createGridLayout( 4, false, 10, 2)) ;
@@ -428,7 +438,7 @@ public class TinyWinNfsSwtManager {
 	 * @param parent	親Composite
 	 */
 	//--------------------------------------------------------------------------
-	private void createTabs(Composite parent) {
+	private void createTabs( Composite parent) {
 		TabFolder folder = new TabFolder( parent, SWT.NONE) ;
 		folder.setLayoutData( new GridData( SWT.FILL, SWT.FILL, true, true)) ;
 		addTab( folder, text( "tab.share"), createShareComposite( folder)) ;
@@ -438,9 +448,9 @@ public class TinyWinNfsSwtManager {
 		addTab( folder, text( "tab.log"), createLogComposite( folder)) ;
 		folder.addSelectionListener( new SelectionAdapter() {
 			@Override
-			public void widgetSelected(SelectionEvent event) {
+			public void widgetSelected( SelectionEvent event) {
 				// 診断タブが選択され、未表示の場合
-				if( folder.getSelection().length > 0 && folder.getSelection()[0] == diagnosticItem && diagnosticTable.getItemCount() == 0) {
+				if(( folder.getSelection().length > 0 && folder.getSelection()[0] == diagnosticItem && diagnosticTable.getItemCount() == 0)) {
 					refreshDiagnosticView() ;
 				}
 			}
@@ -454,11 +464,11 @@ public class TinyWinNfsSwtManager {
 	 * <p>メソッド名称： タブ追加</p>
 	 *
 	 * @param folder	タブフォルダ
-	 * @param text		表示文字
+	 * @param text	表示文字
 	 * @param control	タブ内容
 	 */
 	//--------------------------------------------------------------------------
-	private TabItem addTab(TabFolder folder, String text, Composite control) {
+	private TabItem addTab( TabFolder folder, String text, Composite control) {
 		TabItem item = new TabItem( folder, SWT.NONE) ;
 		item.setText( text) ;
 		item.setControl( control) ;
@@ -472,10 +482,10 @@ public class TinyWinNfsSwtManager {
 	 * <p>メソッド名称： 共有Composite作成</p>
 	 *
 	 * @param parent	親Composite
-	 * @return 共有Composite
+	 * @return	共有Composite
 	 */
 	//--------------------------------------------------------------------------
-	private Composite createShareComposite(Composite parent) {
+	private Composite createShareComposite( Composite parent) {
 		Composite panel = new Composite( parent, SWT.NONE) ;
 		panel.setLayout( createGridLayout( 1, false, 10, 10)) ;
 
@@ -491,7 +501,7 @@ public class TinyWinNfsSwtManager {
 		createTableColumn( exportTable, text( "column.allowedClients"), 160) ;
 		exportTable.addSelectionListener( new SelectionAdapter() {
 			@Override
-			public void widgetSelected(SelectionEvent event) {
+			public void widgetSelected( SelectionEvent event) {
 				selectShare( exportTable.getSelectionIndex()) ;
 			}
 		}) ;
@@ -524,7 +534,7 @@ public class TinyWinNfsSwtManager {
 		mountClientCombo.setLayoutData( new GridData( SWT.FILL, SWT.CENTER, true, false)) ;
 		mountClientCombo.addSelectionListener( new SelectionAdapter() {
 			@Override
-			public void widgetSelected(SelectionEvent event) {
+			public void widgetSelected( SelectionEvent event) {
 				updateMountCommand() ;
 			}
 		}) ;
@@ -534,7 +544,7 @@ public class TinyWinNfsSwtManager {
 		mountProtocolCombo.setLayoutData( new GridData( SWT.FILL, SWT.CENTER, true, false)) ;
 		mountProtocolCombo.addSelectionListener( new SelectionAdapter() {
 			@Override
-			public void widgetSelected(SelectionEvent event) {
+			public void widgetSelected( SelectionEvent event) {
 				updateMountCommand() ;
 			}
 		}) ;
@@ -562,10 +572,10 @@ public class TinyWinNfsSwtManager {
 	 * <p>メソッド名称： オプションComposite作成</p>
 	 *
 	 * @param parent	親Composite
-	 * @return オプションComposite
+	 * @return	オプションComposite
 	 */
 	//--------------------------------------------------------------------------
-	private Composite createOptionsComposite(Composite parent) {
+	private Composite createOptionsComposite( Composite parent) {
 		Composite panel = new Composite( parent, SWT.NONE) ;
 		panel.setLayout( createGridLayout( 1, false, 10, 10)) ;
 
@@ -634,10 +644,10 @@ public class TinyWinNfsSwtManager {
 	 * <p>メソッド名称： 診断Composite作成</p>
 	 *
 	 * @param parent	親Composite
-	 * @return 診断Composite
+	 * @return	診断Composite
 	 */
 	//--------------------------------------------------------------------------
-	private Composite createDiagnosticComposite(Composite parent) {
+	private Composite createDiagnosticComposite( Composite parent) {
 		Composite panel = new Composite( parent, SWT.NONE) ;
 		panel.setLayout( createGridLayout( 1, false, 8, 8)) ;
 
@@ -650,7 +660,7 @@ public class TinyWinNfsSwtManager {
 		diagnosticSeverityCombo.select( 0) ;
 		diagnosticSeverityCombo.addSelectionListener( new SelectionAdapter() {
 			@Override
-			public void widgetSelected(SelectionEvent event) {
+			public void widgetSelected( SelectionEvent event) {
 				refreshDiagnosticView() ;
 			}
 		}) ;
@@ -684,10 +694,10 @@ public class TinyWinNfsSwtManager {
 	 * <p>メソッド名称： サービスComposite作成</p>
 	 *
 	 * @param parent	親Composite
-	 * @return サービスComposite
+	 * @return	サービスComposite
 	 */
 	//--------------------------------------------------------------------------
-	private Composite createServiceComposite(Composite parent) {
+	private Composite createServiceComposite( Composite parent) {
 		Composite panel = new Composite( parent, SWT.NONE) ;
 		panel.setLayout( createGridLayout( 1, false, 8, 8)) ;
 
@@ -723,10 +733,10 @@ public class TinyWinNfsSwtManager {
 	 * <p>メソッド名称： ログComposite作成</p>
 	 *
 	 * @param parent	親Composite
-	 * @return ログComposite
+	 * @return	ログComposite
 	 */
 	//--------------------------------------------------------------------------
-	private Composite createLogComposite(Composite parent) {
+	private Composite createLogComposite( Composite parent) {
 		Composite panel = new Composite( parent, SWT.NONE) ;
 		panel.setLayout( createGridLayout( 1, false, 8, 8)) ;
 
@@ -745,7 +755,7 @@ public class TinyWinNfsSwtManager {
 		logFilterCombo.select( 0) ;
 		logFilterCombo.addSelectionListener( new SelectionAdapter() {
 			@Override
-			public void widgetSelected(SelectionEvent event) {
+			public void widgetSelected( SelectionEvent event) {
 				applyServerLogFilter() ;
 			}
 		}) ;
@@ -753,7 +763,7 @@ public class TinyWinNfsSwtManager {
 		logAutoRefreshButton.setText( text( "label.autoRefresh")) ;
 		logAutoRefreshButton.addSelectionListener( new SelectionAdapter() {
 			@Override
-			public void widgetSelected(SelectionEvent event) {
+			public void widgetSelected( SelectionEvent event) {
 				// 自動更新が有効になった場合
 				if( logAutoRefreshButton.getSelection()) {
 					refreshServerLogView() ;
@@ -784,12 +794,12 @@ public class TinyWinNfsSwtManager {
 	 * <p>メソッド名称： グループ作成</p>
 	 *
 	 * @param parent	親Composite
-	 * @param text		表示文字
+	 * @param text	表示文字
 	 * @param columns	列数
-	 * @return グループ
+	 * @return	グループ
 	 */
 	//--------------------------------------------------------------------------
-	private Group createGroup(Composite parent, String text, int columns) {
+	private Group createGroup( Composite parent, String text, int columns) {
 		Group group = new Group( parent, SWT.NONE) ;
 		group.setText( text) ;
 		group.setLayoutData( new GridData( SWT.FILL, SWT.TOP, true, false)) ;
@@ -804,12 +814,12 @@ public class TinyWinNfsSwtManager {
 	 * <p>メソッド名称： 入力項目追加</p>
 	 *
 	 * @param parent	親Composite
-	 * @param label		ラベル
+	 * @param label	ラベル
 	 * @param button	ボタン
-	 * @return テキスト
+	 * @return	テキスト
 	 */
 	//--------------------------------------------------------------------------
-	private Text addField(Composite parent, String label) {
+	private Text addField( Composite parent, String label) {
 		return addField( parent, label, null, null) ;
 	}
 
@@ -819,14 +829,14 @@ public class TinyWinNfsSwtManager {
 	 *
 	 * <p>メソッド名称： ボタン付き入力項目追加</p>
 	 *
-	 * @param parent		親Composite
-	 * @param label			ラベル
+	 * @param parent	親Composite
+	 * @param label	ラベル
 	 * @param buttonText	ボタン表示文字
-	 * @param listener		リスナ
-	 * @return テキスト
+	 * @param listener	リスナ
+	 * @return	テキスト
 	 */
 	//--------------------------------------------------------------------------
-	private Text addField(Composite parent, String label, String buttonText, SwtSelectionListener listener) {
+	private Text addField( Composite parent, String label, String buttonText, SwtSelectionListener listener) {
 		createLabel( parent, label) ;
 		Text text = createText( parent, SWT.BORDER) ;
 		text.setLayoutData( new GridData( SWT.FILL, SWT.CENTER, true, false)) ;
@@ -849,10 +859,10 @@ public class TinyWinNfsSwtManager {
 	 * <p>メソッド名称： ボタン行作成</p>
 	 *
 	 * @param parent	親Composite
-	 * @return ボタン行
+	 * @return	ボタン行
 	 */
 	//--------------------------------------------------------------------------
-	private Composite createButtonRow(Composite parent) {
+	private Composite createButtonRow( Composite parent) {
 		Composite buttons = new Composite( parent, SWT.NONE) ;
 		FillLayout layout = new FillLayout( SWT.HORIZONTAL) ;
 		layout.spacing = 8 ;
@@ -868,11 +878,11 @@ public class TinyWinNfsSwtManager {
 	 * <p>メソッド名称： ラベル作成</p>
 	 *
 	 * @param parent	親Composite
-	 * @param text		表示文字
-	 * @return ラベル
+	 * @param text	表示文字
+	 * @return	ラベル
 	 */
 	//--------------------------------------------------------------------------
-	private Label createLabel(Composite parent, String text) {
+	private Label createLabel( Composite parent, String text) {
 		Label label = new Label( parent, SWT.NONE) ;
 		label.setText( text) ;
 		return label ;
@@ -885,11 +895,11 @@ public class TinyWinNfsSwtManager {
 	 * <p>メソッド名称： テキスト作成</p>
 	 *
 	 * @param parent	親Composite
-	 * @param style		スタイル
-	 * @return テキスト
+	 * @param style	スタイル
+	 * @return	テキスト
 	 */
 	//--------------------------------------------------------------------------
-	private Text createText(Composite parent, int style) {
+	private Text createText( Composite parent, int style) {
 		return new Text( parent, style) ;
 	}
 
@@ -899,12 +909,12 @@ public class TinyWinNfsSwtManager {
 	 *
 	 * <p>メソッド名称： テーブル列作成</p>
 	 *
-	 * @param table		テーブル
-	 * @param text		表示文字
-	 * @param width		幅
+	 * @param table	テーブル
+	 * @param text	表示文字
+	 * @param width	幅
 	 */
 	//--------------------------------------------------------------------------
-	private void createTableColumn(Table table, String text, int width) {
+	private void createTableColumn( Table table, String text, int width) {
 		TableColumn column = new TableColumn( table, SWT.NONE) ;
 		column.setText( text) ;
 		column.setWidth( width) ;
@@ -917,17 +927,17 @@ public class TinyWinNfsSwtManager {
 	 * <p>メソッド名称： ボタン作成</p>
 	 *
 	 * @param parent	親Composite
-	 * @param text		表示文字
+	 * @param text	表示文字
 	 * @param listener	リスナ
-	 * @return ボタン
+	 * @return	ボタン
 	 */
 	//--------------------------------------------------------------------------
-	private Button createButton(Composite parent, String text, SwtSelectionListener listener) {
+	private Button createButton( Composite parent, String text, SwtSelectionListener listener) {
 		Button button = new Button( parent, SWT.PUSH) ;
 		button.setText( text) ;
 		button.addSelectionListener( new SelectionAdapter() {
 			@Override
-			public void widgetSelected(SelectionEvent event) {
+			public void widgetSelected( SelectionEvent event) {
 				listener.widgetSelected( event) ;
 			}
 		}) ;
@@ -941,12 +951,12 @@ public class TinyWinNfsSwtManager {
 	 * <p>メソッド名称： サービス操作ボタン作成</p>
 	 *
 	 * @param parent	親Composite
-	 * @param text		表示文字
+	 * @param text	表示文字
 	 * @param listener	選択リスナー
-	 * @return ボタン
+	 * @return	ボタン
 	 */
 	//--------------------------------------------------------------------------
-	private Button createServiceButton(Composite parent, String text, SwtSelectionListener listener) {
+	private Button createServiceButton( Composite parent, String text, SwtSelectionListener listener) {
 		Button button = createButton( parent, text, listener) ;
 		serviceActionButtons.add( button) ;
 		return button ;
@@ -958,14 +968,14 @@ public class TinyWinNfsSwtManager {
 	 *
 	 * <p>メソッド名称： GridLayout作成</p>
 	 *
-	 * @param columns		列数
-	 * @param equalWidth		同幅可否
+	 * @param columns	列数
+	 * @param equalWidth	同幅可否
 	 * @param marginWidth	横余白
 	 * @param marginHeight	縦余白
-	 * @return GridLayout
+	 * @return	GridLayout
 	 */
 	//--------------------------------------------------------------------------
-	private GridLayout createGridLayout(int columns, boolean equalWidth, int marginWidth, int marginHeight) {
+	private GridLayout createGridLayout( int columns, boolean equalWidth, int marginWidth, int marginHeight) {
 		GridLayout layout = new GridLayout( columns, equalWidth) ;
 		layout.marginWidth = marginWidth ;
 		layout.marginHeight = marginHeight ;
@@ -979,10 +989,10 @@ public class TinyWinNfsSwtManager {
 	 * <p>メソッド名称： 横結合GridData作成</p>
 	 *
 	 * @param span	結合列数
-	 * @return GridData
+	 * @return	GridData
 	 */
 	//--------------------------------------------------------------------------
-	private GridData createSpanData(int span) {
+	private GridData createSpanData( int span) {
 		GridData data = new GridData( SWT.FILL, SWT.CENTER, true, false) ;
 		data.horizontalSpan = span ;
 		return data ;
@@ -1028,7 +1038,7 @@ public class TinyWinNfsSwtManager {
 	 *
 	 * <p>メソッド名称： 設定済み言語読込</p>
 	 *
-	 * @return 言語コード
+	 * @return	言語コード
 	 */
 	//--------------------------------------------------------------------------
 	private String readConfiguredLanguage() {
@@ -1057,7 +1067,7 @@ public class TinyWinNfsSwtManager {
 	 * @param language	言語コード
 	 */
 	//--------------------------------------------------------------------------
-	private void setLanguageSelection(String language) {
+	private void setLanguageSelection( String language) {
 		String normalized = ManagerMessages.normalizeLanguage( language) ;
 		int index = switch( normalized) {
 		case "en" -> 1 ;
@@ -1073,7 +1083,7 @@ public class TinyWinNfsSwtManager {
 	 *
 	 * <p>メソッド名称： 選択中言語取得</p>
 	 *
-	 * @return 言語コード
+	 * @return	言語コード
 	 */
 	//--------------------------------------------------------------------------
 	private String getSelectedLanguage() {
@@ -1093,10 +1103,10 @@ public class TinyWinNfsSwtManager {
 	 * <p>メソッド名称： 表示文字列取得</p>
 	 *
 	 * @param key	キー
-	 * @return 表示文字列
+	 * @return	表示文字列
 	 */
 	//--------------------------------------------------------------------------
-	private String text(String key) {
+	private String text( String key) {
 		return messages.text( key) ;
 	}
 
@@ -1106,12 +1116,12 @@ public class TinyWinNfsSwtManager {
 	 *
 	 * <p>メソッド名称： 表示文字列書式化</p>
 	 *
-	 * @param key		キー
+	 * @param key	キー
 	 * @param arguments	引数
-	 * @return 表示文字列
+	 * @return	表示文字列
 	 */
 	//--------------------------------------------------------------------------
-	private String format(String key, Object... arguments) {
+	private String format( String key, Object... arguments) {
 		return messages.format( key, arguments) ;
 	}
 
@@ -1122,10 +1132,10 @@ public class TinyWinNfsSwtManager {
 	 * <p>メソッド名称： 真偽値表示取得</p>
 	 *
 	 * @param value	値
-	 * @return 表示文字列
+	 * @return	表示文字列
 	 */
 	//--------------------------------------------------------------------------
-	private String boolText(boolean value) {
+	private String boolText( boolean value) {
 		return text( value ? "value.yes" : "value.no") ;
 	}
 
@@ -1136,12 +1146,12 @@ public class TinyWinNfsSwtManager {
 	 * <p>メソッド名称： 許可クライアント表示取得</p>
 	 *
 	 * @param value	許可クライアント
-	 * @return 表示文字列
+	 * @return	表示文字列
 	 */
 	//--------------------------------------------------------------------------
-	private String displayAllowedClients(String value) {
+	private String displayAllowedClients( String value) {
 		// 未設定の場合
-		if( value == null || value.isBlank()) {
+		if(( value == null || value.isBlank())) {
 			return text( "value.any") ;
 		}
 
@@ -1157,12 +1167,13 @@ public class TinyWinNfsSwtManager {
 	 * @param properties	設定値
 	 */
 	//--------------------------------------------------------------------------
-	private void loadShareEntries(Properties properties) {
+	private void loadShareEntries( Properties properties) {
 		shareEntries.clear() ;
 		int count = parseInt( properties.getProperty( "exports.count"), 0) ;
 
 		// 複数共有定義が存在する場合
 		if( count > 0) {
+			// 設定ファイル上の共有定義を順に読み込む
 			for( int i = 1; i <= count; i++) {
 				String prefix = "exports." + i + "." ;
 				String name = properties.getProperty( prefix + "name", "" ).trim() ;
@@ -1171,7 +1182,7 @@ public class TinyWinNfsSwtManager {
 				String allowedClients = properties.getProperty( prefix + "allowed.clients", "" ).trim() ;
 
 				// 共有定義が入力されている場合
-				if( !name.isEmpty() && !path.isEmpty()) {
+				if(( !name.isEmpty() && !path.isEmpty())) {
 					shareEntries.add( new ShareEntry( name, resolveSharePath( path).toString(), writable, allowedClients)) ;
 				}
 			}
@@ -1221,9 +1232,9 @@ public class TinyWinNfsSwtManager {
 	 * @param index	選択位置
 	 */
 	//--------------------------------------------------------------------------
-	private void selectShare(int index) {
+	private void selectShare( int index) {
 		// 選択位置が不正な場合
-		if( index < 0 || index >= shareEntries.size()) {
+		if(( index < 0 || index >= shareEntries.size())) {
 			selectedShareIndex = -1 ;
 			exportNameText.setText( "" ) ;
 			exportPathText.setText( "" ) ;
@@ -1288,7 +1299,7 @@ public class TinyWinNfsSwtManager {
 	//--------------------------------------------------------------------------
 	private void applySelectedShare() {
 		// 選択中共有が存在しない場合
-		if( selectedShareIndex < 0 || selectedShareIndex >= shareEntries.size()) {
+		if(( selectedShareIndex < 0 || selectedShareIndex >= shareEntries.size())) {
 			return ;
 		}
 
@@ -1308,7 +1319,7 @@ public class TinyWinNfsSwtManager {
 	//--------------------------------------------------------------------------
 	private void removeShare() {
 		// 選択中共有が存在しない場合
-		if( selectedShareIndex < 0 || selectedShareIndex >= shareEntries.size()) {
+		if(( selectedShareIndex < 0 || selectedShareIndex >= shareEntries.size())) {
 			return ;
 		}
 
@@ -1324,7 +1335,7 @@ public class TinyWinNfsSwtManager {
 	 *
 	 * <p>メソッド名称： 共有定義取得</p>
 	 *
-	 * @return 共有定義
+	 * @return	共有定義
 	 */
 	//--------------------------------------------------------------------------
 	private ShareEntry readShareFields() {
@@ -1341,12 +1352,12 @@ public class TinyWinNfsSwtManager {
 	 *
 	 * <p>メソッド名称： 表示共有定義取得</p>
 	 *
-	 * @return 共有定義
+	 * @return	共有定義
 	 */
 	//--------------------------------------------------------------------------
 	private ShareEntry getSelectedOrFirstShare() {
 		// 選択中共有が存在する場合
-		if( selectedShareIndex >= 0 && selectedShareIndex < shareEntries.size()) {
+		if(( selectedShareIndex >= 0 && selectedShareIndex < shareEntries.size())) {
 			return readShareFields() ;
 		}
 
@@ -1364,7 +1375,7 @@ public class TinyWinNfsSwtManager {
 	 *
 	 * <p>メソッド名称： 既定公開フォルダ取得</p>
 	 *
-	 * @return 既定公開フォルダ
+	 * @return	既定公開フォルダ
 	 */
 	//--------------------------------------------------------------------------
 	private Path defaultExportPath() {
@@ -1378,10 +1389,10 @@ public class TinyWinNfsSwtManager {
 	 * <p>メソッド名称： 共有フォルダパス解決</p>
 	 *
 	 * @param value	設定値
-	 * @return 解決済みパス
+	 * @return	解決済みパス
 	 */
 	//--------------------------------------------------------------------------
-	private Path resolveSharePath(String value) {
+	private Path resolveSharePath( String value) {
 		return TinyWinNfsPaths.resolveConfiguredPath( dataRootPath, value) ;
 	}
 
@@ -1391,11 +1402,11 @@ public class TinyWinNfsSwtManager {
 	 *
 	 * <p>メソッド名称： 共有定義検証</p>
 	 *
-	 * @param entry		共有定義
+	 * @param entry	共有定義
 	 * @param selfIndex	自分の位置
 	 */
 	//--------------------------------------------------------------------------
-	private void validateShareEntry(ShareEntry entry, int selfIndex) {
+	private void validateShareEntry( ShareEntry entry, int selfIndex) {
 		// export名が不正な場合
 		if( !isValidExportName( entry.getName())) {
 			throw new IllegalArgumentException( text( "error.exportNameRequired") ) ;
@@ -1419,7 +1430,7 @@ public class TinyWinNfsSwtManager {
 		}
 
 		// 書込可能設定だがフォルダへ書き込めない場合
-		if( entry.isWritable() && !Files.isWritable( exportPath)) {
+		if(( entry.isWritable() && !Files.isWritable( exportPath))) {
 			throw new IllegalArgumentException( format( "error.sharedFolderNotWritable", exportPath)) ;
 		}
 
@@ -1448,7 +1459,7 @@ public class TinyWinNfsSwtManager {
 			}
 
 			// exportパスが入れ子の場合
-			if( existingPath.startsWith( normalized) || normalized.startsWith( existingPath)) {
+			if(( existingPath.startsWith( normalized) || normalized.startsWith( existingPath))) {
 				throw new IllegalArgumentException( format( "error.sharedFoldersNested", normalized, existingPath)) ;
 			}
 		}
@@ -1461,17 +1472,19 @@ public class TinyWinNfsSwtManager {
 	 * <p>メソッド名称： 公開名検証</p>
 	 *
 	 * @param value	公開名
-	 * @return true:正常 false:異常
+	 * @return	判定結果<ul>
+	 * 			false	: 異常<br>
+	 * 			true	: 正常</ul>
 	 */
 	//--------------------------------------------------------------------------
-	private boolean isValidExportName(String value) {
+	private boolean isValidExportName( String value) {
 		// 公開名が絶対パス形式ではない場合
-		if( value == null || value.isBlank() || !value.startsWith( "/") || "/".equals( value)) {
+		if(( value == null || value.isBlank() || !value.startsWith( "/") || "/".equals( value))) {
 			return false ;
 		}
 
 		// 公開名が不正文字を含む場合
-		if( value.contains( "\\" ) || value.contains( "//")) {
+		if(( value.contains( "\\" ) || value.contains( "//"))) {
 			return false ;
 		}
 
@@ -1505,9 +1518,9 @@ public class TinyWinNfsSwtManager {
 	 * @param value	許可クライアント
 	 */
 	//--------------------------------------------------------------------------
-	private void validateAllowedClients(String value) {
+	private void validateAllowedClients( String value) {
 		// 未設定の場合
-		if( value == null || value.isBlank()) {
+		if(( value == null || value.isBlank())) {
 			return ;
 		}
 
@@ -1536,10 +1549,12 @@ public class TinyWinNfsSwtManager {
 	 * <p>メソッド名称： IPv4アドレス確認</p>
 	 *
 	 * @param value	値
-	 * @return true:IPv4 false:IPv4以外
+	 * @return	判定結果<ul>
+	 * 			false	: IPv4以外<br>
+	 * 			true	: IPv4</ul>
 	 */
 	//--------------------------------------------------------------------------
-	private boolean isExactIpv4Address(String value) {
+	private boolean isExactIpv4Address( String value) {
 		String[] parts = value.split( "\\.", -1) ;
 
 		// 4オクテットではない場合
@@ -1558,7 +1573,7 @@ public class TinyWinNfsSwtManager {
 				int octet = Integer.parseInt( part) ;
 
 				// 範囲外の場合
-				if( octet < 0 || octet > 255) {
+				if(( octet < 0 || octet > 255)) {
 					return false ;
 				}
 			} catch( NumberFormatException nfex) {
@@ -1604,7 +1619,7 @@ public class TinyWinNfsSwtManager {
 	 * @param properties	設定値
 	 */
 	//--------------------------------------------------------------------------
-	private void applyProperties(Properties properties) {
+	private void applyProperties( Properties properties) {
 		loadShareEntries( properties) ;
 		setLanguageSelection( ManagerMessages.normalizeLanguage( properties.getProperty( "ui.language", messages.getLanguageCode()))) ;
 		serverHostText.setText( properties.getProperty( "client.server.host", detectLocalHostName())) ;
@@ -1643,21 +1658,21 @@ public class TinyWinNfsSwtManager {
 	 *
 	 * <p>メソッド名称： Combo選択値設定</p>
 	 *
-	 * @param combo			Combo
-	 * @param value			選択値
+	 * @param combo	Combo
+	 * @param value	選択値
 	 * @param defaultValue	既定値
 	 */
 	//--------------------------------------------------------------------------
-	private void setComboSelection(Combo combo, int value, int defaultValue) {
+	private void setComboSelection( Combo combo, int value, int defaultValue) {
 		// Comboが存在しない場合
-		if( combo == null || combo.isDisposed()) {
+		if(( combo == null || combo.isDisposed())) {
 			return ;
 		}
 
 		int selection = value ;
 
 		// 選択値が範囲外の場合
-		if( value < 0 || value >= combo.getItemCount()) {
+		if(( value < 0 || value >= combo.getItemCount())) {
 			selection = defaultValue ;
 		}
 
@@ -1670,7 +1685,9 @@ public class TinyWinNfsSwtManager {
 	 *
 	 * <p>メソッド名称： 設定保存</p>
 	 *
-	 * @return true:保存成功 false:保存失敗
+	 * @return	判定結果<ul>
+	 * 			false	: 保存失敗<br>
+	 * 			true	: 保存成功</ul>
 	 */
 	//--------------------------------------------------------------------------
 	private boolean saveConfig() {
@@ -1713,7 +1730,7 @@ public class TinyWinNfsSwtManager {
 	 *
 	 * <p>メソッド名称： 設定行作成</p>
 	 *
-	 * @return 設定行
+	 * @return	設定行
 	 */
 	//--------------------------------------------------------------------------
 	private List<String> buildConfigLines() {
@@ -1778,14 +1795,14 @@ public class TinyWinNfsSwtManager {
 	 *
 	 * <p>メソッド名称： Combo選択位置取得</p>
 	 *
-	 * @param combo			Combo
+	 * @param combo	Combo
 	 * @param defaultValue	既定値
-	 * @return 選択位置
+	 * @return	選択位置
 	 */
 	//--------------------------------------------------------------------------
-	private int selectedComboIndex(Combo combo, int defaultValue) {
+	private int selectedComboIndex( Combo combo, int defaultValue) {
 		// Comboが存在しない場合
-		if( combo == null || combo.isDisposed() || combo.getSelectionIndex() < 0) {
+		if(( combo == null || combo.isDisposed() || combo.getSelectionIndex() < 0)) {
 			return defaultValue ;
 		}
 
@@ -1799,11 +1816,11 @@ public class TinyWinNfsSwtManager {
 	 * <p>メソッド名称： 検証済み設定書込</p>
 	 *
 	 * @param configDirectory	設定ディレクトリ
-	 * @param lines				設定行
-	 * @throws IOException 書込異常
+	 * @param lines	設定行
+	 * @throws IOException	書込異常
 	 */
 	//--------------------------------------------------------------------------
-	private Path writeValidatedConfig(Path configDirectory, List<String> lines) throws IOException {
+	private Path writeValidatedConfig( Path configDirectory, List<String> lines) throws IOException {
 		Path temporaryPath = Files.createTempFile( configDirectory, "nfs-server-", ".properties") ;
 
 		try {
@@ -1880,10 +1897,10 @@ public class TinyWinNfsSwtManager {
 	 * <p>メソッド名称： 指定パス設定インポート</p>
 	 *
 	 * @param sourcePath	インポート元
-	 * @throws IOException インポート異常
+	 * @throws IOException	インポート異常
 	 */
 	//--------------------------------------------------------------------------
-	private void importConfigFromPath(Path sourcePath) throws IOException {
+	private void importConfigFromPath( Path sourcePath) throws IOException {
 		Path configDirectory = configPath.getParent() ;
 		Files.createDirectories( configDirectory) ;
 		Path temporaryPath = Files.createTempFile( configDirectory, "nfs-server-import-", ".properties") ;
@@ -1964,10 +1981,10 @@ public class TinyWinNfsSwtManager {
 	 * <p>メソッド名称： 設定ファイル配置</p>
 	 *
 	 * @param temporaryPath	一時設定ファイル
-	 * @throws IOException 移動異常
+	 * @throws IOException	移動異常
 	 */
 	//--------------------------------------------------------------------------
-	private void moveConfigIntoPlace(Path temporaryPath) throws IOException {
+	private void moveConfigIntoPlace( Path temporaryPath) throws IOException {
 		try {
 			Files.move(
 					temporaryPath,
@@ -1986,10 +2003,12 @@ public class TinyWinNfsSwtManager {
 	 * <p>メソッド名称： 設定保存権限確認</p>
 	 *
 	 * @param configDirectory	設定ディレクトリ
-	 * @return true:管理者権限が必要 false:不要
+	 * @return	判定結果<ul>
+	 * 			false	: 不要<br>
+	 * 			true	: 管理者権限が必要</ul>
 	 */
 	//--------------------------------------------------------------------------
-	private boolean shouldRequireAdministratorForConfigSave(Path configDirectory) {
+	private boolean shouldRequireAdministratorForConfigSave( Path configDirectory) {
 		// 既に管理者権限を持つ場合
 		if( isAdministrator()) {
 			return false ;
@@ -2005,10 +2024,12 @@ public class TinyWinNfsSwtManager {
 	 * <p>メソッド名称： 保護インストール先確認</p>
 	 *
 	 * @param path	確認パス
-	 * @return true:保護パス false:非保護パス
+	 * @return	判定結果<ul>
+	 * 			false	: 非保護パス<br>
+	 * 			true	: 保護パス</ul>
 	 */
 	//--------------------------------------------------------------------------
-	private boolean isProtectedInstallPath(Path path) {
+	private boolean isProtectedInstallPath( Path path) {
 		Path absolutePath = path.toAbsolutePath().normalize() ;
 		return isUnderEnvironmentPath( absolutePath, "ProgramFiles")
 				|| isUnderEnvironmentPath( absolutePath, "ProgramFiles(x86)")
@@ -2021,16 +2042,18 @@ public class TinyWinNfsSwtManager {
 	 *
 	 * <p>メソッド名称： 環境変数配下確認</p>
 	 *
-	 * @param path			確認パス
+	 * @param path	確認パス
 	 * @param variableName	環境変数名
-	 * @return true:配下 false:配下ではない
+	 * @return	判定結果<ul>
+	 * 			false	: 配下ではない<br>
+	 * 			true	: 配下</ul>
 	 */
 	//--------------------------------------------------------------------------
-	private boolean isUnderEnvironmentPath(Path path, String variableName) {
+	private boolean isUnderEnvironmentPath( Path path, String variableName) {
 		String value = System.getenv( variableName) ;
 
 		// 環境変数が未設定の場合
-		if( value == null || value.isBlank()) {
+		if(( value == null || value.isBlank())) {
 			return false ;
 		}
 
@@ -2138,10 +2161,12 @@ public class TinyWinNfsSwtManager {
 	 * <p>メソッド名称： クライアント側mount point検証</p>
 	 *
 	 * @param value	値
-	 * @return true:正常 false:異常
+	 * @return	判定結果<ul>
+	 * 			false	: 異常<br>
+	 * 			true	: 正常</ul>
 	 */
 	//--------------------------------------------------------------------------
-	private boolean isValidClientMountPoint(String value) {
+	private boolean isValidClientMountPoint( String value) {
 		// Windowsクライアントの場合
 		if( selectedComboIndex( mountClientCombo, MOUNT_CLIENT_QNX) == MOUNT_CLIENT_WINDOWS) {
 			return value.matches( "[A-Za-z]:" ) || value.startsWith( "\\\\" ) ;
@@ -2160,7 +2185,7 @@ public class TinyWinNfsSwtManager {
 	 * @param value	値
 	 */
 	//--------------------------------------------------------------------------
-	private void validatePort(String label, String value) {
+	private void validatePort( String label, String value) {
 		int port = validatePositiveInt( label, value) ;
 
 		// ポートが範囲外の場合
@@ -2177,10 +2202,10 @@ public class TinyWinNfsSwtManager {
 	 *
 	 * @param label	ラベル
 	 * @param value	値
-	 * @return 数値
+	 * @return	数値
 	 */
 	//--------------------------------------------------------------------------
-	private int validatePositiveInt(String label, String value) {
+	private int validatePositiveInt( String label, String value) {
 		int number = validateInt( label, value) ;
 
 		// 正数ではない場合
@@ -2199,10 +2224,10 @@ public class TinyWinNfsSwtManager {
 	 *
 	 * @param label	ラベル
 	 * @param value	値
-	 * @return 数値
+	 * @return	数値
 	 */
 	//--------------------------------------------------------------------------
-	private long validatePositiveLong(String label, String value) {
+	private long validatePositiveLong( String label, String value) {
 		long number = validateLong( label, value) ;
 
 		// 正数ではない場合
@@ -2253,10 +2278,10 @@ public class TinyWinNfsSwtManager {
 	 *
 	 * @param label	ラベル
 	 * @param value	値
-	 * @return 数値
+	 * @return	数値
 	 */
 	//--------------------------------------------------------------------------
-	private int validateInt(String label, String value) {
+	private int validateInt( String label, String value) {
 		try {
 			return Integer.parseInt( value.trim()) ;
 		} catch( NumberFormatException nfex) {
@@ -2272,10 +2297,10 @@ public class TinyWinNfsSwtManager {
 	 *
 	 * @param label	ラベル
 	 * @param value	値
-	 * @return 数値
+	 * @return	数値
 	 */
 	//--------------------------------------------------------------------------
-	private long validateLong(String label, String value) {
+	private long validateLong( String label, String value) {
 		try {
 			return Long.parseLong( value.trim()) ;
 		} catch( NumberFormatException nfex) {
@@ -2293,7 +2318,7 @@ public class TinyWinNfsSwtManager {
 	 * @param value	値
 	 */
 	//--------------------------------------------------------------------------
-	private void validateCharset(String label, String value) {
+	private void validateCharset( String label, String value) {
 		try {
 			Charset.forName( value.trim()) ;
 		} catch( RuntimeException rex) {
@@ -2307,14 +2332,14 @@ public class TinyWinNfsSwtManager {
 	 *
 	 * <p>メソッド名称： 整数変換</p>
 	 *
-	 * @param value			値
+	 * @param value	値
 	 * @param defaultValue	デフォルト値
-	 * @return 整数
+	 * @return	整数
 	 */
 	//--------------------------------------------------------------------------
-	private int parseInt(String value, int defaultValue) {
+	private int parseInt( String value, int defaultValue) {
 		// 値がない場合
-		if( value == null || value.isBlank()) {
+		if(( value == null || value.isBlank())) {
 			return defaultValue ;
 		}
 
@@ -2332,10 +2357,10 @@ public class TinyWinNfsSwtManager {
 	 * <p>メソッド名称： パスエスケープ</p>
 	 *
 	 * @param path	パス
-	 * @return エスケープ済みパス
+	 * @return	エスケープ済みパス
 	 */
 	//--------------------------------------------------------------------------
-	private String escapePath(String path) {
+	private String escapePath( String path) {
 		return path.trim().replace( "\\", "\\\\" ) ;
 	}
 
@@ -2382,7 +2407,7 @@ public class TinyWinNfsSwtManager {
 	 *
 	 * <p>メソッド名称： ローカルホスト名検出</p>
 	 *
-	 * @return ローカルホスト名
+	 * @return	ローカルホスト名
 	 */
 	//--------------------------------------------------------------------------
 	private String detectLocalHostName() {
@@ -2390,7 +2415,7 @@ public class TinyWinNfsSwtManager {
 			String hostName = InetAddress.getLocalHost().getHostName() ;
 
 			// ホスト名が取得できた場合
-			if( hostName != null && !hostName.isBlank()) {
+			if(( hostName != null && !hostName.isBlank())) {
 				return hostName ;
 			}
 		} catch( Exception ex) {
@@ -2437,14 +2462,14 @@ public class TinyWinNfsSwtManager {
 	 *
 	 * <p>メソッド名称： mountコマンド表示作成</p>
 	 *
-	 * @param host			サーバーホスト
+	 * @param host	サーバーホスト
 	 * @param exportName	export名
 	 * @param mountPoint	mount point
-	 * @param share			共有定義
-	 * @return mountコマンド表示
+	 * @param share	共有定義
+	 * @return	mountコマンド表示
 	 */
 	//--------------------------------------------------------------------------
-	private String buildMountCommandText(String host, String exportName, String mountPoint, ShareEntry share) {
+	private String buildMountCommandText( String host, String exportName, String mountPoint, ShareEntry share) {
 		String command = buildMountCommand( host, exportName, mountPoint) ;
 		StringBuilder builder = new StringBuilder() ;
 		builder.append( command).append( System.lineSeparator()) ;
@@ -2465,13 +2490,13 @@ public class TinyWinNfsSwtManager {
 	 *
 	 * <p>メソッド名称： mountコマンド作成</p>
 	 *
-	 * @param host			サーバーホスト
+	 * @param host	サーバーホスト
 	 * @param exportName	export名
 	 * @param mountPoint	mount point
-	 * @return mountコマンド
+	 * @return	mountコマンド
 	 */
 	//--------------------------------------------------------------------------
-	private String buildMountCommand(String host, String exportName, String mountPoint) {
+	private String buildMountCommand( String host, String exportName, String mountPoint) {
 		int client = selectedComboIndex( mountClientCombo, MOUNT_CLIENT_QNX) ;
 		int protocol = selectedComboIndex( mountProtocolCombo, MOUNT_PROTOCOL_V2_UDP) ;
 
@@ -2496,10 +2521,12 @@ public class TinyWinNfsSwtManager {
 	 * <p>メソッド名称： Windows mount point確認</p>
 	 *
 	 * @param value	値
-	 * @return true:Windows mount point false:その他
+	 * @return	判定結果<ul>
+	 * 			false	: その他<br>
+	 * 			true	: Windows mount point</ul>
 	 */
 	//--------------------------------------------------------------------------
-	private boolean isValidWindowsMountPoint(String value) {
+	private boolean isValidWindowsMountPoint( String value) {
 		return value.matches( "[A-Za-z]:" ) || value.startsWith( "\\\\" ) ;
 	}
 
@@ -2510,10 +2537,10 @@ public class TinyWinNfsSwtManager {
 	 * <p>メソッド名称： Linux mountオプション作成</p>
 	 *
 	 * @param protocol	プロトコル選択
-	 * @return mountオプション
+	 * @return	mountオプション
 	 */
 	//--------------------------------------------------------------------------
-	private String linuxMountOptions(int protocol) {
+	private String linuxMountOptions( int protocol) {
 		// NFSv3/TCPの場合
 		if( protocol == MOUNT_PROTOCOL_V3_TCP) {
 			return "vers=3,proto=tcp" ;
@@ -2533,7 +2560,7 @@ public class TinyWinNfsSwtManager {
 	 *
 	 * <p>メソッド名称： 選択mountクライアント名取得</p>
 	 *
-	 * @return mountクライアント名
+	 * @return	mountクライアント名
 	 */
 	//--------------------------------------------------------------------------
 	private String selectedMountClientLabel() {
@@ -2547,7 +2574,7 @@ public class TinyWinNfsSwtManager {
 	 *
 	 * <p>メソッド名称： 選択mountプロトコル名取得</p>
 	 *
-	 * @return mountプロトコル名
+	 * @return	mountプロトコル名
 	 */
 	//--------------------------------------------------------------------------
 	private String selectedMountProtocolLabel() {
@@ -2561,7 +2588,7 @@ public class TinyWinNfsSwtManager {
 	 *
 	 * <p>メソッド名称： 公開定義概要作成</p>
 	 *
-	 * @return 公開定義概要
+	 * @return	公開定義概要
 	 */
 	//--------------------------------------------------------------------------
 	private String buildExportSummary() {
@@ -2644,7 +2671,7 @@ public class TinyWinNfsSwtManager {
 	//--------------------------------------------------------------------------
 	private void updateServiceInfoText() {
 		// サービス情報表示が存在しない場合
-		if( serviceInfoText == null || serviceInfoText.isDisposed()) {
+		if(( serviceInfoText == null || serviceInfoText.isDisposed())) {
 			return ;
 		}
 
@@ -2681,7 +2708,7 @@ public class TinyWinNfsSwtManager {
 	//--------------------------------------------------------------------------
 	private void refreshDiagnosticView() {
 		// 診断ビューが存在しない場合
-		if( diagnosticTable == null || diagnosticTable.isDisposed()) {
+		if(( diagnosticTable == null || diagnosticTable.isDisposed())) {
 			return ;
 		}
 
@@ -2714,15 +2741,15 @@ public class TinyWinNfsSwtManager {
 	 *
 	 * <p>メソッド名称： 診断行作成</p>
 	 *
-	 * @param report		診断レポート
+	 * @param report	診断レポート
 	 * @param serviceStatus	サービス状態
 	 * @param portmapStatus	Portmap状態
-	 * @param nfsStatus		NFS状態
+	 * @param nfsStatus	NFS状態
 	 * @param mountStatus	MOUNT状態
-	 * @return 診断行
+	 * @return	診断行
 	 */
 	//--------------------------------------------------------------------------
-	private List<DiagnosticRow> buildDiagnosticRows(DiagnosticReport report, String serviceStatus, String portmapStatus, String nfsStatus, String mountStatus) {
+	private List<DiagnosticRow> buildDiagnosticRows( DiagnosticReport report, String serviceStatus, String portmapStatus, String nfsStatus, String mountStatus) {
 		List<DiagnosticRow> rows = new ArrayList<DiagnosticRow>() ;
 		rows.add( new DiagnosticRow( "INFO", text( "diagnostic.source.service"), "SERVICE_STATUS", serviceStatus)) ;
 		rows.add( new DiagnosticRow( "INFO", text( "diagnostic.source.port"), "PORTMAP_PORT", portmapStatus)) ;
@@ -2738,6 +2765,7 @@ public class TinyWinNfsSwtManager {
 		for( NfsDiagnostics.ExportReport exportReport : report.getExportReports()) {
 			rows.add( createExportSummaryRow( exportReport)) ;
 
+			// 公開フォルダごとの診断メッセージを行へ展開する
 			for( DiagnosticMessage message : exportReport.getMessages()) {
 				rows.add( new DiagnosticRow( message.getSeverity(), exportReport.getExport().getName(), message.getCode(), message.getMessage())) ;
 			}
@@ -2753,14 +2781,14 @@ public class TinyWinNfsSwtManager {
 	 * <p>メソッド名称： export概要診断行作成</p>
 	 *
 	 * @param exportReport	export診断
-	 * @return 診断行
+	 * @return	診断行
 	 */
 	//--------------------------------------------------------------------------
-	private DiagnosticRow createExportSummaryRow(NfsDiagnostics.ExportReport exportReport) {
+	private DiagnosticRow createExportSummaryRow( NfsDiagnostics.ExportReport exportReport) {
 		String severity = exportReport.getMessages().stream().anyMatch( message -> "ERROR".equals( message.getSeverity())) ? "ERROR" : "INFO" ;
 
 		// エラーがなく警告がある場合
-		if( "INFO".equals( severity) && exportReport.getMessages().stream().anyMatch( message -> "WARNING".equals( message.getSeverity()))) {
+		if(( "INFO".equals( severity) && exportReport.getMessages().stream().anyMatch( message -> "WARNING".equals( message.getSeverity())))) {
 			severity = "WARNING" ;
 		}
 
@@ -2782,11 +2810,11 @@ public class TinyWinNfsSwtManager {
 	 *
 	 * <p>メソッド名称： 診断行表示</p>
 	 *
-	 * @param rows		診断行
+	 * @param rows	診断行
 	 * @param detail	詳細
 	 */
 	//--------------------------------------------------------------------------
-	private void showDiagnosticRows(List<DiagnosticRow> rows, String detail) {
+	private void showDiagnosticRows( List<DiagnosticRow> rows, String detail) {
 		diagnosticTable.removeAll() ;
 
 		// 診断行を表示する
@@ -2809,10 +2837,12 @@ public class TinyWinNfsSwtManager {
 	 * <p>メソッド名称： 診断重大度フィルタ一致確認</p>
 	 *
 	 * @param row	診断行
-	 * @return true:一致 false:不一致
+	 * @return	判定結果<ul>
+	 * 			false	: 不一致<br>
+	 * 			true	: 一致</ul>
 	 */
 	//--------------------------------------------------------------------------
-	private boolean matchesDiagnosticSeverity(DiagnosticRow row) {
+	private boolean matchesDiagnosticSeverity( DiagnosticRow row) {
 		int selection = selectedComboIndex( diagnosticSeverityCombo, 0) ;
 
 		// すべて表示の場合
@@ -2843,7 +2873,7 @@ public class TinyWinNfsSwtManager {
 	 * @param row	診断行
 	 */
 	//--------------------------------------------------------------------------
-	private void addDiagnosticRow(Table table, DiagnosticRow row) {
+	private void addDiagnosticRow( Table table, DiagnosticRow row) {
 		TableItem item = new TableItem( table, SWT.NONE) ;
 		item.setText( new String[] { severityText( row.getSeverity()), row.getSource(), row.getCode(), row.getMessage() }) ;
 	}
@@ -2855,10 +2885,10 @@ public class TinyWinNfsSwtManager {
 	 * <p>メソッド名称： 重大度表示文字取得</p>
 	 *
 	 * @param severity	重大度
-	 * @return 表示文字
+	 * @return	表示文字
 	 */
 	//--------------------------------------------------------------------------
-	private String severityText(String severity) {
+	private String severityText( String severity) {
 		// エラーの場合
 		if( "ERROR".equals( severity)) {
 			return text( "diagnostic.severity.error") ;
@@ -2917,10 +2947,10 @@ public class TinyWinNfsSwtManager {
 	 * @param serviceText	サービス情報
 	 * @param exportSummary	export概要
 	 * @param administrator	管理者権限有無
-	 * @return 診断概要
+	 * @return	診断概要
 	 */
 	//--------------------------------------------------------------------------
-	private String buildDiagnosticSummary(String serviceStatus, String serviceText, String exportSummary, boolean administrator) {
+	private String buildDiagnosticSummary( String serviceStatus, String serviceText, String exportSummary, boolean administrator) {
 		StringBuilder builder = new StringBuilder() ;
 		builder.append( PRODUCT_NAME).append( " diagnostics" ).append( System.lineSeparator()) ;
 		builder.append( "created=" ).append( LocalDateTime.now()).append( System.lineSeparator()) ;
@@ -2948,14 +2978,14 @@ public class TinyWinNfsSwtManager {
 	 *
 	 * <p>メソッド名称： 製品バージョン解決</p>
 	 *
-	 * @return 製品バージョン
+	 * @return	製品バージョン
 	 */
 	//--------------------------------------------------------------------------
 	private String resolveProductVersion() {
 		Package packageInfo = TinyWinNfsSwtManager.class.getPackage() ;
 
 		// Package情報が存在する場合
-		if( packageInfo != null && packageInfo.getImplementationVersion() != null) {
+		if(( packageInfo != null && packageInfo.getImplementationVersion() != null)) {
 			return packageInfo.getImplementationVersion() ;
 		}
 
@@ -2972,10 +3002,10 @@ public class TinyWinNfsSwtManager {
 	 * @param serviceText	サービス情報
 	 * @param exportSummary	export概要
 	 * @param administrator	管理者権限有無
-	 * @return 診断テキスト
+	 * @return	診断テキスト
 	 */
 	//--------------------------------------------------------------------------
-	private DiagnosticText buildDiagnosticText(String serviceStatus, String serviceText, String exportSummary, boolean administrator) {
+	private DiagnosticText buildDiagnosticText( String serviceStatus, String serviceText, String exportSummary, boolean administrator) {
 		String summary = buildDiagnosticSummary( serviceStatus, serviceText, exportSummary, administrator) ;
 
 		try {
@@ -2995,14 +3025,14 @@ public class TinyWinNfsSwtManager {
 	 * <p>メソッド名称： 診断パッケージ書込</p>
 	 *
 	 * @param diagnosticText	診断テキスト
-	 * @param logPath			ログパス
-	 * @param backupPath		バックアップパス
-	 * @param winswLogPath		WinSWログパス
-	 * @return 診断パッケージ
-	 * @throws IOException 書込異常
+	 * @param logPath	ログパス
+	 * @param backupPath	バックアップパス
+	 * @param winswLogPath	WinSWログパス
+	 * @return	診断パッケージ
+	 * @throws IOException	書込異常
 	 */
 	//--------------------------------------------------------------------------
-	private Path writeDiagnosticPackage(DiagnosticText diagnosticText, Path logPath, Path backupPath, Path winswLogPath) throws IOException {
+	private Path writeDiagnosticPackage( DiagnosticText diagnosticText, Path logPath, Path backupPath, Path winswLogPath) throws IOException {
 		Path diagnosticDirectory = dataRootPath.resolve( "diagnostics") ;
 		Files.createDirectories( diagnosticDirectory) ;
 		String timestamp = DateTimeFormatter.ofPattern( "yyyyMMdd-HHmmss").format( LocalDateTime.now()) ;
@@ -3026,13 +3056,13 @@ public class TinyWinNfsSwtManager {
 	 *
 	 * <p>メソッド名称： テキストエントリ追加</p>
 	 *
-	 * @param zip		Zip出力
+	 * @param zip	Zip出力
 	 * @param entryName	エントリ名
-	 * @param text		テキスト
-	 * @throws IOException 書込異常
+	 * @param text	テキスト
+	 * @throws IOException	書込異常
 	 */
 	//--------------------------------------------------------------------------
-	private void addTextEntry(ZipOutputStream zip, String entryName, String text) throws IOException {
+	private void addTextEntry( ZipOutputStream zip, String entryName, String text) throws IOException {
 		zip.putNextEntry( new ZipEntry( entryName)) ;
 		zip.write( text.getBytes( StandardCharsets.UTF_8)) ;
 		zip.closeEntry() ;
@@ -3044,13 +3074,13 @@ public class TinyWinNfsSwtManager {
 	 *
 	 * <p>メソッド名称： ファイルエントリ追加</p>
 	 *
-	 * @param zip		Zip出力
+	 * @param zip	Zip出力
 	 * @param entryName	エントリ名
 	 * @param filePath	ファイルパス
-	 * @throws IOException 書込異常
+	 * @throws IOException	書込異常
 	 */
 	//--------------------------------------------------------------------------
-	private void addFileEntryIfExists(ZipOutputStream zip, String entryName, Path filePath) throws IOException {
+	private void addFileEntryIfExists( ZipOutputStream zip, String entryName, Path filePath) throws IOException {
 		// 通常ファイルではない場合
 		if( !Files.isRegularFile( filePath)) {
 			return ;
@@ -3067,14 +3097,14 @@ public class TinyWinNfsSwtManager {
 	 *
 	 * <p>メソッド名称： ディレクトリ内エントリ追加</p>
 	 *
-	 * @param zip			Zip出力
+	 * @param zip	Zip出力
 	 * @param entryPrefix	エントリ接頭辞
-	 * @param directory		ディレクトリ
+	 * @param directory	ディレクトリ
 	 * @param extensions	拡張子
-	 * @throws IOException 書込異常
+	 * @throws IOException	書込異常
 	 */
 	//--------------------------------------------------------------------------
-	private void addDirectoryEntries(ZipOutputStream zip, String entryPrefix, Path directory, String... extensions) throws IOException {
+	private void addDirectoryEntries( ZipOutputStream zip, String entryPrefix, Path directory, String... extensions) throws IOException {
 		// ディレクトリではない場合
 		if( !Files.isDirectory( directory)) {
 			return ;
@@ -3104,12 +3134,14 @@ public class TinyWinNfsSwtManager {
 	 *
 	 * <p>メソッド名称： 拡張子一致確認</p>
 	 *
-	 * @param file			ファイル
+	 * @param file	ファイル
 	 * @param extensions	拡張子
-	 * @return true:一致 false:不一致
+	 * @return	判定結果<ul>
+	 * 			false	: 不一致<br>
+	 * 			true	: 一致</ul>
 	 */
 	//--------------------------------------------------------------------------
-	private boolean hasAnyExtension(Path file, String... extensions) {
+	private boolean hasAnyExtension( Path file, String... extensions) {
 		String fileName = file.getFileName().toString().toLowerCase() ;
 
 		// 拡張子を確認する
@@ -3129,16 +3161,16 @@ public class TinyWinNfsSwtManager {
 	 *
 	 * <p>メソッド名称： パス状態表示</p>
 	 *
-	 * @param path				パス
+	 * @param path	パス
 	 * @param directoryRequired	true:ディレクトリ必須 false:ファイル
-	 * @return 表示文字列
+	 * @return	表示文字列
 	 */
 	//--------------------------------------------------------------------------
-	private String describePathStatus(Path path, boolean directoryRequired) {
+	private String describePathStatus( Path path, boolean directoryRequired) {
 		// パスが存在する場合
 		if( Files.exists( path)) {
 			// ディレクトリ必須でディレクトリではない場合
-			if( directoryRequired && !Files.isDirectory( path)) {
+			if(( directoryRequired && !Files.isDirectory( path))) {
 				return text( "diagnostic.notDirectory") ;
 			}
 
@@ -3148,7 +3180,7 @@ public class TinyWinNfsSwtManager {
 		Path parent = directoryRequired ? path.getParent() : path.toAbsolutePath().normalize().getParent() ;
 
 		// 親パスが書込可能な場合
-		if( parent != null && Files.exists( parent) && Files.isWritable( parent)) {
+		if(( parent != null && Files.exists( parent) && Files.isWritable( parent))) {
 			return text( "diagnostic.missingParentWritable") ;
 		}
 
@@ -3162,12 +3194,12 @@ public class TinyWinNfsSwtManager {
 	 * <p>メソッド名称： ポート状態表示</p>
 	 *
 	 * @param portText	ポートText
-	 * @return 表示文字列
+	 * @return	表示文字列
 	 */
 	//--------------------------------------------------------------------------
-	private String describePortStatus(Text portText) {
+	private String describePortStatus( Text portText) {
 		// ポートTextが存在しない場合
-		if( portText == null || portText.isDisposed()) {
+		if(( portText == null || portText.isDisposed())) {
 			return text( "status.unknown") ;
 		}
 
@@ -3186,10 +3218,10 @@ public class TinyWinNfsSwtManager {
 	 * <p>メソッド名称： UDPポート状態表示</p>
 	 *
 	 * @param port	ポート
-	 * @return 表示文字列
+	 * @return	表示文字列
 	 */
 	//--------------------------------------------------------------------------
-	private String describeUdpPortStatus(int port) {
+	private String describeUdpPortStatus( int port) {
 		try( DatagramSocket socket = new DatagramSocket( null)) {
 			socket.setReuseAddress( false) ;
 			socket.bind( new InetSocketAddress( InetAddress.getByName( "0.0.0.0"), port)) ;
@@ -3206,10 +3238,10 @@ public class TinyWinNfsSwtManager {
 	 * <p>メソッド名称： TCPポート状態表示</p>
 	 *
 	 * @param port	ポート
-	 * @return 表示文字列
+	 * @return	表示文字列
 	 */
 	//--------------------------------------------------------------------------
-	private String describeTcpPortStatus(int port) {
+	private String describeTcpPortStatus( int port) {
 		try( ServerSocket socket = new ServerSocket()) {
 			socket.setReuseAddress( false) ;
 			socket.bind( new InetSocketAddress( InetAddress.getByName( "0.0.0.0"), port)) ;
@@ -3225,7 +3257,7 @@ public class TinyWinNfsSwtManager {
 	 *
 	 * <p>メソッド名称： Windows NFS Client状態取得</p>
 	 *
-	 * @return 状態
+	 * @return	状態
 	 */
 	//--------------------------------------------------------------------------
 	private String getWindowsNfsClientStatus() {
@@ -3266,14 +3298,14 @@ public class TinyWinNfsSwtManager {
 	 *
 	 * <p>メソッド名称： WinSWログパス取得</p>
 	 *
-	 * @return WinSWログパス
+	 * @return	WinSWログパス
 	 */
 	//--------------------------------------------------------------------------
 	private Path getWinswLogPath() {
 		Path serviceExecutable = detectInstalledServiceExecutablePath() ;
 
 		// サービス実行ファイルが取得できる場合
-		if( serviceExecutable != null && serviceExecutable.getParent() != null) {
+		if(( serviceExecutable != null && serviceExecutable.getParent() != null)) {
 			return serviceExecutable.getParent() ;
 		}
 
@@ -3289,7 +3321,7 @@ public class TinyWinNfsSwtManager {
 	 * @param path	パス
 	 */
 	//--------------------------------------------------------------------------
-	private void openPath(Path path) {
+	private void openPath( Path path) {
 		try {
 			Path normalized = path.toAbsolutePath().normalize() ;
 
@@ -3308,7 +3340,7 @@ public class TinyWinNfsSwtManager {
 			Path parent = normalized.getParent() ;
 
 			// 親ディレクトリが存在する場合
-			if( parent != null && Files.isDirectory( parent)) {
+			if(( parent != null && Files.isDirectory( parent))) {
 				new ProcessBuilder( "explorer.exe", parent.toString()).start() ;
 				return ;
 			}
@@ -3328,7 +3360,7 @@ public class TinyWinNfsSwtManager {
 	//--------------------------------------------------------------------------
 	private void refreshServerLogView() {
 		// サーバーログビューが存在しない場合
-		if( serverLogText == null || serverLogText.isDisposed()) {
+		if(( serverLogText == null || serverLogText.isDisposed())) {
 			return ;
 		}
 
@@ -3351,10 +3383,10 @@ public class TinyWinNfsSwtManager {
 	 * <p>メソッド名称： ログ末尾読込</p>
 	 *
 	 * @param logPath	ログパス
-	 * @return ログ内容
+	 * @return	ログ内容
 	 */
 	//--------------------------------------------------------------------------
-	private String readLogTail(Path logPath) {
+	private String readLogTail( Path logPath) {
 		try {
 			// ログファイルが存在しない場合
 			if( !Files.isRegularFile( logPath)) {
@@ -3386,7 +3418,7 @@ public class TinyWinNfsSwtManager {
 					int lineBreak = content.indexOf( '\n' ) ;
 
 					// 先頭の途中行を除去できる場合
-					if( lineBreak >= 0 && lineBreak + 1 < content.length()) {
+					if(( lineBreak >= 0 && lineBreak + 1 < content.length())) {
 						content = content.substring( lineBreak + 1) ;
 					}
 				}
@@ -3407,7 +3439,7 @@ public class TinyWinNfsSwtManager {
 	//--------------------------------------------------------------------------
 	private void applyServerLogFilter() {
 		// サーバーログビューが存在しない場合
-		if( serverLogText == null || serverLogText.isDisposed()) {
+		if(( serverLogText == null || serverLogText.isDisposed())) {
 			return ;
 		}
 
@@ -3424,7 +3456,7 @@ public class TinyWinNfsSwtManager {
 			}
 
 			// 検索文字列に一致しない場合
-			if( !search.isEmpty() && !line.toLowerCase().contains( search)) {
+			if(( !search.isEmpty() && !line.toLowerCase().contains( search))) {
 				continue ;
 			}
 
@@ -3439,7 +3471,7 @@ public class TinyWinNfsSwtManager {
 		serverLogText.setText( builder.toString()) ;
 
 		// 末尾追従が有効な場合
-		if( logAutoRefreshButton != null && !logAutoRefreshButton.isDisposed() && logAutoRefreshButton.getSelection()) {
+		if(( logAutoRefreshButton != null && !logAutoRefreshButton.isDisposed() && logAutoRefreshButton.getSelection())) {
 			serverLogText.setSelection( serverLogText.getCharCount()) ;
 		}
 	}
@@ -3450,12 +3482,14 @@ public class TinyWinNfsSwtManager {
 	 *
 	 * <p>メソッド名称： ログ種別フィルタ一致確認</p>
 	 *
-	 * @param line		ログ行
+	 * @param line	ログ行
 	 * @param filter	フィルタ
-	 * @return true:一致 false:不一致
+	 * @return	判定結果<ul>
+	 * 			false	: 不一致<br>
+	 * 			true	: 一致</ul>
 	 */
 	//--------------------------------------------------------------------------
-	private boolean matchesLogFilter(String line, int filter) {
+	private boolean matchesLogFilter( String line, int filter) {
 		// すべて表示の場合
 		if( filter == 0) {
 			return true ;
@@ -3483,12 +3517,14 @@ public class TinyWinNfsSwtManager {
 	 *
 	 * <p>メソッド名称： 文字列語句包含確認</p>
 	 *
-	 * @param value		値
+	 * @param value	値
 	 * @param keywords	語句
-	 * @return true:含む false:含まない
+	 * @return	判定結果<ul>
+	 * 			false	: 含まない<br>
+	 * 			true	: 含む</ul>
 	 */
 	//--------------------------------------------------------------------------
-	private boolean containsAny(String value, String... keywords) {
+	private boolean containsAny( String value, String... keywords) {
 		// 語句を確認する
 		for( String keyword : keywords) {
 			// 語句を含む場合
@@ -3510,7 +3546,7 @@ public class TinyWinNfsSwtManager {
 	private void scheduleLogAutoRefresh() {
 		display.timerExec( 5000, () -> {
 			// 自動更新が無効な場合
-			if( logAutoRefreshButton == null || logAutoRefreshButton.isDisposed() || !logAutoRefreshButton.getSelection()) {
+			if(( logAutoRefreshButton == null || logAutoRefreshButton.isDisposed() || !logAutoRefreshButton.getSelection())) {
 				return ;
 			}
 
@@ -3529,7 +3565,7 @@ public class TinyWinNfsSwtManager {
 	 * @param script	スクリプト
 	 */
 	//--------------------------------------------------------------------------
-	private void confirmAndRun(String message, String script) {
+	private void confirmAndRun( String message, String script) {
 		MessageBox dialog = new MessageBox( shell, SWT.ICON_QUESTION | SWT.YES | SWT.NO) ;
 		dialog.setText( text( "dialog.confirm") ) ;
 		dialog.setMessage( message) ;
@@ -3581,8 +3617,8 @@ public class TinyWinNfsSwtManager {
 	 *
 	 * <p>メソッド名称： スモークテスト実行</p>
 	 *
-	 * @return テストメッセージ
-	 * @throws Exception テスト異常
+	 * @return	テストメッセージ
+	 * @throws Exception	テスト異常
 	 */
 	//--------------------------------------------------------------------------
 	private List<String> runSmokeTest() throws Exception {
@@ -3613,13 +3649,13 @@ public class TinyWinNfsSwtManager {
 	 * <p>メソッド名称： Portmapポート取得</p>
 	 *
 	 * @param portmapPort	Portmapポート
-	 * @param program		Program
-	 * @param version		Version
-	 * @return ポート
-	 * @throws Exception 取得異常
+	 * @param program	Program
+	 * @param version	Version
+	 * @return	ポート
+	 * @throws Exception	取得異常
 	 */
 	//--------------------------------------------------------------------------
-	private int getMappedPort(int portmapPort, int program, int version) throws Exception {
+	private int getMappedPort( int portmapPort, int program, int version) throws Exception {
 		XdrWriter arguments = new XdrWriter() ;
 		arguments.writeInt( program) ;
 		arguments.writeInt( version) ;
@@ -3636,11 +3672,11 @@ public class TinyWinNfsSwtManager {
 	 * <p>メソッド名称： export mount</p>
 	 *
 	 * @param mountPort	MOUNTポート
-	 * @return ルートファイルハンドル
-	 * @throws Exception mount異常
+	 * @return	ルートファイルハンドル
+	 * @throws Exception	mount異常
 	 */
 	//--------------------------------------------------------------------------
-	private byte[] mountExport(int mountPort) throws Exception {
+	private byte[] mountExport( int mountPort) throws Exception {
 		XdrWriter arguments = new XdrWriter() ;
 		arguments.writeString( getSelectedOrFirstShare().getName()) ;
 		XdrReader reader = rpcCall( mountPort, RpcConstants.PROGRAM_MOUNT, 1, 1, arguments) ;
@@ -3660,12 +3696,12 @@ public class TinyWinNfsSwtManager {
 	 *
 	 * <p>メソッド名称： ルートGETATTR確認</p>
 	 *
-	 * @param nfsPort		NFSポート
+	 * @param nfsPort	NFSポート
 	 * @param rootHandle	ルートファイルハンドル
-	 * @throws Exception 確認異常
+	 * @throws Exception	確認異常
 	 */
 	//--------------------------------------------------------------------------
-	private void checkRootGetAttr(int nfsPort, byte[] rootHandle) throws Exception {
+	private void checkRootGetAttr( int nfsPort, byte[] rootHandle) throws Exception {
 		XdrWriter arguments = new XdrWriter() ;
 		arguments.writeFixedOpaque( rootHandle) ;
 		XdrReader reader = rpcCall( nfsPort, RpcConstants.PROGRAM_NFS, 2, 1, arguments) ;
@@ -3690,16 +3726,16 @@ public class TinyWinNfsSwtManager {
 	 *
 	 * <p>メソッド名称： RPC呼出</p>
 	 *
-	 * @param port		ポート
+	 * @param port	ポート
 	 * @param program	Program
 	 * @param version	Version
 	 * @param procedure	Procedure
 	 * @param arguments	引数
-	 * @return 応答本文
-	 * @throws Exception 呼出異常
+	 * @return	応答本文
+	 * @throws Exception	呼出異常
 	 */
 	//--------------------------------------------------------------------------
-	private XdrReader rpcCall(int port, int program, int version, int procedure, XdrWriter arguments) throws Exception {
+	private XdrReader rpcCall( int port, int program, int version, int procedure, XdrWriter arguments) throws Exception {
 		int requestXid = ++xid ;
 		byte[] request = createRpcCall( requestXid, program, version, procedure, arguments) ;
 		byte[] buffer = new byte[65535] ;
@@ -3728,15 +3764,15 @@ public class TinyWinNfsSwtManager {
 	 *
 	 * <p>メソッド名称： RPC CALL作成</p>
 	 *
-	 * @param xid		XID
+	 * @param xid	XID
 	 * @param program	Program
 	 * @param version	Version
 	 * @param procedure	Procedure
 	 * @param arguments	引数
-	 * @return RPC CALL
+	 * @return	RPC CALL
 	 */
 	//--------------------------------------------------------------------------
-	private byte[] createRpcCall(int xid, int program, int version, int procedure, XdrWriter arguments) {
+	private byte[] createRpcCall( int xid, int program, int version, int procedure, XdrWriter arguments) {
 		XdrWriter writer = new XdrWriter() ;
 		writer.writeInt( xid) ;
 		writer.writeInt( RpcConstants.MSG_CALL) ;
@@ -3758,12 +3794,12 @@ public class TinyWinNfsSwtManager {
 	 *
 	 * <p>メソッド名称： 数値一致確認</p>
 	 *
-	 * @param name		名称
+	 * @param name	名称
 	 * @param expected	期待値
 	 * @param actual	実値
 	 */
 	//--------------------------------------------------------------------------
-	private void checkEquals(String name, int expected, int actual) {
+	private void checkEquals( String name, int expected, int actual) {
 		// 値が一致しない場合
 		if( expected != actual) {
 			throw new IllegalStateException( format( "error.expectedActual", name, expected, actual)) ;
@@ -3779,7 +3815,7 @@ public class TinyWinNfsSwtManager {
 	 * @param scriptName	スクリプト名
 	 */
 	//--------------------------------------------------------------------------
-	private void runScriptAsync(String scriptName) {
+	private void runScriptAsync( String scriptName) {
 		runScriptAsync( scriptName, result -> refreshStatus()) ;
 	}
 
@@ -3792,7 +3828,7 @@ public class TinyWinNfsSwtManager {
 	 * @param scriptName	スクリプト名
 	 */
 	//--------------------------------------------------------------------------
-	private void runPrivilegedScriptAsync(String scriptName) {
+	private void runPrivilegedScriptAsync( String scriptName) {
 		runPrivilegedScriptAsync( scriptName, result -> refreshStatus()) ;
 	}
 
@@ -3806,7 +3842,7 @@ public class TinyWinNfsSwtManager {
 	 * @param callback	コールバック
 	 */
 	//--------------------------------------------------------------------------
-	private void runPrivilegedScriptAsync(String scriptName, ResultCallback callback) {
+	private void runPrivilegedScriptAsync( String scriptName, ResultCallback callback) {
 		// 管理者権限がない場合
 		if( !isAdministrator()) {
 			appendLog( text( "log.adminRequired")) ;
@@ -3828,7 +3864,7 @@ public class TinyWinNfsSwtManager {
 	 * @param callback	コールバック
 	 */
 	//--------------------------------------------------------------------------
-	private void runScriptAsync(String scriptName, ResultCallback callback) {
+	private void runScriptAsync( String scriptName, ResultCallback callback) {
 		Path scriptPath = rootPath.resolve( "scripts").resolve( scriptName) ;
 
 		// スクリプトが存在しない場合
@@ -3864,7 +3900,7 @@ public class TinyWinNfsSwtManager {
 	 * @param running	true:実行中 false:停止中
 	 */
 	//--------------------------------------------------------------------------
-	private void setServiceOperationRunning(boolean running) {
+	private void setServiceOperationRunning( boolean running) {
 		// サービス操作ボタンを切り替える
 		for( Button button : serviceActionButtons) {
 			// ボタンが破棄済みではない場合
@@ -3880,13 +3916,13 @@ public class TinyWinNfsSwtManager {
 	 *
 	 * <p>メソッド名称： サービス操作結果表示</p>
 	 *
-	 * @param title		タイトル
+	 * @param title	タイトル
 	 * @param result	結果
 	 */
 	//--------------------------------------------------------------------------
-	private void showServiceResult(String title, ProcessResult result) {
+	private void showServiceResult( String title, ProcessResult result) {
 		// サービス結果表示が存在しない場合
-		if( serviceResultText == null || serviceResultText.isDisposed()) {
+		if(( serviceResultText == null || serviceResultText.isDisposed())) {
 			return ;
 		}
 
@@ -3915,10 +3951,10 @@ public class TinyWinNfsSwtManager {
 	 * <p>メソッド名称： サービス操作結果分類</p>
 	 *
 	 * @param result	結果
-	 * @return 分類結果
+	 * @return	分類結果
 	 */
 	//--------------------------------------------------------------------------
-	private String classifyServiceResult(ProcessResult result) {
+	private String classifyServiceResult( ProcessResult result) {
 		// 成功の場合
 		if( result.getExitCode() == 0) {
 			return text( "service.result.success") ;
@@ -3927,17 +3963,17 @@ public class TinyWinNfsSwtManager {
 		String output = result.getCombinedOutput().toLowerCase() ;
 
 		// 管理者権限不足の場合
-		if( output.contains( "access is denied" ) || output.contains( "administrator" ) || output.contains( "管理者" )) {
+		if(( output.contains( "access is denied" ) || output.contains( "administrator" ) || output.contains( "管理者" ))) {
 			return text( "service.result.adminRequired") ;
 		}
 
 		// ポート使用中の場合
-		if( output.contains( "address already in use" ) || output.contains( "bind" ) || output.contains( "port" ) || output.contains( "ポート" )) {
+		if(( output.contains( "address already in use" ) || output.contains( "bind" ) || output.contains( "port" ) || output.contains( "ポート" ))) {
 			return text( "service.result.portInUse") ;
 		}
 
 		// サービス未登録の場合
-		if( output.contains( "does not exist" ) || output.contains( "not installed" ) || output.contains( "not found" ) || output.contains( "見つかりません" )) {
+		if(( output.contains( "does not exist" ) || output.contains( "not installed" ) || output.contains( "not found" ) || output.contains( "見つかりません" ))) {
 			return text( "service.result.notInstalled") ;
 		}
 
@@ -3950,12 +3986,12 @@ public class TinyWinNfsSwtManager {
 	 *
 	 * <p>メソッド名称： コマンド非同期実行</p>
 	 *
-	 * @param title		タイトル
+	 * @param title	タイトル
 	 * @param command	コマンド
 	 * @param callback	コールバック
 	 */
 	//--------------------------------------------------------------------------
-	private void runCommandAsync(String title, List<String> command, ResultCallback callback) {
+	private void runCommandAsync( String title, List<String> command, ResultCallback callback) {
 		appendLog( format( "log.start", title)) ;
 		new Thread( () -> {
 			ProcessResult result = runCommand( command) ;
@@ -3983,10 +4019,10 @@ public class TinyWinNfsSwtManager {
 	 * <p>メソッド名称： コマンド実行</p>
 	 *
 	 * @param command	コマンド
-	 * @return 実行結果
+	 * @return	実行結果
 	 */
 	//--------------------------------------------------------------------------
-	private ProcessResult runCommand(List<String> command) {
+	private ProcessResult runCommand( List<String> command) {
 		StringBuilder output = new StringBuilder() ;
 		StringBuilder errorOutput = new StringBuilder() ;
 
@@ -4016,12 +4052,12 @@ public class TinyWinNfsSwtManager {
 	 *
 	 * <p>メソッド名称： プロセス出力非同期読取</p>
 	 *
-	 * @param input		入力ストリーム
+	 * @param input	入力ストリーム
 	 * @param output	出力先
-	 * @return 読取Thread
+	 * @return	読取Thread
 	 */
 	//--------------------------------------------------------------------------
-	private Thread readProcessOutputAsync(InputStream input, StringBuilder output) {
+	private Thread readProcessOutputAsync( InputStream input, StringBuilder output) {
 		Thread thread = new Thread( () -> {
 			try {
 				output.append( readStreamOutput( input)) ;
@@ -4040,16 +4076,17 @@ public class TinyWinNfsSwtManager {
 	 * <p>メソッド名称： ストリーム出力読取</p>
 	 *
 	 * @param input	入力ストリーム
-	 * @return 出力
-	 * @throws IOException 読取異常
+	 * @return	出力
+	 * @throws IOException	読取異常
 	 */
 	//--------------------------------------------------------------------------
-	private String readStreamOutput(InputStream input) throws IOException {
+	private String readStreamOutput( InputStream input) throws IOException {
 		StringBuilder output = new StringBuilder() ;
 
 		try( BufferedReader reader = new BufferedReader( new InputStreamReader( input, Charset.defaultCharset()))) {
 			String line ;
 
+			// プロセス出力を終了まで読み取る
 			while( (line = reader.readLine()) != null) {
 				output.append( line).append( System.lineSeparator()) ;
 			}
@@ -4064,7 +4101,9 @@ public class TinyWinNfsSwtManager {
 	 *
 	 * <p>メソッド名称： 管理者権限確認</p>
 	 *
-	 * @return true:管理者 false:一般ユーザー
+	 * @return	判定結果<ul>
+	 * 			false	: 一般ユーザー<br>
+	 * 			true	: 管理者</ul>
 	 */
 	//--------------------------------------------------------------------------
 	private boolean isAdministrator() {
@@ -4082,28 +4121,28 @@ public class TinyWinNfsSwtManager {
 	 *
 	 * <p>メソッド名称： ルートパス検出</p>
 	 *
-	 * @return ルートパス
+	 * @return	ルートパス
 	 */
 	//--------------------------------------------------------------------------
 	private Path detectRootPath() {
 		String home = System.getenv( "TINYWIN_NFS_HOME") ;
 
 		// 環境変数指定がある場合
-		if( home != null && !home.isBlank()) {
+		if(( home != null && !home.isBlank())) {
 			return Path.of( home).toAbsolutePath().normalize() ;
 		}
 
 		home = System.getenv( "OGAWA_NFS_HOME") ;
 
 		// 旧環境変数指定がある場合
-		if( home != null && !home.isBlank()) {
+		if(( home != null && !home.isBlank())) {
 			return Path.of( home).toAbsolutePath().normalize() ;
 		}
 
 		home = System.getenv( "QNX_NFS_HOME") ;
 
 		// 旧環境変数指定がある場合
-		if( home != null && !home.isBlank()) {
+		if(( home != null && !home.isBlank())) {
 			return Path.of( home).toAbsolutePath().normalize() ;
 		}
 
@@ -4119,14 +4158,14 @@ public class TinyWinNfsSwtManager {
 			Path location = Path.of( codeSource.getLocation().toURI()).toAbsolutePath().normalize() ;
 
 			// binフォルダから起動している場合
-			if( Files.isDirectory( location) && "bin".equalsIgnoreCase( location.getFileName().toString())) {
+			if(( Files.isDirectory( location) && "bin".equalsIgnoreCase( location.getFileName().toString()))) {
 				return location.getParent() ;
 			}
 
 			Path parent = location.getParent() ;
 
 			// jpackageのappフォルダから起動している場合
-			if( parent != null && "app".equalsIgnoreCase( parent.getFileName().toString())) {
+			if(( parent != null && "app".equalsIgnoreCase( parent.getFileName().toString()))) {
 				return parent.getParent() ;
 			}
 		} catch( URISyntaxException usex) {
@@ -4142,7 +4181,7 @@ public class TinyWinNfsSwtManager {
 	 *
 	 * <p>メソッド名称： 登録済みサービスルートパス検出</p>
 	 *
-	 * @return ルートパス
+	 * @return	ルートパス
 	 */
 	//--------------------------------------------------------------------------
 	private Path detectInstalledServiceRootPath() {
@@ -4183,7 +4222,7 @@ public class TinyWinNfsSwtManager {
 	 *
 	 * <p>メソッド名称： 登録済みサービス実行ファイルパス検出</p>
 	 *
-	 * @return 実行ファイルパス
+	 * @return	実行ファイルパス
 	 */
 	//--------------------------------------------------------------------------
 	private Path detectInstalledServiceExecutablePath() {
@@ -4204,6 +4243,7 @@ public class TinyWinNfsSwtManager {
 			try( BufferedReader reader = new BufferedReader( new InputStreamReader( process.getInputStream(), Charset.defaultCharset()))) {
 				String line ;
 
+				// サービス検索コマンドの出力を終了まで読み取る
 				while( (line = reader.readLine()) != null) {
 					output.append( line).append( System.lineSeparator()) ;
 				}
@@ -4234,10 +4274,10 @@ public class TinyWinNfsSwtManager {
 	 * <p>メソッド名称： 実行ファイルパス抽出</p>
 	 *
 	 * @param pathName	PathName
-	 * @return 実行ファイルパス
+	 * @return	実行ファイルパス
 	 */
 	//--------------------------------------------------------------------------
-	private Path extractExecutablePath(String pathName) {
+	private Path extractExecutablePath( String pathName) {
 		String executable = pathName.trim() ;
 
 		// ダブルクォートで囲まれている場合
@@ -4269,7 +4309,7 @@ public class TinyWinNfsSwtManager {
 	 * @param runnable	処理
 	 */
 	//--------------------------------------------------------------------------
-	private void runOnUi(Runnable runnable) {
+	private void runOnUi( Runnable runnable) {
 		// Displayが破棄済みの場合
 		if( display.isDisposed()) {
 			return ;
@@ -4283,7 +4323,7 @@ public class TinyWinNfsSwtManager {
 
 		display.asyncExec( () -> {
 			// Shellが破棄済みではない場合
-			if( shell != null && !shell.isDisposed()) {
+			if(( shell != null && !shell.isDisposed())) {
 				runnable.run() ;
 			}
 		}) ;
@@ -4298,7 +4338,7 @@ public class TinyWinNfsSwtManager {
 	 * @param message	メッセージ
 	 */
 	//--------------------------------------------------------------------------
-	private void appendLog(String message) {
+	private void appendLog( String message) {
 		// UIスレッドではない場合
 		if( Thread.currentThread() != display.getThread()) {
 			runOnUi( () -> appendLog( message)) ;
@@ -4308,7 +4348,7 @@ public class TinyWinNfsSwtManager {
 		String text = message ;
 
 		// メッセージが空の場合
-		if( text == null || text.isBlank() || logText == null || logText.isDisposed()) {
+		if(( text == null || text.isBlank() || logText == null || logText.isDisposed())) {
 			return ;
 		}
 
@@ -4326,7 +4366,7 @@ public class TinyWinNfsSwtManager {
 	 * @param exception	例外
 	 */
 	//--------------------------------------------------------------------------
-	private void showError(String message, Exception exception) {
+	private void showError( String message, Exception exception) {
 		// UIスレッドではない場合
 		if( Thread.currentThread() != display.getThread()) {
 			runOnUi( () -> showError( message, exception)) ;
@@ -4352,6 +4392,15 @@ public class TinyWinNfsSwtManager {
 	 *
 	 * <p>クラス名称： 診断テキスト</p>
 	 *
+	 * <p>著作権： Copyright (c) 2026 EnterOgawa. All Rights Reserved.</p>
+	 *
+	 * <p>更新履歴：
+	 * <pre>
+	 *     VerNo.         author        update     comment
+	 *     Ver.01.00.00   Shunji Ogawa  2026/09/02 新規作成
+	 * </pre>
+	 * </p>
+	 *
 	 * @author Shunji Ogawa
 	 * @version 01.00.00
 	 */
@@ -4374,7 +4423,7 @@ public class TinyWinNfsSwtManager {
 		 * @param report	レポート
 		 */
 		//----------------------------------------------------------------------
-		DiagnosticText(String summary, String report) {
+		DiagnosticText( String summary, String report) {
 			this.summary = summary ;
 			this.report = report ;
 		}
@@ -4385,7 +4434,7 @@ public class TinyWinNfsSwtManager {
 		 *
 		 * <p>メソッド名称： 概要取得</p>
 		 *
-		 * @return 概要
+		 * @return	概要
 		 */
 		//----------------------------------------------------------------------
 		String getSummary() {
@@ -4398,7 +4447,7 @@ public class TinyWinNfsSwtManager {
 		 *
 		 * <p>メソッド名称： レポート取得</p>
 		 *
-		 * @return レポート
+		 * @return	レポート
 		 */
 		//----------------------------------------------------------------------
 		String getReport() {
@@ -4411,6 +4460,15 @@ public class TinyWinNfsSwtManager {
 	 * 実行結果クラスです。<br><br>
 	 *
 	 * <p>クラス名称： 実行結果</p>
+	 *
+	 * <p>著作権： Copyright (c) 2026 EnterOgawa. All Rights Reserved.</p>
+	 *
+	 * <p>更新履歴：
+	 * <pre>
+	 *     VerNo.         author        update     comment
+	 *     Ver.01.00.00   Shunji Ogawa  2026/09/02 新規作成
+	 * </pre>
+	 * </p>
 	 *
 	 * @author Shunji Ogawa
 	 * @version 01.00.00
@@ -4434,11 +4492,11 @@ public class TinyWinNfsSwtManager {
 		 * <p>メソッド名称： コンストラクタ</p>
 		 *
 		 * @param exitCode	終了コード
-		 * @param output		出力
+		 * @param output	出力
 		 * @param errorOutput	エラー出力
 		 */
 		//----------------------------------------------------------------------
-		ProcessResult(int exitCode, String output, String errorOutput) {
+		ProcessResult( int exitCode, String output, String errorOutput) {
 			this.exitCode = exitCode ;
 			this.output = output == null ? "" : output ;
 			this.errorOutput = errorOutput == null ? "" : errorOutput ;
@@ -4450,7 +4508,7 @@ public class TinyWinNfsSwtManager {
 		 *
 		 * <p>メソッド名称： 終了コード取得</p>
 		 *
-		 * @return 終了コード
+		 * @return	終了コード
 		 */
 		//----------------------------------------------------------------------
 		int getExitCode() {
@@ -4463,7 +4521,7 @@ public class TinyWinNfsSwtManager {
 		 *
 		 * <p>メソッド名称： 出力取得</p>
 		 *
-		 * @return 出力
+		 * @return	出力
 		 */
 		//----------------------------------------------------------------------
 		String getOutput() {
@@ -4476,7 +4534,7 @@ public class TinyWinNfsSwtManager {
 		 *
 		 * <p>メソッド名称： エラー出力取得</p>
 		 *
-		 * @return エラー出力
+		 * @return	エラー出力
 		 */
 		//----------------------------------------------------------------------
 		String getErrorOutput() {
@@ -4489,7 +4547,7 @@ public class TinyWinNfsSwtManager {
 		 *
 		 * <p>メソッド名称： 結合出力取得</p>
 		 *
-		 * @return 結合出力
+		 * @return	結合出力
 		 */
 		//----------------------------------------------------------------------
 		String getCombinedOutput() {
@@ -4512,6 +4570,15 @@ public class TinyWinNfsSwtManager {
 	 * 診断行クラスです。<br><br>
 	 *
 	 * <p>クラス名称： 診断行</p>
+	 *
+	 * <p>著作権： Copyright (c) 2026 EnterOgawa. All Rights Reserved.</p>
+	 *
+	 * <p>更新履歴：
+	 * <pre>
+	 *     VerNo.         author        update     comment
+	 *     Ver.01.00.00   Shunji Ogawa  2026/09/02 新規作成
+	 * </pre>
+	 * </p>
 	 *
 	 * @author Shunji Ogawa
 	 * @version 01.00.00
@@ -4539,11 +4606,11 @@ public class TinyWinNfsSwtManager {
 		 *
 		 * @param severity	重大度
 		 * @param source	発生元
-		 * @param code		コード
+		 * @param code	コード
 		 * @param message	メッセージ
 		 */
 		//----------------------------------------------------------------------
-		DiagnosticRow(String severity, String source, String code, String message) {
+		DiagnosticRow( String severity, String source, String code, String message) {
 			this.severity = severity == null ? "" : severity ;
 			this.source = source == null ? "" : source ;
 			this.code = code == null ? "" : code ;
@@ -4556,7 +4623,7 @@ public class TinyWinNfsSwtManager {
 		 *
 		 * <p>メソッド名称： 重大度取得</p>
 		 *
-		 * @return 重大度
+		 * @return	重大度
 		 */
 		//----------------------------------------------------------------------
 		String getSeverity() {
@@ -4569,7 +4636,7 @@ public class TinyWinNfsSwtManager {
 		 *
 		 * <p>メソッド名称： 発生元取得</p>
 		 *
-		 * @return 発生元
+		 * @return	発生元
 		 */
 		//----------------------------------------------------------------------
 		String getSource() {
@@ -4582,7 +4649,7 @@ public class TinyWinNfsSwtManager {
 		 *
 		 * <p>メソッド名称： コード取得</p>
 		 *
-		 * @return コード
+		 * @return	コード
 		 */
 		//----------------------------------------------------------------------
 		String getCode() {
@@ -4595,7 +4662,7 @@ public class TinyWinNfsSwtManager {
 		 *
 		 * <p>メソッド名称： メッセージ取得</p>
 		 *
-		 * @return メッセージ
+		 * @return	メッセージ
 		 */
 		//----------------------------------------------------------------------
 		String getMessage() {
@@ -4608,6 +4675,15 @@ public class TinyWinNfsSwtManager {
 	 * 共有定義クラスです。<br><br>
 	 *
 	 * <p>クラス名称： 共有定義</p>
+	 *
+	 * <p>著作権： Copyright (c) 2026 EnterOgawa. All Rights Reserved.</p>
+	 *
+	 * <p>更新履歴：
+	 * <pre>
+	 *     VerNo.         author        update     comment
+	 *     Ver.01.00.00   Shunji Ogawa  2026/09/02 新規作成
+	 * </pre>
+	 * </p>
 	 *
 	 * @author Shunji Ogawa
 	 * @version 01.00.00
@@ -4633,13 +4709,13 @@ public class TinyWinNfsSwtManager {
 		 *
 		 * <p>メソッド名称： コンストラクタ</p>
 		 *
-		 * @param name		公開名
-		 * @param path		公開パス
-		 * @param writable			書込可否
+		 * @param name	公開名
+		 * @param path	公開パス
+		 * @param writable	書込可否
 		 * @param allowedClients	許可クライアント
 		 */
 		//----------------------------------------------------------------------
-		ShareEntry(String name, String path, boolean writable, String allowedClients) {
+		ShareEntry( String name, String path, boolean writable, String allowedClients) {
 			this.name = name == null ? "" : name.trim() ;
 			this.path = path == null ? "" : path.trim() ;
 			this.writable = writable ;
@@ -4652,7 +4728,7 @@ public class TinyWinNfsSwtManager {
 		 *
 		 * <p>メソッド名称： 公開名取得</p>
 		 *
-		 * @return 公開名
+		 * @return	公開名
 		 */
 		//----------------------------------------------------------------------
 		String getName() {
@@ -4665,7 +4741,7 @@ public class TinyWinNfsSwtManager {
 		 *
 		 * <p>メソッド名称： 公開パス取得</p>
 		 *
-		 * @return 公開パス
+		 * @return	公開パス
 		 */
 		//----------------------------------------------------------------------
 		String getPath() {
@@ -4678,7 +4754,9 @@ public class TinyWinNfsSwtManager {
 		 *
 		 * <p>メソッド名称： 書込可否取得</p>
 		 *
-		 * @return true:書込可 false:読込専用
+		 * @return	判定結果<ul>
+		 * 			false	: 読込専用<br>
+		 * 			true	: 書込可</ul>
 		 */
 		//----------------------------------------------------------------------
 		boolean isWritable() {
@@ -4691,7 +4769,7 @@ public class TinyWinNfsSwtManager {
 		 *
 		 * <p>メソッド名称： 許可クライアント取得</p>
 		 *
-		 * @return 許可クライアント
+		 * @return	許可クライアント
 		 */
 		//----------------------------------------------------------------------
 		String getAllowedClients() {
@@ -4704,6 +4782,15 @@ public class TinyWinNfsSwtManager {
 	 * 実行結果コールバックインターフェースです。<br><br>
 	 *
 	 * <p>クラス名称： 実行結果コールバック</p>
+	 *
+	 * <p>著作権： Copyright (c) 2026 EnterOgawa. All Rights Reserved.</p>
+	 *
+	 * <p>更新履歴：
+	 * <pre>
+	 *     VerNo.         author        update     comment
+	 *     Ver.01.00.00   Shunji Ogawa  2026/09/02 新規作成
+	 * </pre>
+	 * </p>
 	 *
 	 * @author Shunji Ogawa
 	 * @version 01.00.00
@@ -4720,7 +4807,7 @@ public class TinyWinNfsSwtManager {
 		 * @param result	実行結果
 		 */
 		//----------------------------------------------------------------------
-		void completed(ProcessResult result) ;
+		void completed( ProcessResult result) ;
 	}
 
 	//------------------------------------------------------------------------------
@@ -4728,6 +4815,15 @@ public class TinyWinNfsSwtManager {
 	 * SWT選択リスナーインターフェースです。<br><br>
 	 *
 	 * <p>クラス名称： SWT選択リスナー</p>
+	 *
+	 * <p>著作権： Copyright (c) 2026 EnterOgawa. All Rights Reserved.</p>
+	 *
+	 * <p>更新履歴：
+	 * <pre>
+	 *     VerNo.         author        update     comment
+	 *     Ver.01.00.00   Shunji Ogawa  2026/09/02 新規作成
+	 * </pre>
+	 * </p>
 	 *
 	 * @author Shunji Ogawa
 	 * @version 01.00.00
@@ -4744,6 +4840,6 @@ public class TinyWinNfsSwtManager {
 		 * @param event	選択イベント
 		 */
 		//----------------------------------------------------------------------
-		void widgetSelected(SelectionEvent event) ;
+		void widgetSelected( SelectionEvent event) ;
 	}
 }

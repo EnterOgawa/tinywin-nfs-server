@@ -18,6 +18,15 @@ import jp.co.enterogawa.nfs.config.NfsExport;
  *
  * <p>クラス名称： NFS属性メタデータ管理</p>
  *
+ * <p>著作権： Copyright (c) 2026 EnterOgawa. All Rights Reserved.</p>
+ *
+ * <p>更新履歴：
+ * <pre>
+ *     VerNo.         author        update     comment
+ *     Ver.01.00.00   Shunji Ogawa  2026/09/02 新規作成
+ * </pre>
+ * </p>
+ *
  * @author Shunji Ogawa
  * @version 01.00.00
  */
@@ -61,9 +70,9 @@ public class NfsModeStore {
 	 * @param exports	公開定義
 	 */
 	//--------------------------------------------------------------------------
-	public NfsModeStore(List<NfsExport> exports) {
+	public NfsModeStore( List<NfsExport> exports) {
 		// 公開定義が存在しない場合
-		if( exports == null || exports.isEmpty()) {
+		if(( exports == null || exports.isEmpty())) {
 			throw new IllegalArgumentException( "At least one export is required.") ;
 		}
 
@@ -80,12 +89,12 @@ public class NfsModeStore {
 	 *
 	 * <p>メソッド名称： モード取得</p>
 	 *
-	 * @param path			対象パス
+	 * @param path	対象パス
 	 * @param defaultMode	既定モード
-	 * @return モード
+	 * @return	モード
 	 */
 	//--------------------------------------------------------------------------
-	public synchronized int getMode(Path path, int defaultMode) {
+	public synchronized int getMode( Path path, int defaultMode) {
 		String key = createPathKey( path) ;
 
 		// 管理対象外の場合
@@ -113,7 +122,7 @@ public class NfsModeStore {
 	 * @param mode	モード
 	 */
 	//--------------------------------------------------------------------------
-	public synchronized void setMode(Path path, int mode) {
+	public synchronized void setMode( Path path, int mode) {
 		String key = createPathKey( path) ;
 
 		// 管理対象外の場合
@@ -131,12 +140,12 @@ public class NfsModeStore {
 	 *
 	 * <p>メソッド名称： UID取得</p>
 	 *
-	 * @param path			対象パス
+	 * @param path	対象パス
 	 * @param defaultUid	既定UID
-	 * @return UID
+	 * @return	UID
 	 */
 	//--------------------------------------------------------------------------
-	public synchronized int getUid(Path path, int defaultUid) {
+	public synchronized int getUid( Path path, int defaultUid) {
 		String key = createPathKey( path) ;
 
 		// 管理対象外の場合
@@ -160,12 +169,12 @@ public class NfsModeStore {
 	 *
 	 * <p>メソッド名称： GID取得</p>
 	 *
-	 * @param path			対象パス
+	 * @param path	対象パス
 	 * @param defaultGid	既定GID
-	 * @return GID
+	 * @return	GID
 	 */
 	//--------------------------------------------------------------------------
-	public synchronized int getGid(Path path, int defaultGid) {
+	public synchronized int getGid( Path path, int defaultGid) {
 		String key = createPathKey( path) ;
 
 		// 管理対象外の場合
@@ -194,7 +203,7 @@ public class NfsModeStore {
 	 * @param gid	GID
 	 */
 	//--------------------------------------------------------------------------
-	public synchronized void setOwner(Path path, Integer uid, Integer gid) {
+	public synchronized void setOwner( Path path, Integer uid, Integer gid) {
 		String key = createPathKey( path) ;
 
 		// 管理対象外の場合
@@ -231,7 +240,7 @@ public class NfsModeStore {
 	 * @param path	対象パス
 	 */
 	//--------------------------------------------------------------------------
-	public synchronized void remove(Path path) {
+	public synchronized void remove( Path path) {
 		String key = createPathKey( path) ;
 
 		// 管理対象外の場合
@@ -259,7 +268,7 @@ public class NfsModeStore {
 	 * @param path	対象パス
 	 */
 	//--------------------------------------------------------------------------
-	public synchronized void removeTree(Path path) {
+	public synchronized void removeTree( Path path) {
 		NfsExport export = findExport( path) ;
 
 		// 公開定義が存在しない場合
@@ -295,12 +304,12 @@ public class NfsModeStore {
 	 * @param target	移動先
 	 */
 	//--------------------------------------------------------------------------
-	public synchronized void move(Path source, Path target) {
+	public synchronized void move( Path source, Path target) {
 		NfsExport sourceExport = findExport( source) ;
 		NfsExport targetExport = findExport( target) ;
 
 		// 公開定義が異なる場合
-		if( sourceExport == null || sourceExport != targetExport) {
+		if(( sourceExport == null || sourceExport != targetExport)) {
 			return ;
 		}
 
@@ -310,7 +319,7 @@ public class NfsModeStore {
 		String targetPrefix = createPathKey( targetExport, targetPath) ;
 
 		// キーが作成できない場合
-		if( sourcePrefix == null || targetPrefix == null) {
+		if(( sourcePrefix == null || targetPrefix == null)) {
 			return ;
 		}
 
@@ -345,7 +354,7 @@ public class NfsModeStore {
 	 *
 	 * <p>メソッド名称： 永続ファイルパス解決</p>
 	 *
-	 * @return 永続ファイルパス
+	 * @return	永続ファイルパス
 	 */
 	//--------------------------------------------------------------------------
 	private Path resolveStorePath() {
@@ -469,14 +478,14 @@ public class NfsModeStore {
 	 *
 	 * <p>メソッド名称： 永続ファイル保存間隔取得</p>
 	 *
-	 * @return 保存間隔ミリ秒
+	 * @return	保存間隔ミリ秒
 	 */
 	//--------------------------------------------------------------------------
 	private long getStoreSaveIntervalMillis() {
 		String value = System.getProperty( "tinywin.nfs.modeStoreSaveIntervalMillis", "30000") ;
 
 		// 値がない場合
-		if( value == null || value.isBlank()) {
+		if(( value == null || value.isBlank())) {
 			return 30000L ;
 		}
 
@@ -495,10 +504,12 @@ public class NfsModeStore {
 	 *
 	 * @param values	値
 	 * @param prefix	接頭辞
-	 * @return true:削除あり false:削除なし
+	 * @return	判定結果<ul>
+	 * 			false	: 削除なし<br>
+	 * 			true	: 削除あり</ul>
 	 */
 	//--------------------------------------------------------------------------
-	private boolean removeTreeValues(Map<String, Integer> values, String prefix) {
+	private boolean removeTreeValues( Map<String, Integer> values, String prefix) {
 		return values.keySet().removeIf( key -> key.equals( prefix) || key.startsWith( prefix + "/")) ;
 	}
 
@@ -508,13 +519,15 @@ public class NfsModeStore {
 	 *
 	 * <p>メソッド名称： 値パス移動</p>
 	 *
-	 * @param values		値
+	 * @param values	値
 	 * @param sourcePrefix	移動元接頭辞
 	 * @param targetPrefix	移動先接頭辞
-	 * @return true:移動あり false:移動なし
+	 * @return	判定結果<ul>
+	 * 			false	: 移動なし<br>
+	 * 			true	: 移動あり</ul>
 	 */
 	//--------------------------------------------------------------------------
-	private boolean moveValues(Map<String, Integer> values, String sourcePrefix, String targetPrefix) {
+	private boolean moveValues( Map<String, Integer> values, String sourcePrefix, String targetPrefix) {
 		Map<String, Integer> movedMap = new HashMap<String, Integer>() ;
 
 		// 移動対象を集める
@@ -522,7 +535,7 @@ public class NfsModeStore {
 			String key = entry.getKey() ;
 
 			// 移動元配下の場合
-			if( key.equals( sourcePrefix) || key.startsWith( sourcePrefix + "/")) {
+			if(( key.equals( sourcePrefix) || key.startsWith( sourcePrefix + "/"))) {
 				String movedKey = targetPrefix + key.substring( sourcePrefix.length()) ;
 				movedMap.put( movedKey, entry.getValue()) ;
 			}
@@ -546,10 +559,10 @@ public class NfsModeStore {
 	 * <p>メソッド名称： パスキー作成</p>
 	 *
 	 * @param path	対象パス
-	 * @return パスキー
+	 * @return	パスキー
 	 */
 	//--------------------------------------------------------------------------
-	private String createPathKey(Path path) {
+	private String createPathKey( Path path) {
 		NfsExport export = findExport( path) ;
 
 		// 公開定義が存在しない場合
@@ -567,13 +580,13 @@ public class NfsModeStore {
 	 * <p>メソッド名称： パスキー作成</p>
 	 *
 	 * @param export	公開定義
-	 * @param path		対象パス
-	 * @return パスキー
+	 * @param path	対象パス
+	 * @return	パスキー
 	 */
 	//--------------------------------------------------------------------------
-	private String createPathKey(NfsExport export, Path path) {
+	private String createPathKey( NfsExport export, Path path) {
 		// 公開ルート外の場合
-		if( export == null || !path.startsWith( export.getPath())) {
+		if(( export == null || !path.startsWith( export.getPath()))) {
 			return null ;
 		}
 
@@ -589,10 +602,10 @@ public class NfsModeStore {
 	 * <p>メソッド名称： 公開定義取得</p>
 	 *
 	 * @param path	パス
-	 * @return 公開定義
+	 * @return	公開定義
 	 */
 	//--------------------------------------------------------------------------
-	private NfsExport findExport(Path path) {
+	private NfsExport findExport( Path path) {
 		// パスが存在しない場合
 		if( path == null) {
 			return null ;
@@ -617,14 +630,14 @@ public class NfsModeStore {
 	 *
 	 * <p>メソッド名称： 8進モード変換</p>
 	 *
-	 * @param value			値
+	 * @param value	値
 	 * @param defaultMode	既定モード
-	 * @return モード
+	 * @return	モード
 	 */
 	//--------------------------------------------------------------------------
-	private int parseOctalMode(String value, int defaultMode) {
+	private int parseOctalMode( String value, int defaultMode) {
 		// 値がない場合
-		if( value == null || value.isBlank()) {
+		if(( value == null || value.isBlank())) {
 			return defaultMode ;
 		}
 
@@ -641,14 +654,14 @@ public class NfsModeStore {
 	 *
 	 * <p>メソッド名称： 32bit整数変換</p>
 	 *
-	 * @param value			値
+	 * @param value	値
 	 * @param defaultValue	既定値
-	 * @return 32bit整数
+	 * @return	32bit整数
 	 */
 	//--------------------------------------------------------------------------
-	private int parseInt32(String value, int defaultValue) {
+	private int parseInt32( String value, int defaultValue) {
 		// 値がない場合
-		if( value == null || value.isBlank()) {
+		if(( value == null || value.isBlank())) {
 			return defaultValue ;
 		}
 

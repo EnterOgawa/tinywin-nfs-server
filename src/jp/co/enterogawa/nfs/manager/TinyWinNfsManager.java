@@ -54,6 +54,15 @@ import jp.co.enterogawa.nfs.xdr.XdrWriter;
  *
  * <p>クラス名称： NFSサーバー管理ツール</p>
  *
+ * <p>著作権： Copyright (c) 2026 EnterOgawa. All Rights Reserved.</p>
+ *
+ * <p>更新履歴：
+ * <pre>
+ *     VerNo.         author        update     comment
+ *     Ver.01.00.00   Shunji Ogawa  2026/09/02 新規作成
+ * </pre>
+ * </p>
+ *
  * @author Shunji Ogawa
  * @version 01.00.00
  */
@@ -157,7 +166,7 @@ public class TinyWinNfsManager extends JFrame {
 	 * @param args	起動引数
 	 */
 	//--------------------------------------------------------------------------
-	public static void main(String[] args) {
+	public static void main( String[] args) {
 		SwingUtilities.invokeLater( () -> {
 			try {
 				UIManager.setLookAndFeel( UIManager.getSystemLookAndFeelClassName()) ;
@@ -239,7 +248,7 @@ public class TinyWinNfsManager extends JFrame {
 	 *
 	 * <p>メソッド名称： ヘッダーパネル作成</p>
 	 *
-	 * @return ヘッダーパネル
+	 * @return	ヘッダーパネル
 	 */
 	//--------------------------------------------------------------------------
 	private JPanel createHeaderPanel() {
@@ -263,7 +272,7 @@ public class TinyWinNfsManager extends JFrame {
 	 *
 	 * <p>メソッド名称： タブ作成</p>
 	 *
-	 * @return タブ
+	 * @return	タブ
 	 */
 	//--------------------------------------------------------------------------
 	private JTabbedPane createTabbedPane() {
@@ -281,7 +290,7 @@ public class TinyWinNfsManager extends JFrame {
 	 *
 	 * <p>メソッド名称： 設定パネル作成</p>
 	 *
-	 * @return 設定パネル
+	 * @return	設定パネル
 	 */
 	//--------------------------------------------------------------------------
 	private JPanel createSettingsPanel() {
@@ -317,7 +326,7 @@ public class TinyWinNfsManager extends JFrame {
 	 *
 	 * <p>メソッド名称： マウントパネル作成</p>
 	 *
-	 * @return マウントパネル
+	 * @return	マウントパネル
 	 */
 	//--------------------------------------------------------------------------
 	private JPanel createMountPanel() {
@@ -346,7 +355,7 @@ public class TinyWinNfsManager extends JFrame {
 	 *
 	 * <p>メソッド名称： サービスパネル作成</p>
 	 *
-	 * @return サービスパネル
+	 * @return	サービスパネル
 	 */
 	//--------------------------------------------------------------------------
 	private JPanel createServicePanel() {
@@ -372,7 +381,7 @@ public class TinyWinNfsManager extends JFrame {
 	 *
 	 * <p>メソッド名称： サービスヘルプパネル作成</p>
 	 *
-	 * @return サービスヘルプパネル
+	 * @return	サービスヘルプパネル
 	 */
 	//--------------------------------------------------------------------------
 	private JPanel createServiceHelpPanel() {
@@ -395,7 +404,7 @@ public class TinyWinNfsManager extends JFrame {
 	 *
 	 * <p>メソッド名称： ログパネル作成</p>
 	 *
-	 * @return ログパネル
+	 * @return	ログパネル
 	 */
 	//--------------------------------------------------------------------------
 	private JPanel createLogPanel() {
@@ -412,15 +421,15 @@ public class TinyWinNfsManager extends JFrame {
 	 *
 	 * <p>メソッド名称： フォーム項目追加</p>
 	 *
-	 * @param panel		パネル
-	 * @param row		行
-	 * @param label		ラベル
-	 * @param field		入力欄
+	 * @param panel	パネル
+	 * @param row	行
+	 * @param label	ラベル
+	 * @param field	入力欄
 	 * @param button	ボタン
-	 * @return 次の行
+	 * @return	次の行
 	 */
 	//--------------------------------------------------------------------------
-	private int addField(JPanel panel, int row, String label, JTextField field, JButton button) {
+	private int addField( JPanel panel, int row, String label, JTextField field, JButton button) {
 		GridBagConstraints labelConstraints = new GridBagConstraints() ;
 		labelConstraints.gridx = 0 ;
 		labelConstraints.gridy = row ;
@@ -454,14 +463,14 @@ public class TinyWinNfsManager extends JFrame {
 	 *
 	 * <p>メソッド名称： チェック項目追加</p>
 	 *
-	 * @param panel		パネル
-	 * @param row		行
-	 * @param label		ラベル
+	 * @param panel	パネル
+	 * @param row	行
+	 * @param label	ラベル
 	 * @param checkBox	チェックボックス
-	 * @return 次の行
+	 * @return	次の行
 	 */
 	//--------------------------------------------------------------------------
-	private int addCheckBox(JPanel panel, int row, String label, JCheckBox checkBox) {
+	private int addCheckBox( JPanel panel, int row, String label, JCheckBox checkBox) {
 		GridBagConstraints labelConstraints = new GridBagConstraints() ;
 		labelConstraints.gridx = 0 ;
 		labelConstraints.gridy = row ;
@@ -485,14 +494,14 @@ public class TinyWinNfsManager extends JFrame {
 	 *
 	 * <p>メソッド名称： コマンド欄追加</p>
 	 *
-	 * @param panel		パネル
-	 * @param row		行
-	 * @param label		ラベル
+	 * @param panel	パネル
+	 * @param row	行
+	 * @param label	ラベル
 	 * @param textArea	テキストエリア
-	 * @return 次の行
+	 * @return	次の行
 	 */
 	//--------------------------------------------------------------------------
-	private int addCommandArea(JPanel panel, int row, String label, JTextArea textArea) {
+	private int addCommandArea( JPanel panel, int row, String label, JTextArea textArea) {
 		GridBagConstraints labelConstraints = new GridBagConstraints() ;
 		labelConstraints.gridx = 0 ;
 		labelConstraints.gridy = row ;
@@ -521,12 +530,12 @@ public class TinyWinNfsManager extends JFrame {
 	 *
 	 * <p>メソッド名称： ボタン作成</p>
 	 *
-	 * @param text		表示文字
+	 * @param text	表示文字
 	 * @param listener	リスナ
-	 * @return ボタン
+	 * @return	ボタン
 	 */
 	//--------------------------------------------------------------------------
-	private JButton createButton(String text, java.awt.event.ActionListener listener) {
+	private JButton createButton( String text, java.awt.event.ActionListener listener) {
 		JButton button = new JButton( text) ;
 		button.addActionListener( listener) ;
 		return button ;
@@ -687,7 +696,7 @@ public class TinyWinNfsManager extends JFrame {
 	 * @param value	値
 	 */
 	//--------------------------------------------------------------------------
-	private void validatePort(String label, String value) {
+	private void validatePort( String label, String value) {
 		int port = validatePositiveInt( label, value) ;
 
 		// ポートが範囲外の場合
@@ -704,10 +713,10 @@ public class TinyWinNfsManager extends JFrame {
 	 *
 	 * @param label	ラベル
 	 * @param value	値
-	 * @return 数値
+	 * @return	数値
 	 */
 	//--------------------------------------------------------------------------
-	private int validatePositiveInt(String label, String value) {
+	private int validatePositiveInt( String label, String value) {
 		int number = validateInt( label, value) ;
 
 		// 正数ではない場合
@@ -726,10 +735,10 @@ public class TinyWinNfsManager extends JFrame {
 	 *
 	 * @param label	ラベル
 	 * @param value	値
-	 * @return 数値
+	 * @return	数値
 	 */
 	//--------------------------------------------------------------------------
-	private int validateInt(String label, String value) {
+	private int validateInt( String label, String value) {
 		try {
 			return Integer.parseInt( value.trim()) ;
 		} catch( NumberFormatException nfex) {
@@ -747,7 +756,7 @@ public class TinyWinNfsManager extends JFrame {
 	 * @param value	値
 	 */
 	//--------------------------------------------------------------------------
-	private void validateCharset(String label, String value) {
+	private void validateCharset( String label, String value) {
 		try {
 			Charset.forName( value.trim()) ;
 		} catch( RuntimeException rex) {
@@ -764,7 +773,7 @@ public class TinyWinNfsManager extends JFrame {
 	 * @param event	イベント
 	 */
 	//--------------------------------------------------------------------------
-	private void onBrowseExportPath(ActionEvent event) {
+	private void onBrowseExportPath( ActionEvent event) {
 		JFileChooser chooser = new JFileChooser( FileSystemView.getFileSystemView()) ;
 		chooser.setFileSelectionMode( JFileChooser.DIRECTORIES_ONLY) ;
 		chooser.setDialogTitle( "Select export folder") ;
@@ -801,7 +810,7 @@ public class TinyWinNfsManager extends JFrame {
 	 *
 	 * <p>メソッド名称： ローカルホスト名検出</p>
 	 *
-	 * @return ローカルホスト名
+	 * @return	ローカルホスト名
 	 */
 	//--------------------------------------------------------------------------
 	private String detectLocalHostName() {
@@ -809,7 +818,7 @@ public class TinyWinNfsManager extends JFrame {
 			String hostName = InetAddress.getLocalHost().getHostName() ;
 
 			// ホスト名が取得できた場合
-			if( hostName != null && !hostName.isBlank()) {
+			if(( hostName != null && !hostName.isBlank())) {
 				return hostName ;
 			}
 		} catch( Exception ex) {
@@ -875,7 +884,7 @@ public class TinyWinNfsManager extends JFrame {
 	 * @param event	イベント
 	 */
 	//--------------------------------------------------------------------------
-	private void onRefreshStatus(ActionEvent event) {
+	private void onRefreshStatus( ActionEvent event) {
 		refreshStatus() ;
 	}
 
@@ -916,7 +925,7 @@ public class TinyWinNfsManager extends JFrame {
 	 * @param script	スクリプト
 	 */
 	//--------------------------------------------------------------------------
-	private void confirmAndRun(String message, String script) {
+	private void confirmAndRun( String message, String script) {
 		int result = JOptionPane.showConfirmDialog( this, message, "Confirm", JOptionPane.YES_NO_OPTION) ;
 
 		// はいが選択された場合
@@ -960,8 +969,8 @@ public class TinyWinNfsManager extends JFrame {
 	 *
 	 * <p>メソッド名称： スモークテスト実行</p>
 	 *
-	 * @return テストメッセージ
-	 * @throws Exception テスト異常
+	 * @return	テストメッセージ
+	 * @throws Exception	テスト異常
 	 */
 	//--------------------------------------------------------------------------
 	private List<String> runSmokeTest() throws Exception {
@@ -992,13 +1001,13 @@ public class TinyWinNfsManager extends JFrame {
 	 * <p>メソッド名称： Portmapポート取得</p>
 	 *
 	 * @param portmapPort	Portmapポート
-	 * @param program		Program
-	 * @param version		Version
-	 * @return ポート
-	 * @throws Exception 取得異常
+	 * @param program	Program
+	 * @param version	Version
+	 * @return	ポート
+	 * @throws Exception	取得異常
 	 */
 	//--------------------------------------------------------------------------
-	private int getMappedPort(int portmapPort, int program, int version) throws Exception {
+	private int getMappedPort( int portmapPort, int program, int version) throws Exception {
 		XdrWriter arguments = new XdrWriter() ;
 		arguments.writeInt( program) ;
 		arguments.writeInt( version) ;
@@ -1015,11 +1024,11 @@ public class TinyWinNfsManager extends JFrame {
 	 * <p>メソッド名称： export mount</p>
 	 *
 	 * @param mountPort	MOUNTポート
-	 * @return ルートファイルハンドル
-	 * @throws Exception mount異常
+	 * @return	ルートファイルハンドル
+	 * @throws Exception	mount異常
 	 */
 	//--------------------------------------------------------------------------
-	private byte[] mountExport(int mountPort) throws Exception {
+	private byte[] mountExport( int mountPort) throws Exception {
 		XdrWriter arguments = new XdrWriter() ;
 		arguments.writeString( exportNameField.getText().trim()) ;
 		XdrReader reader = rpcCall( mountPort, RpcConstants.PROGRAM_MOUNT, 1, 1, arguments) ;
@@ -1039,12 +1048,12 @@ public class TinyWinNfsManager extends JFrame {
 	 *
 	 * <p>メソッド名称： ルートGETATTR確認</p>
 	 *
-	 * @param nfsPort		NFSポート
+	 * @param nfsPort	NFSポート
 	 * @param rootHandle	ルートファイルハンドル
-	 * @throws Exception 確認異常
+	 * @throws Exception	確認異常
 	 */
 	//--------------------------------------------------------------------------
-	private void checkRootGetAttr(int nfsPort, byte[] rootHandle) throws Exception {
+	private void checkRootGetAttr( int nfsPort, byte[] rootHandle) throws Exception {
 		XdrWriter arguments = new XdrWriter() ;
 		arguments.writeFixedOpaque( rootHandle) ;
 		XdrReader reader = rpcCall( nfsPort, RpcConstants.PROGRAM_NFS, 2, 1, arguments) ;
@@ -1069,16 +1078,16 @@ public class TinyWinNfsManager extends JFrame {
 	 *
 	 * <p>メソッド名称： RPC呼出</p>
 	 *
-	 * @param port		ポート
+	 * @param port	ポート
 	 * @param program	Program
 	 * @param version	Version
 	 * @param procedure	Procedure
 	 * @param arguments	引数
-	 * @return 応答本文
-	 * @throws Exception 呼出異常
+	 * @return	応答本文
+	 * @throws Exception	呼出異常
 	 */
 	//--------------------------------------------------------------------------
-	private XdrReader rpcCall(int port, int program, int version, int procedure, XdrWriter arguments) throws Exception {
+	private XdrReader rpcCall( int port, int program, int version, int procedure, XdrWriter arguments) throws Exception {
 		int requestXid = ++xid ;
 		byte[] request = createRpcCall( requestXid, program, version, procedure, arguments) ;
 		byte[] buffer = new byte[65535] ;
@@ -1107,15 +1116,15 @@ public class TinyWinNfsManager extends JFrame {
 	 *
 	 * <p>メソッド名称： RPC CALL作成</p>
 	 *
-	 * @param xid		XID
+	 * @param xid	XID
 	 * @param program	Program
 	 * @param version	Version
 	 * @param procedure	Procedure
 	 * @param arguments	引数
-	 * @return RPC CALL
+	 * @return	RPC CALL
 	 */
 	//--------------------------------------------------------------------------
-	private byte[] createRpcCall(int xid, int program, int version, int procedure, XdrWriter arguments) {
+	private byte[] createRpcCall( int xid, int program, int version, int procedure, XdrWriter arguments) {
 		XdrWriter writer = new XdrWriter() ;
 		writer.writeInt( xid) ;
 		writer.writeInt( RpcConstants.MSG_CALL) ;
@@ -1137,12 +1146,12 @@ public class TinyWinNfsManager extends JFrame {
 	 *
 	 * <p>メソッド名称： 数値一致確認</p>
 	 *
-	 * @param name		名称
+	 * @param name	名称
 	 * @param expected	期待値
 	 * @param actual	実値
 	 */
 	//--------------------------------------------------------------------------
-	private void checkEquals(String name, int expected, int actual) {
+	private void checkEquals( String name, int expected, int actual) {
 		// 値が一致しない場合
 		if( expected != actual) {
 			throw new IllegalStateException( name + " expected=" + expected + " actual=" + actual) ;
@@ -1158,7 +1167,7 @@ public class TinyWinNfsManager extends JFrame {
 	 * @param scriptName	スクリプト名
 	 */
 	//--------------------------------------------------------------------------
-	private void runScriptAsync(String scriptName) {
+	private void runScriptAsync( String scriptName) {
 		Path scriptPath = rootPath.resolve( "scripts").resolve( scriptName) ;
 
 		// スクリプトが存在しない場合
@@ -1182,12 +1191,12 @@ public class TinyWinNfsManager extends JFrame {
 	 *
 	 * <p>メソッド名称： コマンド非同期実行</p>
 	 *
-	 * @param title		タイトル
+	 * @param title	タイトル
 	 * @param command	コマンド
 	 * @param callback	コールバック
 	 */
 	//--------------------------------------------------------------------------
-	private void runCommandAsync(String title, List<String> command, ResultCallback callback) {
+	private void runCommandAsync( String title, List<String> command, ResultCallback callback) {
 		appendLog( "START: " + title) ;
 		new Thread( () -> {
 			ProcessResult result = runCommand( command) ;
@@ -1215,10 +1224,10 @@ public class TinyWinNfsManager extends JFrame {
 	 * <p>メソッド名称： コマンド実行</p>
 	 *
 	 * @param command	コマンド
-	 * @return 実行結果
+	 * @return	実行結果
 	 */
 	//--------------------------------------------------------------------------
-	private ProcessResult runCommand(List<String> command) {
+	private ProcessResult runCommand( List<String> command) {
 		StringBuilder output = new StringBuilder() ;
 
 		try {
@@ -1230,6 +1239,7 @@ public class TinyWinNfsManager extends JFrame {
 			try( BufferedReader reader = new BufferedReader( new InputStreamReader( process.getInputStream(), Charset.defaultCharset()))) {
 				String line ;
 
+				// プロセス出力を終了まで読み取る
 				while( (line = reader.readLine()) != null) {
 					output.append( line).append( System.lineSeparator()) ;
 				}
@@ -1253,7 +1263,9 @@ public class TinyWinNfsManager extends JFrame {
 	 *
 	 * <p>メソッド名称： 管理者権限確認</p>
 	 *
-	 * @return true:管理者 false:一般ユーザー
+	 * @return	判定結果<ul>
+	 * 			false	: 一般ユーザー<br>
+	 * 			true	: 管理者</ul>
 	 */
 	//--------------------------------------------------------------------------
 	private boolean isAdministrator() {
@@ -1271,28 +1283,28 @@ public class TinyWinNfsManager extends JFrame {
 	 *
 	 * <p>メソッド名称： ルートパス検出</p>
 	 *
-	 * @return ルートパス
+	 * @return	ルートパス
 	 */
 	//--------------------------------------------------------------------------
 	private Path detectRootPath() {
 		String home = System.getenv( "TINYWIN_NFS_HOME") ;
 
 		// 環境変数指定がある場合
-		if( home != null && !home.isBlank()) {
+		if(( home != null && !home.isBlank())) {
 			return Path.of( home).toAbsolutePath().normalize() ;
 		}
 
 		home = System.getenv( "OGAWA_NFS_HOME") ;
 
 		// 旧環境変数指定がある場合
-		if( home != null && !home.isBlank()) {
+		if(( home != null && !home.isBlank())) {
 			return Path.of( home).toAbsolutePath().normalize() ;
 		}
 
 		home = System.getenv( "QNX_NFS_HOME") ;
 
 		// 旧環境変数指定がある場合
-		if( home != null && !home.isBlank()) {
+		if(( home != null && !home.isBlank())) {
 			return Path.of( home).toAbsolutePath().normalize() ;
 		}
 
@@ -1308,14 +1320,14 @@ public class TinyWinNfsManager extends JFrame {
 			Path location = Path.of( codeSource.getLocation().toURI()).toAbsolutePath().normalize() ;
 
 			// binフォルダから起動している場合
-			if( Files.isDirectory( location) && "bin".equalsIgnoreCase( location.getFileName().toString())) {
+			if(( Files.isDirectory( location) && "bin".equalsIgnoreCase( location.getFileName().toString()))) {
 				return location.getParent() ;
 			}
 
 			Path parent = location.getParent() ;
 
 			// jpackageのappフォルダから起動している場合
-			if( parent != null && "app".equalsIgnoreCase( parent.getFileName().toString())) {
+			if(( parent != null && "app".equalsIgnoreCase( parent.getFileName().toString()))) {
 				return parent.getParent() ;
 			}
 		} catch( URISyntaxException usex) {
@@ -1331,7 +1343,7 @@ public class TinyWinNfsManager extends JFrame {
 	 *
 	 * <p>メソッド名称： 登録済みサービスルートパス検出</p>
 	 *
-	 * @return ルートパス
+	 * @return	ルートパス
 	 */
 	//--------------------------------------------------------------------------
 	private Path detectInstalledServiceRootPath() {
@@ -1352,6 +1364,7 @@ public class TinyWinNfsManager extends JFrame {
 			try( BufferedReader reader = new BufferedReader( new InputStreamReader( process.getInputStream(), Charset.defaultCharset()))) {
 				String line ;
 
+				// サービス検索コマンドの出力を終了まで読み取る
 				while( (line = reader.readLine()) != null) {
 					output.append( line).append( System.lineSeparator()) ;
 				}
@@ -1415,10 +1428,10 @@ public class TinyWinNfsManager extends JFrame {
 	 * <p>メソッド名称： 実行ファイルパス抽出</p>
 	 *
 	 * @param pathName	PathName
-	 * @return 実行ファイルパス
+	 * @return	実行ファイルパス
 	 */
 	//--------------------------------------------------------------------------
-	private Path extractExecutablePath(String pathName) {
+	private Path extractExecutablePath( String pathName) {
 		String executable = pathName.trim() ;
 
 		// ダブルクォートで囲まれている場合
@@ -1450,11 +1463,11 @@ public class TinyWinNfsManager extends JFrame {
 	 * @param message	メッセージ
 	 */
 	//--------------------------------------------------------------------------
-	private void appendLog(String message) {
+	private void appendLog( String message) {
 		String text = message ;
 
 		// メッセージが空の場合
-		if( text == null || text.isBlank()) {
+		if(( text == null || text.isBlank())) {
 			return ;
 		}
 
@@ -1472,7 +1485,7 @@ public class TinyWinNfsManager extends JFrame {
 	 * @param exception	例外
 	 */
 	//--------------------------------------------------------------------------
-	private void showError(String message, Exception exception) {
+	private void showError( String message, Exception exception) {
 		String detail = message ;
 
 		// 例外が存在する場合
@@ -1488,6 +1501,15 @@ public class TinyWinNfsManager extends JFrame {
 	 * 実行結果クラスです。<br><br>
 	 *
 	 * <p>クラス名称： 実行結果</p>
+	 *
+	 * <p>著作権： Copyright (c) 2026 EnterOgawa. All Rights Reserved.</p>
+	 *
+	 * <p>更新履歴：
+	 * <pre>
+	 *     VerNo.         author        update     comment
+	 *     Ver.01.00.00   Shunji Ogawa  2026/09/02 新規作成
+	 * </pre>
+	 * </p>
 	 *
 	 * @author Shunji Ogawa
 	 * @version 01.00.00
@@ -1511,7 +1533,7 @@ public class TinyWinNfsManager extends JFrame {
 		 * @param output	出力
 		 */
 		//----------------------------------------------------------------------
-		ProcessResult(int exitCode, String output) {
+		ProcessResult( int exitCode, String output) {
 			this.exitCode = exitCode ;
 			this.output = output ;
 		}
@@ -1522,7 +1544,7 @@ public class TinyWinNfsManager extends JFrame {
 		 *
 		 * <p>メソッド名称： 終了コード取得</p>
 		 *
-		 * @return 終了コード
+		 * @return	終了コード
 		 */
 		//----------------------------------------------------------------------
 		int getExitCode() {
@@ -1535,7 +1557,7 @@ public class TinyWinNfsManager extends JFrame {
 		 *
 		 * <p>メソッド名称： 出力取得</p>
 		 *
-		 * @return 出力
+		 * @return	出力
 		 */
 		//----------------------------------------------------------------------
 		String getOutput() {
@@ -1548,6 +1570,15 @@ public class TinyWinNfsManager extends JFrame {
 	 * 実行結果コールバックインターフェースです。<br><br>
 	 *
 	 * <p>クラス名称： 実行結果コールバック</p>
+	 *
+	 * <p>著作権： Copyright (c) 2026 EnterOgawa. All Rights Reserved.</p>
+	 *
+	 * <p>更新履歴：
+	 * <pre>
+	 *     VerNo.         author        update     comment
+	 *     Ver.01.00.00   Shunji Ogawa  2026/09/02 新規作成
+	 * </pre>
+	 * </p>
 	 *
 	 * @author Shunji Ogawa
 	 * @version 01.00.00
@@ -1564,6 +1595,6 @@ public class TinyWinNfsManager extends JFrame {
 		 * @param result	実行結果
 		 */
 		//----------------------------------------------------------------------
-		void completed(ProcessResult result) ;
+		void completed( ProcessResult result) ;
 	}
 }

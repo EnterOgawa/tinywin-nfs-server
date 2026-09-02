@@ -16,6 +16,15 @@ import java.util.stream.Stream;
  *
  * <p>クラス名称： 設定バックアップ</p>
  *
+ * <p>著作権： Copyright (c) 2026 EnterOgawa. All Rights Reserved.</p>
+ *
+ * <p>更新履歴：
+ * <pre>
+ *     VerNo.         author        update     comment
+ *     Ver.01.00.00   Shunji Ogawa  2026/09/02 新規作成
+ * </pre>
+ * </p>
+ *
  * @author Shunji Ogawa
  * @version 01.00.00
  */
@@ -48,11 +57,11 @@ public final class ConfigBackup {
 	 * <p>メソッド名称： 既存設定バックアップ</p>
 	 *
 	 * @param configPath	設定ファイル
-	 * @return バックアップファイル。設定ファイルが存在しない場合は null
-	 * @throws IOException バックアップ異常
+	 * @return	バックアップファイル。設定ファイルが存在しない場合は null
+	 * @throws IOException	バックアップ異常
 	 */
 	//--------------------------------------------------------------------------
-	public static Path backupIfExists(Path configPath) throws IOException {
+	public static Path backupIfExists( Path configPath) throws IOException {
 		Path configDirectory = configPath.toAbsolutePath().normalize().getParent() ;
 		return backupIfExists( configPath, configDirectory, "nfs-server") ;
 	}
@@ -63,14 +72,14 @@ public final class ConfigBackup {
 	 *
 	 * <p>メソッド名称： 指定ファイルバックアップ</p>
 	 *
-	 * @param sourcePath		バックアップ元
+	 * @param sourcePath	バックアップ元
 	 * @param configDirectory	設定ディレクトリ
-	 * @param prefix			バックアップ名prefix
-	 * @return バックアップファイル。バックアップ元が存在しない場合は null
-	 * @throws IOException バックアップ異常
+	 * @param prefix	バックアップ名prefix
+	 * @return	バックアップファイル。バックアップ元が存在しない場合は null
+	 * @throws IOException	バックアップ異常
 	 */
 	//--------------------------------------------------------------------------
-	public static Path backupIfExists(Path sourcePath, Path configDirectory, String prefix) throws IOException {
+	public static Path backupIfExists( Path sourcePath, Path configDirectory, String prefix) throws IOException {
 		Path normalizedSource = sourcePath.toAbsolutePath().normalize() ;
 
 		// バックアップ元が存在しない場合
@@ -93,12 +102,12 @@ public final class ConfigBackup {
 	 * <p>メソッド名称： バックアップパス作成</p>
 	 *
 	 * @param backupDirectory	バックアップディレクトリ
-	 * @param prefix			バックアップ名prefix
-	 * @return バックアップパス
-	 * @throws IOException バックアップパス作成異常
+	 * @param prefix	バックアップ名prefix
+	 * @return	バックアップパス
+	 * @throws IOException	バックアップパス作成異常
 	 */
 	//--------------------------------------------------------------------------
-	private static Path createBackupPath(Path backupDirectory, String prefix) throws IOException {
+	private static Path createBackupPath( Path backupDirectory, String prefix) throws IOException {
 		String timestamp = LocalDateTime.now().format( BACKUP_TIME_FORMAT) ;
 
 		// 同一ミリ秒内の重複を避けるため連番を確認する
@@ -122,11 +131,11 @@ public final class ConfigBackup {
 	 * <p>メソッド名称： バックアップ世代整理</p>
 	 *
 	 * @param backupDirectory	バックアップディレクトリ
-	 * @param prefix			バックアップ名prefix
-	 * @throws IOException 整理異常
+	 * @param prefix	バックアップ名prefix
+	 * @throws IOException	整理異常
 	 */
 	//--------------------------------------------------------------------------
-	private static void pruneBackups(Path backupDirectory, String prefix) throws IOException {
+	private static void pruneBackups( Path backupDirectory, String prefix) throws IOException {
 		try( Stream<Path> stream = Files.list( backupDirectory)) {
 			List<Path> backups = stream
 					.filter( path -> path.getFileName().toString().startsWith( prefix + "-" ) )
@@ -147,10 +156,10 @@ public final class ConfigBackup {
 	 * <p>メソッド名称： 最終更新時刻取得</p>
 	 *
 	 * @param path	パス
-	 * @return 最終更新時刻
+	 * @return	最終更新時刻
 	 */
 	//--------------------------------------------------------------------------
-	private static long lastModifiedMillis(Path path) {
+	private static long lastModifiedMillis( Path path) {
 		try {
 			return Files.getLastModifiedTime( path).toMillis() ;
 		} catch( IOException ioex) {

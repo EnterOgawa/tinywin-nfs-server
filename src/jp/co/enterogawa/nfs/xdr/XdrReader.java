@@ -10,6 +10,15 @@ import java.util.Arrays;
  *
  * <p>クラス名称： XDR読込</p>
  *
+ * <p>著作権： Copyright (c) 2026 EnterOgawa. All Rights Reserved.</p>
+ *
+ * <p>更新履歴：
+ * <pre>
+ *     VerNo.         author        update     comment
+ *     Ver.01.00.00   Shunji Ogawa  2026/09/02 新規作成
+ * </pre>
+ * </p>
+ *
  * @author Shunji Ogawa
  * @version 01.00.00
  */
@@ -28,11 +37,11 @@ public class XdrReader {
 	 *
 	 * <p>メソッド名称： コンストラクタ</p>
 	 *
-	 * @param data		入力データ
+	 * @param data	入力データ
 	 * @param length	有効長
 	 */
 	//--------------------------------------------------------------------------
-	public XdrReader(byte[] data, int length) {
+	public XdrReader( byte[] data, int length) {
 		this.data = Arrays.copyOf( data, length) ;
 		position = 0 ;
 	}
@@ -46,7 +55,7 @@ public class XdrReader {
 	 * @param data	入力データ
 	 */
 	//--------------------------------------------------------------------------
-	public XdrReader(byte[] data) {
+	public XdrReader( byte[] data) {
 		this( data, data.length) ;
 	}
 
@@ -56,7 +65,7 @@ public class XdrReader {
 	 *
 	 * <p>メソッド名称： 32bit整数読込</p>
 	 *
-	 * @return 32bit整数
+	 * @return	32bit整数
 	 */
 	//--------------------------------------------------------------------------
 	public int readInt() {
@@ -64,7 +73,7 @@ public class XdrReader {
 		int value = ((data[position] & 0xff) << 24)
 				| ((data[position + 1] & 0xff) << 16)
 				| ((data[position + 2] & 0xff) << 8)
-				| (data[position + 3] & 0xff) ;
+				| ( data[position + 3] & 0xff) ;
 		position += 4 ;
 		return value ;
 	}
@@ -75,7 +84,7 @@ public class XdrReader {
 	 *
 	 * <p>メソッド名称： 符号なし32bit整数読込</p>
 	 *
-	 * @return 符号なし32bit整数
+	 * @return	符号なし32bit整数
 	 */
 	//--------------------------------------------------------------------------
 	public long readUnsignedInt() {
@@ -88,7 +97,7 @@ public class XdrReader {
 	 *
 	 * <p>メソッド名称： 64bit整数読込</p>
 	 *
-	 * @return 64bit整数
+	 * @return	64bit整数
 	 */
 	//--------------------------------------------------------------------------
 	public long readLong() {
@@ -103,7 +112,7 @@ public class XdrReader {
 	 *
 	 * <p>メソッド名称： boolean値読込</p>
 	 *
-	 * @return boolean値
+	 * @return	boolean値
 	 */
 	//--------------------------------------------------------------------------
 	public boolean readBoolean() {
@@ -116,14 +125,17 @@ public class XdrReader {
 	 *
 	 * <p>メソッド名称： 可変長バイト列読込</p>
 	 *
-	 * @return バイト列
+	 * @return	バイト列
 	 */
 	//--------------------------------------------------------------------------
 	public byte[] readOpaque() {
 		int length = readInt() ;
+
+		// XDRの可変長データ長が負値の場合は不正入力として扱う
 		if( length < 0) {
 			throw new IllegalArgumentException( "XDR opaque length is invalid.") ;
 		}
+
 		byte[] value = readFixedOpaque( length) ;
 		return value ;
 	}
@@ -135,13 +147,15 @@ public class XdrReader {
 	 * <p>メソッド名称： 固定長バイト列読込</p>
 	 *
 	 * @param length	長さ
-	 * @return バイト列
+	 * @return	バイト列
 	 */
 	//--------------------------------------------------------------------------
-	public byte[] readFixedOpaque(int length) {
+	public byte[] readFixedOpaque( int length) {
+		// 固定長データ長が負値の場合は不正入力として扱う
 		if( length < 0) {
 			throw new IllegalArgumentException( "XDR opaque length is invalid.") ;
 		}
+
 		require( length) ;
 		byte[] value = Arrays.copyOfRange( data, position, position + length) ;
 		position += length ;
@@ -156,13 +170,15 @@ public class XdrReader {
 	 * <p>メソッド名称： パディングなし固定長バイト列読込</p>
 	 *
 	 * @param length	長さ
-	 * @return バイト列
+	 * @return	バイト列
 	 */
 	//--------------------------------------------------------------------------
-	public byte[] readFixedOpaqueWithoutPadding(int length) {
+	public byte[] readFixedOpaqueWithoutPadding( int length) {
+		// パディングなし固定長データ長が負値の場合は不正入力として扱う
 		if( length < 0) {
 			throw new IllegalArgumentException( "XDR opaque length is invalid.") ;
 		}
+
 		require( length) ;
 		byte[] value = Arrays.copyOfRange( data, position, position + length) ;
 		position += length ;
@@ -175,7 +191,7 @@ public class XdrReader {
 	 *
 	 * <p>メソッド名称： 文字列読込</p>
 	 *
-	 * @return 文字列
+	 * @return	文字列
 	 */
 	//--------------------------------------------------------------------------
 	public String readString() {
@@ -190,10 +206,10 @@ public class XdrReader {
 	 * <p>メソッド名称： 文字列読込</p>
 	 *
 	 * @param charset	文字コード
-	 * @return 文字列
+	 * @return	文字列
 	 */
 	//--------------------------------------------------------------------------
-	public String readString(Charset charset) {
+	public String readString( Charset charset) {
 		byte[] value = readOpaque() ;
 		return new String( value, charset) ;
 	}
@@ -204,7 +220,7 @@ public class XdrReader {
 	 *
 	 * <p>メソッド名称： 残データ読込</p>
 	 *
-	 * @return 残データ
+	 * @return	残データ
 	 */
 	//--------------------------------------------------------------------------
 	public byte[] readRemaining() {
@@ -219,7 +235,7 @@ public class XdrReader {
 	 *
 	 * <p>メソッド名称： 読込位置取得</p>
 	 *
-	 * @return 読込位置
+	 * @return	読込位置
 	 */
 	//--------------------------------------------------------------------------
 	public int getPosition() {
@@ -235,10 +251,12 @@ public class XdrReader {
 	 * @param position	読込位置
 	 */
 	//--------------------------------------------------------------------------
-	public void setPosition(int position) {
-		if( position < 0 || position > data.length) {
+	public void setPosition( int position) {
+		// 読込位置がバッファ範囲外の場合は不正入力として扱う
+		if(( position < 0 || position > data.length)) {
 			throw new IllegalArgumentException( "XDR position is invalid.") ;
 		}
+
 		this.position = position ;
 	}
 
@@ -248,7 +266,7 @@ public class XdrReader {
 	 *
 	 * <p>メソッド名称： 残データ長取得</p>
 	 *
-	 * @return 残データ長
+	 * @return	残データ長
 	 */
 	//--------------------------------------------------------------------------
 	public int remainingLength() {
@@ -261,7 +279,9 @@ public class XdrReader {
 	 *
 	 * <p>メソッド名称： 残データ有無確認</p>
 	 *
-	 * @return true:残データあり false:残データなし
+	 * @return	判定結果<ul>
+	 * 			false	: 残データなし<br>
+	 * 			true	: 残データあり</ul>
 	 */
 	//--------------------------------------------------------------------------
 	public boolean hasRemaining() {
@@ -277,7 +297,7 @@ public class XdrReader {
 	 * @param length	実データ長
 	 */
 	//--------------------------------------------------------------------------
-	private void skipPadding(int length) {
+	private void skipPadding( int length) {
 		int padding = (4 - (length % 4)) % 4 ;
 
 		// パディングが存在する場合
@@ -296,7 +316,7 @@ public class XdrReader {
 	 * @param length	必要長
 	 */
 	//--------------------------------------------------------------------------
-	private void require(int length) {
+	private void require( int length) {
 		// データが不足する場合
 		if( position + length > data.length) {
 			throw new IllegalArgumentException( "XDR data is too short.") ;

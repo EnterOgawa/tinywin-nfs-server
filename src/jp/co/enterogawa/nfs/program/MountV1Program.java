@@ -18,6 +18,15 @@ import jp.co.enterogawa.nfs.xdr.XdrWriter;
  *
  * <p>クラス名称： MOUNT Version 1プログラム</p>
  *
+ * <p>著作権： Copyright (c) 2026 EnterOgawa. All Rights Reserved.</p>
+ *
+ * <p>更新履歴：
+ * <pre>
+ *     VerNo.         author        update     comment
+ *     Ver.01.00.00   Shunji Ogawa  2026/09/02 新規作成
+ * </pre>
+ * </p>
+ *
  * @author Shunji Ogawa
  * @version 01.00.00
  */
@@ -64,11 +73,11 @@ public class MountV1Program implements RpcProgram {
 	 *
 	 * <p>メソッド名称： コンストラクタ</p>
 	 *
-	 * @param config		設定
+	 * @param config	設定
 	 * @param handleTable	ファイルハンドル管理
 	 */
 	//--------------------------------------------------------------------------
-	public MountV1Program(NfsServerConfig config, FileHandleTable handleTable) {
+	public MountV1Program( NfsServerConfig config, FileHandleTable handleTable) {
 		this.config = config ;
 		this.handleTable = handleTable ;
 	}
@@ -79,7 +88,7 @@ public class MountV1Program implements RpcProgram {
 	 *
 	 * <p>メソッド名称： Program番号取得</p>
 	 *
-	 * @return Program番号
+	 * @return	Program番号
 	 */
 	//--------------------------------------------------------------------------
 	@Override
@@ -93,7 +102,7 @@ public class MountV1Program implements RpcProgram {
 	 *
 	 * <p>メソッド名称： Version取得</p>
 	 *
-	 * @return Version
+	 * @return	Version
 	 */
 	//--------------------------------------------------------------------------
 	@Override
@@ -108,11 +117,13 @@ public class MountV1Program implements RpcProgram {
 	 * <p>メソッド名称： Version対応可否確認</p>
 	 *
 	 * @param version	Version
-	 * @return true:対応 false:未対応
+	 * @return	判定結果<ul>
+	 * 			false	: 未対応<br>
+	 * 			true	: 対応</ul>
 	 */
 	//--------------------------------------------------------------------------
 	@Override
-	public boolean supportsVersion(int version) {
+	public boolean supportsVersion( int version) {
 		return version == 1 || version == 2 || version == 3 ;
 	}
 
@@ -122,14 +133,15 @@ public class MountV1Program implements RpcProgram {
 	 *
 	 * <p>メソッド名称： RPC呼出処理</p>
 	 *
-	 * @param call		RPC呼出
+	 * @param call	RPC呼出
 	 * @param response	応答
-	 * @return ACCEPTステータス
-	 * @throws IOException 処理異常
+	 * @return	ACCEPTステータス
+	 * @throws IOException	処理異常
 	 */
 	//--------------------------------------------------------------------------
 	@Override
-	public int handle(RpcCall call, XdrWriter response) throws IOException {
+	public int handle( RpcCall call, XdrWriter response) throws IOException {
+		// MOUNT手続き番号に応じた応答を返す
 		switch( call.getProcedure()) {
 		case PROC_NULL:
 			return RpcConstants.ACCEPT_SUCCESS ;
@@ -161,11 +173,11 @@ public class MountV1Program implements RpcProgram {
 	 *
 	 * <p>メソッド名称： MOUNT処理</p>
 	 *
-	 * @param call		RPC呼出
+	 * @param call	RPC呼出
 	 * @param response	応答
 	 */
 	//--------------------------------------------------------------------------
-	private void handleMount(RpcCall call, XdrWriter response) {
+	private void handleMount( RpcCall call, XdrWriter response) {
 		String path = call.getArguments().readString() ;
 		NfsExport export = config.findExport( path) ;
 
@@ -204,12 +216,12 @@ public class MountV1Program implements RpcProgram {
 	 *
 	 * <p>メソッド名称： MOUNTログ出力</p>
 	 *
-	 * @param path		公開名
+	 * @param path	公開名
 	 * @param status	ステータス
 	 * @param detail	詳細
 	 */
 	//--------------------------------------------------------------------------
-	private void logMount(String path, int status, String detail) {
+	private void logMount( String path, int status, String detail) {
 		RpcRequestContext context = RpcRequestContext.current() ;
 		StringBuilder message = new StringBuilder() ;
 		message.append( "MOUNT MNT" )
@@ -222,7 +234,7 @@ public class MountV1Program implements RpcProgram {
 				.append( " export=" ).append( path ) ;
 
 		// 詳細が存在する場合
-		if( detail != null && !detail.isBlank()) {
+		if(( detail != null && !detail.isBlank())) {
 			message.append( " " ).append( detail) ;
 		}
 
@@ -238,7 +250,7 @@ public class MountV1Program implements RpcProgram {
 	 * @param response	応答
 	 */
 	//--------------------------------------------------------------------------
-	private void handleExport(XdrWriter response) {
+	private void handleExport( XdrWriter response) {
 		// 公開定義を出力する
 		for( NfsExport export : config.getExports()) {
 			response.writeBoolean( true) ;

@@ -8,6 +8,15 @@ import jp.co.enterogawa.nfs.xdr.XdrReader;
  *
  * <p>クラス名称： RPC呼出</p>
  *
+ * <p>著作権： Copyright (c) 2026 EnterOgawa. All Rights Reserved.</p>
+ *
+ * <p>更新履歴：
+ * <pre>
+ *     VerNo.         author        update     comment
+ *     Ver.01.00.00   Shunji Ogawa  2026/09/02 新規作成
+ * </pre>
+ * </p>
+ *
  * @author Shunji Ogawa
  * @version 01.00.00
  */
@@ -44,17 +53,17 @@ public class RpcCall {
 	 *
 	 * <p>メソッド名称： コンストラクタ</p>
 	 *
-	 * @param xid			XID
-	 * @param program		Program
-	 * @param version		Version
-	 * @param procedure		Procedure
+	 * @param xid	XID
+	 * @param program	Program
+	 * @param version	Version
+	 * @param procedure	Procedure
 	 * @param credential	Credential
-	 * @param verifier		Verifier
-	 * @param arguments		引数
+	 * @param verifier	Verifier
+	 * @param arguments	引数
 	 * @param argumentBytes	引数バイト列
 	 */
 	//--------------------------------------------------------------------------
-	private RpcCall(int xid, int program, int version, int procedure, RpcCredential credential, RpcCredential verifier, XdrReader arguments, byte[] argumentBytes) {
+	private RpcCall( int xid, int program, int version, int procedure, RpcCredential credential, RpcCredential verifier, XdrReader arguments, byte[] argumentBytes) {
 		this.xid = xid ;
 		this.program = program ;
 		this.version = version ;
@@ -73,10 +82,10 @@ public class RpcCall {
 	 *
 	 * @param packet	パケット
 	 * @param length	有効長
-	 * @return RPC呼出
+	 * @return	RPC呼出
 	 */
 	//--------------------------------------------------------------------------
-	public static RpcCall read(byte[] packet, int length) {
+	public static RpcCall read( byte[] packet, int length) {
 		XdrReader reader = new XdrReader( packet, length) ;
 		int xid = reader.readInt() ;
 		int messageType = reader.readInt() ;
@@ -112,10 +121,10 @@ public class RpcCall {
 	 *
 	 * @param packet	パケット
 	 * @param length	有効長
-	 * @return XID
+	 * @return	XID
 	 */
 	//--------------------------------------------------------------------------
-	public static int readXid(byte[] packet, int length) {
+	public static int readXid( byte[] packet, int length) {
 		// XIDが存在しない場合
 		if( length < 4) {
 			return 0 ;
@@ -124,7 +133,7 @@ public class RpcCall {
 		return ((packet[0] & 0xff) << 24)
 				| ((packet[1] & 0xff) << 16)
 				| ((packet[2] & 0xff) << 8)
-				| (packet[3] & 0xff) ;
+				| ( packet[3] & 0xff) ;
 	}
 
 	//--------------------------------------------------------------------------
@@ -134,10 +143,10 @@ public class RpcCall {
 	 * <p>メソッド名称： 認証情報読込</p>
 	 *
 	 * @param reader	XDR読込
-	 * @return 認証情報
+	 * @return	認証情報
 	 */
 	//--------------------------------------------------------------------------
-	private static RpcCredential readCredential(XdrReader reader) {
+	private static RpcCredential readCredential( XdrReader reader) {
 		int flavor = reader.readInt() ;
 		byte[] body = reader.readOpaque() ;
 		return new RpcCredential( flavor, body) ;
@@ -149,7 +158,7 @@ public class RpcCall {
 	 *
 	 * <p>メソッド名称： XID取得</p>
 	 *
-	 * @return XID
+	 * @return	XID
 	 */
 	//--------------------------------------------------------------------------
 	public int getXid() {
@@ -162,7 +171,7 @@ public class RpcCall {
 	 *
 	 * <p>メソッド名称： Program取得</p>
 	 *
-	 * @return Program
+	 * @return	Program
 	 */
 	//--------------------------------------------------------------------------
 	public int getProgram() {
@@ -175,7 +184,7 @@ public class RpcCall {
 	 *
 	 * <p>メソッド名称： Version取得</p>
 	 *
-	 * @return Version
+	 * @return	Version
 	 */
 	//--------------------------------------------------------------------------
 	public int getVersion() {
@@ -188,7 +197,7 @@ public class RpcCall {
 	 *
 	 * <p>メソッド名称： Procedure取得</p>
 	 *
-	 * @return Procedure
+	 * @return	Procedure
 	 */
 	//--------------------------------------------------------------------------
 	public int getProcedure() {
@@ -201,7 +210,7 @@ public class RpcCall {
 	 *
 	 * <p>メソッド名称： Credential取得</p>
 	 *
-	 * @return Credential
+	 * @return	Credential
 	 */
 	//--------------------------------------------------------------------------
 	public RpcCredential getCredential() {
@@ -214,7 +223,7 @@ public class RpcCall {
 	 *
 	 * <p>メソッド名称： Verifier取得</p>
 	 *
-	 * @return Verifier
+	 * @return	Verifier
 	 */
 	//--------------------------------------------------------------------------
 	public RpcCredential getVerifier() {
@@ -227,7 +236,7 @@ public class RpcCall {
 	 *
 	 * <p>メソッド名称： 引数取得</p>
 	 *
-	 * @return 引数
+	 * @return	引数
 	 */
 	//--------------------------------------------------------------------------
 	public XdrReader getArguments() {
@@ -240,7 +249,7 @@ public class RpcCall {
 	 *
 	 * <p>メソッド名称： 引数バイト列取得</p>
 	 *
-	 * @return 引数バイト列
+	 * @return	引数バイト列
 	 */
 	//--------------------------------------------------------------------------
 	public byte[] getArgumentBytes() {

@@ -51,6 +51,15 @@ import jp.co.enterogawa.nfs.xdr.XdrWriter;
  *
  * <p>クラス名称： NFS Version 2プログラム</p>
  *
+ * <p>著作権： Copyright (c) 2026 EnterOgawa. All Rights Reserved.</p>
+ *
+ * <p>更新履歴：
+ * <pre>
+ *     VerNo.         author        update     comment
+ *     Ver.01.00.00   Shunji Ogawa  2026/09/02 新規作成
+ * </pre>
+ * </p>
+ *
  * @author Shunji Ogawa
  * @version 01.00.00
  */
@@ -163,11 +172,11 @@ public class NfsV2Program implements RpcProgram {
 	 *
 	 * <p>メソッド名称： コンストラクタ</p>
 	 *
-	 * @param config		設定
+	 * @param config	設定
 	 * @param handleTable	ファイルハンドル管理
 	 */
 	//--------------------------------------------------------------------------
-	public NfsV2Program(NfsServerConfig config, FileHandleTable handleTable) {
+	public NfsV2Program( NfsServerConfig config, FileHandleTable handleTable) {
 		this( config, handleTable, new WriteFileCache( config), new NfsModeStore( config.getExports())) ;
 	}
 
@@ -177,12 +186,12 @@ public class NfsV2Program implements RpcProgram {
 	 *
 	 * <p>メソッド名称： コンストラクタ</p>
 	 *
-	 * @param config			設定
-	 * @param handleTable		ファイルハンドル管理
+	 * @param config	設定
+	 * @param handleTable	ファイルハンドル管理
 	 * @param writeFileCache	書込ファイルキャッシュ
 	 */
 	//--------------------------------------------------------------------------
-	public NfsV2Program(NfsServerConfig config, FileHandleTable handleTable, WriteFileCache writeFileCache) {
+	public NfsV2Program( NfsServerConfig config, FileHandleTable handleTable, WriteFileCache writeFileCache) {
 		this( config, handleTable, writeFileCache, new NfsModeStore( config.getExports())) ;
 	}
 
@@ -192,13 +201,13 @@ public class NfsV2Program implements RpcProgram {
 	 *
 	 * <p>メソッド名称： コンストラクタ</p>
 	 *
-	 * @param config			設定
-	 * @param handleTable		ファイルハンドル管理
+	 * @param config	設定
+	 * @param handleTable	ファイルハンドル管理
 	 * @param writeFileCache	書込ファイルキャッシュ
-	 * @param modeStore		NFSモード管理
+	 * @param modeStore	NFSモード管理
 	 */
 	//--------------------------------------------------------------------------
-	public NfsV2Program(NfsServerConfig config, FileHandleTable handleTable, WriteFileCache writeFileCache, NfsModeStore modeStore) {
+	public NfsV2Program( NfsServerConfig config, FileHandleTable handleTable, WriteFileCache writeFileCache, NfsModeStore modeStore) {
 		this.config = config ;
 		this.handleTable = handleTable ;
 		this.writeFileCache = writeFileCache ;
@@ -212,7 +221,7 @@ public class NfsV2Program implements RpcProgram {
 	 *
 	 * <p>メソッド名称： リソースクローズ</p>
 	 *
-	 * @throws IOException クローズ異常
+	 * @throws IOException	クローズ異常
 	 */
 	//--------------------------------------------------------------------------
 	public void close() throws IOException {
@@ -226,7 +235,7 @@ public class NfsV2Program implements RpcProgram {
 	 *
 	 * <p>メソッド名称： Program番号取得</p>
 	 *
-	 * @return Program番号
+	 * @return	Program番号
 	 */
 	//--------------------------------------------------------------------------
 	@Override
@@ -240,7 +249,7 @@ public class NfsV2Program implements RpcProgram {
 	 *
 	 * <p>メソッド名称： Version取得</p>
 	 *
-	 * @return Version
+	 * @return	Version
 	 */
 	//--------------------------------------------------------------------------
 	@Override
@@ -254,15 +263,16 @@ public class NfsV2Program implements RpcProgram {
 	 *
 	 * <p>メソッド名称： RPC呼出処理</p>
 	 *
-	 * @param call		RPC呼出
+	 * @param call	RPC呼出
 	 * @param response	応答
-	 * @return ACCEPTステータス
-	 * @throws IOException 処理異常
+	 * @return	ACCEPTステータス
+	 * @throws IOException	処理異常
 	 */
 	//--------------------------------------------------------------------------
 	@Override
-	public int handle(RpcCall call, XdrWriter response) throws IOException {
+	public int handle( RpcCall call, XdrWriter response) throws IOException {
 		try {
+			// NFSv2手続き番号に応じた処理を行う
 			switch( call.getProcedure()) {
 			case PROC_NULL:
 			case PROC_ROOT:
@@ -335,6 +345,7 @@ public class NfsV2Program implements RpcProgram {
 				return RpcConstants.ACCEPT_PROC_UNAVAIL ;
 			}
 		} catch( IllegalArgumentException iaex) {
+			// WRITE引数の解析に失敗した場合は調査用ログを出力する
 			if( call.getProcedure() == PROC_WRITE) {
 				logWriteParseError( call, iaex) ;
 			}
@@ -354,10 +365,10 @@ public class NfsV2Program implements RpcProgram {
 	 *
 	 * @param arguments	引数
 	 * @param response	応答
-	 * @throws IOException 処理異常
+	 * @throws IOException	処理異常
 	 */
 	//--------------------------------------------------------------------------
-	private void handleGetAttr(XdrReader arguments, XdrWriter response) throws IOException {
+	private void handleGetAttr( XdrReader arguments, XdrWriter response) throws IOException {
 		FileHandle handle = readHandle( arguments) ;
 		Path path = handleTable.getPath( handle) ;
 
@@ -385,10 +396,10 @@ public class NfsV2Program implements RpcProgram {
 	 *
 	 * @param arguments	引数
 	 * @param response	応答
-	 * @throws IOException 処理異常
+	 * @throws IOException	処理異常
 	 */
 	//--------------------------------------------------------------------------
-	private void handleLookup(XdrReader arguments, XdrWriter response) throws IOException {
+	private void handleLookup( XdrReader arguments, XdrWriter response) throws IOException {
 		FileHandle directoryHandle = readHandle( arguments) ;
 		String name = readName( arguments) ;
 		Path directory = handleTable.getPath( directoryHandle) ;
@@ -453,10 +464,10 @@ public class NfsV2Program implements RpcProgram {
 	 *
 	 * @param arguments	引数
 	 * @param response	応答
-	 * @throws IOException 処理異常
+	 * @throws IOException	処理異常
 	 */
 	//--------------------------------------------------------------------------
-	private void handleReadLink(XdrReader arguments, XdrWriter response) throws IOException {
+	private void handleReadLink( XdrReader arguments, XdrWriter response) throws IOException {
 		FileHandle handle = readHandle( arguments) ;
 		Path path = handleTable.getPath( handle) ;
 
@@ -504,10 +515,10 @@ public class NfsV2Program implements RpcProgram {
 	 *
 	 * @param arguments	引数
 	 * @param response	応答
-	 * @throws IOException 処理異常
+	 * @throws IOException	処理異常
 	 */
 	//--------------------------------------------------------------------------
-	private void handleRead(XdrReader arguments, XdrWriter response) throws IOException {
+	private void handleRead( XdrReader arguments, XdrWriter response) throws IOException {
 		FileHandle handle = readHandle( arguments) ;
 		long offset = arguments.readUnsignedInt() ;
 		int count = arguments.readInt() ;
@@ -562,10 +573,10 @@ public class NfsV2Program implements RpcProgram {
 	 *
 	 * @param arguments	引数
 	 * @param response	応答
-	 * @throws IOException 処理異常
+	 * @throws IOException	処理異常
 	 */
 	//--------------------------------------------------------------------------
-	private void handleSetAttr(XdrReader arguments, XdrWriter response) throws IOException {
+	private void handleSetAttr( XdrReader arguments, XdrWriter response) throws IOException {
 		FileHandle handle = readHandle( arguments) ;
 		SetAttributes attributes = readSetAttributes( arguments) ;
 		Path path = handleTable.getPath( handle) ;
@@ -620,10 +631,10 @@ public class NfsV2Program implements RpcProgram {
 	 *
 	 * @param arguments	引数
 	 * @param response	応答
-	 * @throws IOException 処理異常
+	 * @throws IOException	処理異常
 	 */
 	//--------------------------------------------------------------------------
-	private void handleWrite(XdrReader arguments, XdrWriter response) throws IOException {
+	private void handleWrite( XdrReader arguments, XdrWriter response) throws IOException {
 		FileHandle handle = readHandle( arguments) ;
 		arguments.readUnsignedInt() ;
 		long offset = arguments.readUnsignedInt() ;
@@ -680,10 +691,11 @@ public class NfsV2Program implements RpcProgram {
 	 *
 	 * @param arguments	引数
 	 * @param totalCount	WRITE totalcount
-	 * @return WRITEデータ
+	 * @return	WRITEデータ
 	 */
 	//--------------------------------------------------------------------------
-	private byte[] readWriteData(XdrReader arguments, long totalCount) {
+	private byte[] readWriteData( XdrReader arguments, long totalCount) {
+		// WRITE countが有効な場合はQNX互換の固定長opaque形式を確認する
 		if( isValidWriteCount( totalCount)) {
 			int count = (int)totalCount ;
 
@@ -707,7 +719,7 @@ public class NfsV2Program implements RpcProgram {
 			}
 
 			// data lengthが付かない古いクライアント向けの限定的な互換処理
-			if( isValidWriteCount( totalCount) && arguments.remainingLength() == getPaddedLength( (int)totalCount)) {
+			if(( isValidWriteCount( totalCount) && arguments.remainingLength() == getPaddedLength( (int)totalCount))) {
 				return arguments.readFixedOpaque( (int)totalCount) ;
 			}
 
@@ -722,10 +734,10 @@ public class NfsV2Program implements RpcProgram {
 	 * <p>メソッド名称： パディングなしopaqueデータ読込</p>
 	 *
 	 * @param arguments	引数
-	 * @return データ。対象外の場合はnull
+	 * @return	データ。対象外の場合はnull
 	 */
 	//--------------------------------------------------------------------------
-	private byte[] readUnpaddedOpaqueData(XdrReader arguments) {
+	private byte[] readUnpaddedOpaqueData( XdrReader arguments) {
 		int position = arguments.getPosition() ;
 
 		// lengthフィールドが存在しない場合
@@ -757,11 +769,11 @@ public class NfsV2Program implements RpcProgram {
 	 *
 	 * <p>メソッド名称： WRITE解析エラー出力</p>
 	 *
-	 * @param call		RPC呼出
-	 * @param cause		原因
+	 * @param call	RPC呼出
+	 * @param cause	原因
 	 */
 	//--------------------------------------------------------------------------
-	private void logWriteParseError(RpcCall call, IllegalArgumentException cause) {
+	private void logWriteParseError( RpcCall call, IllegalArgumentException cause) {
 		RpcRequestContext context = RpcRequestContext.current() ;
 		byte[] arguments = call.getArgumentBytes() ;
 		StringBuilder message = new StringBuilder() ;
@@ -791,10 +803,10 @@ public class NfsV2Program implements RpcProgram {
 	 * <p>メソッド名称： WRITE引数フィールド整形</p>
 	 *
 	 * @param arguments	引数
-	 * @return フィールド文字列
+	 * @return	フィールド文字列
 	 */
 	//--------------------------------------------------------------------------
-	private String formatWriteArgumentFields(byte[] arguments) {
+	private String formatWriteArgumentFields( byte[] arguments) {
 		StringBuilder fields = new StringBuilder() ;
 		appendUnsignedField( fields, "begin", arguments, FileHandle.LENGTH) ;
 		appendUnsignedField( fields, "offset", arguments, FileHandle.LENGTH + Integer.BYTES) ;
@@ -810,18 +822,20 @@ public class NfsV2Program implements RpcProgram {
 	 * <p>メソッド名称： 符号なしフィールド追加</p>
 	 *
 	 * @param builder	文字列
-	 * @param name		名前
-	 * @param data		データ
+	 * @param name	名前
+	 * @param data	データ
 	 * @param offset	オフセット
 	 */
 	//--------------------------------------------------------------------------
-	private void appendUnsignedField(StringBuilder builder, String name, byte[] data, int offset) {
+	private void appendUnsignedField( StringBuilder builder, String name, byte[] data, int offset) {
+		// 既存フィールドがある場合は区切り文字を追加する
 		if( builder.length() > 0) {
 			builder.append( "," ) ;
 		}
 
 		builder.append( name ).append( "=" ) ;
 
+		// 対象フィールドが引数バイト列に収まらない場合は欠落として出力する
 		if( data.length < offset + Integer.BYTES) {
 			builder.append( "missing" ) ;
 			return ;
@@ -836,16 +850,16 @@ public class NfsV2Program implements RpcProgram {
 	 *
 	 * <p>メソッド名称： 32bit整数読込</p>
 	 *
-	 * @param data		データ
+	 * @param data	データ
 	 * @param offset	オフセット
-	 * @return 32bit整数
+	 * @return	32bit整数
 	 */
 	//--------------------------------------------------------------------------
-	private int readInt(byte[] data, int offset) {
+	private int readInt( byte[] data, int offset) {
 		return ((data[offset] & 0xff) << 24)
 				| ((data[offset + 1] & 0xff) << 16)
 				| ((data[offset + 2] & 0xff) << 8)
-				| (data[offset + 3] & 0xff) ;
+				| ( data[offset + 3] & 0xff) ;
 	}
 
 	//--------------------------------------------------------------------------
@@ -854,16 +868,18 @@ public class NfsV2Program implements RpcProgram {
 	 *
 	 * <p>メソッド名称： HEX文字列整形</p>
 	 *
-	 * @param data		データ
+	 * @param data	データ
 	 * @param maxBytes	最大バイト数
-	 * @return HEX文字列
+	 * @return	HEX文字列
 	 */
 	//--------------------------------------------------------------------------
-	private String formatHex(byte[] data, int maxBytes) {
+	private String formatHex( byte[] data, int maxBytes) {
 		StringBuilder hex = new StringBuilder() ;
 		int length = Math.min( data.length, maxBytes) ;
 
+		// 出力対象バイトをHEX文字列へ変換する
 		for( int i = 0; i < length; i++) {
+			// 2バイト目以降は可読性のため空白で区切る
 			if( i > 0) {
 				hex.append( ' ' ) ;
 			}
@@ -871,6 +887,7 @@ public class NfsV2Program implements RpcProgram {
 			hex.append( String.format( "%02x", data[i] & 0xff)) ;
 		}
 
+		// 出力上限を超えた場合は省略表示を追加する
 		if( data.length > maxBytes) {
 			hex.append( " ..." ) ;
 		}
@@ -885,10 +902,12 @@ public class NfsV2Program implements RpcProgram {
 	 * <p>メソッド名称： WRITE count有効確認</p>
 	 *
 	 * @param count	WRITE count
-	 * @return true:有効 false:無効
+	 * @return	判定結果<ul>
+	 * 			false	: 無効<br>
+	 * 			true	: 有効</ul>
 	 */
 	//--------------------------------------------------------------------------
-	private boolean isValidWriteCount(long count) {
+	private boolean isValidWriteCount( long count) {
 		return 0 <= count && count <= MAX_WRITE_BYTES ;
 	}
 
@@ -899,10 +918,10 @@ public class NfsV2Program implements RpcProgram {
 	 * <p>メソッド名称： XDRパディング長取得</p>
 	 *
 	 * @param length	実データ長
-	 * @return パディング込み長
+	 * @return	パディング込み長
 	 */
 	//--------------------------------------------------------------------------
-	private int getPaddedLength(int length) {
+	private int getPaddedLength( int length) {
 		return length + (4 - (length % 4)) % 4 ;
 	}
 
@@ -914,10 +933,10 @@ public class NfsV2Program implements RpcProgram {
 	 *
 	 * @param arguments	引数
 	 * @param response	応答
-	 * @throws IOException 処理異常
+	 * @throws IOException	処理異常
 	 */
 	//--------------------------------------------------------------------------
-	private void handleCreate(XdrReader arguments, XdrWriter response) throws IOException {
+	private void handleCreate( XdrReader arguments, XdrWriter response) throws IOException {
 		ResolvedPath target = readOperationPath( arguments) ;
 		SetAttributes attributes = readSetAttributes( arguments) ;
 
@@ -980,10 +999,10 @@ public class NfsV2Program implements RpcProgram {
 	 *
 	 * @param arguments	引数
 	 * @param response	応答
-	 * @throws IOException 処理異常
+	 * @throws IOException	処理異常
 	 */
 	//--------------------------------------------------------------------------
-	private void handleRemove(XdrReader arguments, XdrWriter response) throws IOException {
+	private void handleRemove( XdrReader arguments, XdrWriter response) throws IOException {
 		ResolvedPath target = readOperationPath( arguments) ;
 
 		// 対象パスが不正な場合
@@ -1026,7 +1045,7 @@ public class NfsV2Program implements RpcProgram {
 			response.writeInt( NfsStatus.OK) ;
 		} catch( IOException ioex) {
 			// QNX 4.xはディレクトリ削除時に .nfsX* へリネームしてからREMOVEする場合がある
-			if( directoryTarget && ioex instanceof DirectoryNotEmptyException && isQnxSillyRenamePath( target.getPath())) {
+			if(( directoryTarget && ioex instanceof DirectoryNotEmptyException && isQnxSillyRenamePath( target.getPath()))) {
 				try {
 					writeFileCache.closeTree( target.getPath()) ;
 					deleteDirectoryTree( target.getPath()) ;
@@ -1057,10 +1076,10 @@ public class NfsV2Program implements RpcProgram {
 	 *
 	 * @param arguments	引数
 	 * @param response	応答
-	 * @throws IOException 処理異常
+	 * @throws IOException	処理異常
 	 */
 	//--------------------------------------------------------------------------
-	private void handleRename(XdrReader arguments, XdrWriter response) throws IOException {
+	private void handleRename( XdrReader arguments, XdrWriter response) throws IOException {
 		ResolvedPath source = readOperationPath( arguments) ;
 		ResolvedPath target = readOperationPath( arguments) ;
 
@@ -1079,14 +1098,14 @@ public class NfsV2Program implements RpcProgram {
 		}
 
 		// クライアントが許可されていない場合
-		if( !isClientAllowed( source.getPath()) || !isClientAllowed( target.getPath())) {
+		if(( !isClientAllowed( source.getPath()) || !isClientAllowed( target.getPath()))) {
 			logMutation( "RENAME", source.getPath(), NfsStatus.ACCES, "client-denied target=" + target.getPath()) ;
 			response.writeInt( NfsStatus.ACCES) ;
 			return ;
 		}
 
 		// 書込不可の場合
-		if( !isWritable( source.getPath()) || !isWritable( target.getPath())) {
+		if(( !isWritable( source.getPath()) || !isWritable( target.getPath()))) {
 			logMutation( "RENAME", source.getPath(), NfsStatus.ROFS, "read-only target=" + target.getPath()) ;
 			response.writeInt( NfsStatus.ROFS) ;
 			return ;
@@ -1130,10 +1149,10 @@ public class NfsV2Program implements RpcProgram {
 	 *
 	 * @param arguments	引数
 	 * @param response	応答
-	 * @throws IOException 処理異常
+	 * @throws IOException	処理異常
 	 */
 	//--------------------------------------------------------------------------
-	private void handleLink(XdrReader arguments, XdrWriter response) throws IOException {
+	private void handleLink( XdrReader arguments, XdrWriter response) throws IOException {
 		FileHandle sourceHandle = readHandle( arguments) ;
 		ResolvedPath target = readOperationPath( arguments) ;
 		Path source = handleTable.getPath( sourceHandle) ;
@@ -1153,7 +1172,7 @@ public class NfsV2Program implements RpcProgram {
 		}
 
 		// クライアントが許可されていない場合
-		if( !isClientAllowed( source) || !isClientAllowed( target.getPath())) {
+		if(( !isClientAllowed( source) || !isClientAllowed( target.getPath()))) {
 			logMutation( "LINK", source, NfsStatus.ACCES, "client-denied target=" + target.getPath()) ;
 			response.writeInt( NfsStatus.ACCES) ;
 			return ;
@@ -1218,10 +1237,10 @@ public class NfsV2Program implements RpcProgram {
 	 *
 	 * @param arguments	引数
 	 * @param response	応答
-	 * @throws IOException 処理異常
+	 * @throws IOException	処理異常
 	 */
 	//--------------------------------------------------------------------------
-	private void handleSymlink(XdrReader arguments, XdrWriter response) throws IOException {
+	private void handleSymlink( XdrReader arguments, XdrWriter response) throws IOException {
 		ResolvedPath target = readOperationPath( arguments) ;
 		String linkTarget = readPath( arguments) ;
 		SetAttributes attributes = readSetAttributes( arguments) ;
@@ -1302,10 +1321,10 @@ public class NfsV2Program implements RpcProgram {
 	 *
 	 * @param arguments	引数
 	 * @param response	応答
-	 * @throws IOException 処理異常
+	 * @throws IOException	処理異常
 	 */
 	//--------------------------------------------------------------------------
-	private void handleMkdir(XdrReader arguments, XdrWriter response) throws IOException {
+	private void handleMkdir( XdrReader arguments, XdrWriter response) throws IOException {
 		ResolvedPath target = readOperationPath( arguments) ;
 		SetAttributes attributes = readSetAttributes( arguments) ;
 
@@ -1361,10 +1380,10 @@ public class NfsV2Program implements RpcProgram {
 	 *
 	 * @param arguments	引数
 	 * @param response	応答
-	 * @throws IOException 処理異常
+	 * @throws IOException	処理異常
 	 */
 	//--------------------------------------------------------------------------
-	private void handleRmdir(XdrReader arguments, XdrWriter response) throws IOException {
+	private void handleRmdir( XdrReader arguments, XdrWriter response) throws IOException {
 		ResolvedPath target = readOperationPath( arguments) ;
 
 		// 対象パスが不正な場合
@@ -1416,10 +1435,10 @@ public class NfsV2Program implements RpcProgram {
 	 *
 	 * @param arguments	引数
 	 * @param response	応答
-	 * @throws IOException 処理異常
+	 * @throws IOException	処理異常
 	 */
 	//--------------------------------------------------------------------------
-	private void handleReadDir(XdrReader arguments, XdrWriter response) throws IOException {
+	private void handleReadDir( XdrReader arguments, XdrWriter response) throws IOException {
 		FileHandle handle = readHandle( arguments) ;
 		int cookie = arguments.readInt() ;
 		int count = arguments.readInt() ;
@@ -1456,7 +1475,7 @@ public class NfsV2Program implements RpcProgram {
 			int estimatedBytes = 4 + 4 + 4 + name.getBytes( filenameCharset).length + 4 ;
 
 			// 指定サイズを超過する場合
-			if( writtenBytes > 0 && writtenBytes + estimatedBytes > count) {
+			if(( writtenBytes > 0 && writtenBytes + estimatedBytes > count)) {
 				response.writeBoolean( false) ;
 				response.writeBoolean( false) ;
 				return ;
@@ -1482,10 +1501,10 @@ public class NfsV2Program implements RpcProgram {
 	 *
 	 * @param entries	エントリ一覧
 	 * @param cookie	cookie
-	 * @return 開始位置
+	 * @return	開始位置
 	 */
 	//--------------------------------------------------------------------------
-	private int findReadDirStartIndex(List<DirectoryEntry> entries, int cookie) {
+	private int findReadDirStartIndex( List<DirectoryEntry> entries, int cookie) {
 		// 先頭cookieの場合
 		if( cookie == 0) {
 			return 0 ;
@@ -1509,10 +1528,10 @@ public class NfsV2Program implements RpcProgram {
 	 * <p>メソッド名称： ファイル名読込</p>
 	 *
 	 * @param arguments	引数
-	 * @return ファイル名
+	 * @return	ファイル名
 	 */
 	//--------------------------------------------------------------------------
-	private String readName(XdrReader arguments) {
+	private String readName( XdrReader arguments) {
 		return arguments.readString( filenameCharset) ;
 	}
 
@@ -1523,10 +1542,10 @@ public class NfsV2Program implements RpcProgram {
 	 * <p>メソッド名称： パス文字列読込</p>
 	 *
 	 * @param arguments	引数
-	 * @return パス文字列
+	 * @return	パス文字列
 	 */
 	//--------------------------------------------------------------------------
-	private String readPath(XdrReader arguments) {
+	private String readPath( XdrReader arguments) {
 		return arguments.readString( filenameCharset) ;
 	}
 
@@ -1537,11 +1556,11 @@ public class NfsV2Program implements RpcProgram {
 	 * <p>メソッド名称： LOOKUP対象パス解決</p>
 	 *
 	 * @param directory	ディレクトリ
-	 * @param name		名前
-	 * @return 対象パス
+	 * @param name	名前
+	 * @return	対象パス
 	 */
 	//--------------------------------------------------------------------------
-	private Path resolveLookupPath(Path directory, String name) {
+	private Path resolveLookupPath( Path directory, String name) {
 		// カレントディレクトリの場合
 		if( ".".equals( name)) {
 			return directory ;
@@ -1555,7 +1574,7 @@ public class NfsV2Program implements RpcProgram {
 			Path rootPath = handleTable.getRootPath( directory) ;
 
 			// 親が存在しない、または公開ルート外の場合
-			if( parent == null || !parent.toAbsolutePath().normalize().startsWith( rootPath)) {
+			if(( parent == null || !parent.toAbsolutePath().normalize().startsWith( rootPath))) {
 				return rootPath ;
 			}
 
@@ -1572,10 +1591,12 @@ public class NfsV2Program implements RpcProgram {
 	 * <p>メソッド名称： LOOKUP名妥当性確認</p>
 	 *
 	 * @param name	名前
-	 * @return true:正常 false:不正
+	 * @return	判定結果<ul>
+	 * 			false	: 不正<br>
+	 * 			true	: 正常</ul>
 	 */
 	//--------------------------------------------------------------------------
-	private boolean isValidLookupName(String name) {
+	private boolean isValidLookupName( String name) {
 		// カレントディレクトリの場合
 		if( ".".equals( name)) {
 			return true ;
@@ -1587,7 +1608,7 @@ public class NfsV2Program implements RpcProgram {
 		}
 
 		// 空文字の場合
-		if( name == null || name.isEmpty()) {
+		if(( name == null || name.isEmpty())) {
 			return false ;
 		}
 
@@ -1597,7 +1618,7 @@ public class NfsV2Program implements RpcProgram {
 		}
 
 		// パス区切りを含む場合
-		if( name.indexOf( '/') != -1 || name.indexOf( '\\') != -1) {
+		if(( name.indexOf( '/') != -1 || name.indexOf( '\\') != -1)) {
 			return false ;
 		}
 
@@ -1616,16 +1637,18 @@ public class NfsV2Program implements RpcProgram {
 	 * <p>メソッド名称： Windowsファイル名不正文字確認</p>
 	 *
 	 * @param name	名前
-	 * @return true:不正文字あり false:不正文字なし
+	 * @return	判定結果<ul>
+	 * 			false	: 不正文字なし<br>
+	 * 			true	: 不正文字あり</ul>
 	 */
 	//--------------------------------------------------------------------------
-	private boolean hasInvalidWindowsNameCharacter(String name) {
+	private boolean hasInvalidWindowsNameCharacter( String name) {
 		// ファイル名を1文字ずつ検証する
 		for( int i = 0; i < name.length(); i++) {
 			char value = name.charAt( i) ;
 
 			// 制御文字またはWindows予約文字の場合
-			if( value < 0x20 || value == '<' || value == '>' || value == ':' || value == '"' || value == '|' || value == '?' || value == '*') {
+			if(( value < 0x20 || value == '<' || value == '>' || value == ':' || value == '"' || value == '|' || value == '?' || value == '*')) {
 				return true ;
 			}
 		}
@@ -1640,10 +1663,12 @@ public class NfsV2Program implements RpcProgram {
 	 * <p>メソッド名称： 公開ルート内確認</p>
 	 *
 	 * @param path	パス
-	 * @return true:公開ルート内 false:公開ルート外
+	 * @return	判定結果<ul>
+	 * 			false	: 公開ルート外<br>
+	 * 			true	: 公開ルート内</ul>
 	 */
 	//--------------------------------------------------------------------------
-	private boolean isInExportRoot(Path path) {
+	private boolean isInExportRoot( Path path) {
 		return handleTable.isInExportRoot( path) ;
 	}
 
@@ -1653,12 +1678,14 @@ public class NfsV2Program implements RpcProgram {
 	 *
 	 * <p>メソッド名称： 同一公開ルート内確認</p>
 	 *
-	 * @param base		基準パス
+	 * @param base	基準パス
 	 * @param target	対象パス
-	 * @return true:同一公開ルート内 false:公開ルート外
+	 * @return	判定結果<ul>
+	 * 			false	: 公開ルート外<br>
+	 * 			true	: 同一公開ルート内</ul>
 	 */
 	//--------------------------------------------------------------------------
-	private boolean isInSameExportRoot(Path base, Path target) {
+	private boolean isInSameExportRoot( Path base, Path target) {
 		return handleTable.isSameExport( base, target) && isInExportRoot( target) ;
 	}
 
@@ -1669,10 +1696,12 @@ public class NfsV2Program implements RpcProgram {
 	 * <p>メソッド名称： 書込可否取得</p>
 	 *
 	 * @param path	パス
-	 * @return true:書込可 false:読込専用
+	 * @return	判定結果<ul>
+	 * 			false	: 読込専用<br>
+	 * 			true	: 書込可</ul>
 	 */
 	//--------------------------------------------------------------------------
-	private boolean isWritable(Path path) {
+	private boolean isWritable( Path path) {
 		return handleTable.isWritable( path) ;
 	}
 
@@ -1683,10 +1712,12 @@ public class NfsV2Program implements RpcProgram {
 	 * <p>メソッド名称： クライアント許可可否取得</p>
 	 *
 	 * @param path	対象パス
-	 * @return true:許可 false:拒否
+	 * @return	判定結果<ul>
+	 * 			false	: 拒否<br>
+	 * 			true	: 許可</ul>
 	 */
 	//--------------------------------------------------------------------------
-	private boolean isClientAllowed(Path path) {
+	private boolean isClientAllowed( Path path) {
 		NfsExport export = handleTable.getExport( path) ;
 
 		// 公開定義が取得できない場合
@@ -1704,10 +1735,10 @@ public class NfsV2Program implements RpcProgram {
 	 * <p>メソッド名称： ディレクトリ操作対象読込</p>
 	 *
 	 * @param arguments	引数
-	 * @return 操作対象
+	 * @return	操作対象
 	 */
 	//--------------------------------------------------------------------------
-	private ResolvedPath readOperationPath(XdrReader arguments) {
+	private ResolvedPath readOperationPath( XdrReader arguments) {
 		FileHandle directoryHandle = readHandle( arguments) ;
 		String name = readName( arguments) ;
 		Path directory = handleTable.getPath( directoryHandle) ;
@@ -1750,10 +1781,10 @@ public class NfsV2Program implements RpcProgram {
 	 * <p>メソッド名称： SETATTR属性読込</p>
 	 *
 	 * @param arguments	引数
-	 * @return SETATTR属性
+	 * @return	SETATTR属性
 	 */
 	//--------------------------------------------------------------------------
-	private SetAttributes readSetAttributes(XdrReader arguments) {
+	private SetAttributes readSetAttributes( XdrReader arguments) {
 		int mode = arguments.readInt() ;
 		int uid = arguments.readInt() ;
 		int gid = arguments.readInt() ;
@@ -1777,18 +1808,18 @@ public class NfsV2Program implements RpcProgram {
 	 *
 	 * <p>メソッド名称： SETATTR属性反映</p>
 	 *
-	 * @param path			対象パス
+	 * @param path	対象パス
 	 * @param attributes	属性
-	 * @param allowSize		サイズ変更可否
-	 * @return NFSステータス
-	 * @throws IOException 反映異常
+	 * @param allowSize	サイズ変更可否
+	 * @return	NFSステータス
+	 * @throws IOException	反映異常
 	 */
 	//--------------------------------------------------------------------------
-	private int applySetAttributes(Path path, SetAttributes attributes, boolean allowSize) throws IOException {
+	private int applySetAttributes( Path path, SetAttributes attributes, boolean allowSize) throws IOException {
 		// サイズ指定がある場合
 		if( attributes.hasSize()) {
 			// サイズ変更不可の場合
-			if( !allowSize || !Files.isRegularFile( path, LinkOption.NOFOLLOW_LINKS)) {
+			if(( !allowSize || !Files.isRegularFile( path, LinkOption.NOFOLLOW_LINKS))) {
 				return NfsStatus.INVAL ;
 			}
 
@@ -1804,7 +1835,7 @@ public class NfsV2Program implements RpcProgram {
 		}
 
 		// 所有者指定がある場合
-		if( attributes.hasUid() || attributes.hasGid()) {
+		if(( attributes.hasUid() || attributes.hasGid())) {
 			modeStore.setOwner(
 					path,
 					attributes.hasUid() ? Integer.valueOf( attributes.getUid()) : null,
@@ -1814,7 +1845,7 @@ public class NfsV2Program implements RpcProgram {
 		BasicFileAttributeView view = Files.getFileAttributeView( path, BasicFileAttributeView.class, LinkOption.NOFOLLOW_LINKS) ;
 
 		// 時刻属性が設定可能な場合
-		if( view != null && (attributes.getAccessTime() != null || attributes.getModifiedTime() != null)) {
+		if(( view != null && (attributes.getAccessTime() != null || attributes.getModifiedTime() != null))) {
 			view.setTimes( attributes.getModifiedTime(), attributes.getAccessTime(), null) ;
 		}
 
@@ -1829,10 +1860,10 @@ public class NfsV2Program implements RpcProgram {
 	 *
 	 * @param path	対象パス
 	 * @param mode	モード
-	 * @throws IOException 反映異常
+	 * @throws IOException	反映異常
 	 */
 	//--------------------------------------------------------------------------
-	private void applyMode(Path path, int mode) throws IOException {
+	private void applyMode( Path path, int mode) throws IOException {
 		boolean readOnly = (mode & MODE_WRITE_BITS) == 0 ;
 		DosFileAttributeView dosView = Files.getFileAttributeView( path, DosFileAttributeView.class, LinkOption.NOFOLLOW_LINKS) ;
 
@@ -1857,21 +1888,21 @@ public class NfsV2Program implements RpcProgram {
 	 *
 	 * <p>メソッド名称： 初期所有者反映</p>
 	 *
-	 * @param path			対象パス
+	 * @param path	対象パス
 	 * @param attributes	属性
 	 */
 	//--------------------------------------------------------------------------
-	private void initializeOwner(Path path, SetAttributes attributes) {
+	private void initializeOwner( Path path, SetAttributes attributes) {
 		Integer uid = Integer.valueOf( resolveDefaultAttributeUid()) ;
 		Integer gid = Integer.valueOf( resolveDefaultAttributeGid()) ;
 
 		// UID指定がある場合
-		if( attributes != null && attributes.hasUid()) {
+		if(( attributes != null && attributes.hasUid())) {
 			uid = Integer.valueOf( attributes.getUid()) ;
 		}
 
 		// GID指定がある場合
-		if( attributes != null && attributes.hasGid()) {
+		if(( attributes != null && attributes.hasGid())) {
 			gid = Integer.valueOf( attributes.getGid()) ;
 		}
 
@@ -1886,12 +1917,12 @@ public class NfsV2Program implements RpcProgram {
 	 *
 	 * @param seconds	秒
 	 * @param micros	マイクロ秒
-	 * @return ファイル時刻
+	 * @return	ファイル時刻
 	 */
 	//--------------------------------------------------------------------------
-	private FileTime toFileTime(int seconds, int micros) {
+	private FileTime toFileTime( int seconds, int micros) {
 		// 未指定の場合
-		if( seconds == -1 || micros == -1) {
+		if(( seconds == -1 || micros == -1)) {
 			return null ;
 		}
 
@@ -1906,10 +1937,10 @@ public class NfsV2Program implements RpcProgram {
 	 * <p>メソッド名称： IO異常ステータス変換</p>
 	 *
 	 * @param ioex	IO異常
-	 * @return NFSステータス
+	 * @return	NFSステータス
 	 */
 	//--------------------------------------------------------------------------
-	private int mapIoStatus(IOException ioex) {
+	private int mapIoStatus( IOException ioex) {
 		// 対象が存在しない場合
 		if( ioex instanceof NoSuchFileException) {
 			return NfsStatus.NOENT ;
@@ -1940,14 +1971,14 @@ public class NfsV2Program implements RpcProgram {
 	 * <p>メソッド名称： SYMLINK IO例外変換</p>
 	 *
 	 * @param ioex	IO例外
-	 * @return NFSステータス
+	 * @return	NFSステータス
 	 */
 	//--------------------------------------------------------------------------
-	private int mapSymlinkStatus(IOException ioex) {
+	private int mapSymlinkStatus( IOException ioex) {
 		int status = mapIoStatus( ioex) ;
 
 		// Windowsのsymlink権限不足は汎用FileSystemExceptionになることがある
-		if( status == NfsStatus.IO && ioex instanceof FileSystemException) {
+		if(( status == NfsStatus.IO && ioex instanceof FileSystemException)) {
 			return NfsStatus.ACCES ;
 		}
 
@@ -1961,10 +1992,12 @@ public class NfsV2Program implements RpcProgram {
 	 * <p>メソッド名称： QNX一時リネームパス確認</p>
 	 *
 	 * @param path	パス
-	 * @return true:QNX一時リネームパス false:通常パス
+	 * @return	判定結果<ul>
+	 * 			false	: 通常パス<br>
+	 * 			true	: QNX一時リネームパス</ul>
 	 */
 	//--------------------------------------------------------------------------
-	private boolean isQnxSillyRenamePath(Path path) {
+	private boolean isQnxSillyRenamePath( Path path) {
 		Path fileName = path.getFileName() ;
 
 		// ファイル名が取得できない場合
@@ -1983,19 +2016,19 @@ public class NfsV2Program implements RpcProgram {
 	 * <p>メソッド名称： ディレクトリツリー削除</p>
 	 *
 	 * @param path	対象パス
-	 * @throws IOException 削除異常
+	 * @throws IOException	削除異常
 	 */
 	//--------------------------------------------------------------------------
-	private void deleteDirectoryTree(Path path) throws IOException {
+	private void deleteDirectoryTree( Path path) throws IOException {
 		Files.walkFileTree( path, new SimpleFileVisitor<Path>() {
 			@Override
-			public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
+			public FileVisitResult visitFile( Path file, BasicFileAttributes attrs) throws IOException {
 				deleteFileSystemEntry( file) ;
 				return FileVisitResult.CONTINUE ;
 			}
 
 			@Override
-			public FileVisitResult postVisitDirectory(Path directory, IOException exception) throws IOException {
+			public FileVisitResult postVisitDirectory( Path directory, IOException exception) throws IOException {
 				// 子要素の処理で異常が発生した場合
 				if( exception != null) {
 					throw exception ;
@@ -2014,10 +2047,10 @@ public class NfsV2Program implements RpcProgram {
 	 * <p>メソッド名称： ファイルシステム要素削除</p>
 	 *
 	 * @param path	対象パス
-	 * @throws IOException 削除異常
+	 * @throws IOException	削除異常
 	 */
 	//--------------------------------------------------------------------------
-	private void deleteFileSystemEntry(Path path) throws IOException {
+	private void deleteFileSystemEntry( Path path) throws IOException {
 		try {
 			prepareDelete( path) ;
 			Files.delete( path) ;
@@ -2034,10 +2067,10 @@ public class NfsV2Program implements RpcProgram {
 	 * <p>メソッド名称： 書込キャッシュクローズ</p>
 	 *
 	 * @param path	対象パス
-	 * @throws IOException クローズ異常
+	 * @throws IOException	クローズ異常
 	 */
 	//--------------------------------------------------------------------------
-	private void closeCachedPath(Path path) throws IOException {
+	private void closeCachedPath( Path path) throws IOException {
 		// ディレクトリの場合
 		if( Files.isDirectory( path, LinkOption.NOFOLLOW_LINKS)) {
 			writeFileCache.closeTree( path) ;
@@ -2054,10 +2087,10 @@ public class NfsV2Program implements RpcProgram {
 	 * <p>メソッド名称： 削除前属性解除</p>
 	 *
 	 * @param path	対象パス
-	 * @throws IOException 属性更新異常
+	 * @throws IOException	属性更新異常
 	 */
 	//--------------------------------------------------------------------------
-	private void prepareDelete(Path path) throws IOException {
+	private void prepareDelete( Path path) throws IOException {
 		DosFileAttributeView view = Files.getFileAttributeView( path, DosFileAttributeView.class, LinkOption.NOFOLLOW_LINKS) ;
 
 		// DOS属性を扱えないファイルシステムの場合
@@ -2077,12 +2110,12 @@ public class NfsV2Program implements RpcProgram {
 	 * <p>メソッド名称： 変更系操作ログ出力</p>
 	 *
 	 * @param operation	操作名
-	 * @param path		対象パス
+	 * @param path	対象パス
 	 * @param status	NFSステータス
 	 * @param detail	詳細
 	 */
 	//--------------------------------------------------------------------------
-	private void logMutation(String operation, Path path, int status, String detail) {
+	private void logMutation( String operation, Path path, int status, String detail) {
 		// 高頻度の成功ログを抑制する場合
 		if( !ServerLog.shouldLogOperation( operation, status)) {
 			return ;
@@ -2104,7 +2137,7 @@ public class NfsV2Program implements RpcProgram {
 		}
 
 		// 詳細が存在する場合
-		if( detail != null && !detail.isBlank()) {
+		if(( detail != null && !detail.isBlank())) {
 			message.append( " " ).append( detail) ;
 		}
 
@@ -2118,11 +2151,11 @@ public class NfsV2Program implements RpcProgram {
 	 * <p>メソッド名称： アクセス拒否ログ出力</p>
 	 *
 	 * @param operation	操作名
-	 * @param path		対象パス
+	 * @param path	対象パス
 	 * @param detail	詳細
 	 */
 	//--------------------------------------------------------------------------
-	private void logAccessDenied(String operation, Path path, String detail) {
+	private void logAccessDenied( String operation, Path path, String detail) {
 		logMutation( operation, path, NfsStatus.ACCES, detail) ;
 	}
 
@@ -2134,10 +2167,10 @@ public class NfsV2Program implements RpcProgram {
 	 *
 	 * @param arguments	引数
 	 * @param response	応答
-	 * @throws IOException 処理異常
+	 * @throws IOException	処理異常
 	 */
 	//--------------------------------------------------------------------------
-	private void handleStatFs(XdrReader arguments, XdrWriter response) throws IOException {
+	private void handleStatFs( XdrReader arguments, XdrWriter response) throws IOException {
 		FileHandle handle = readHandle( arguments) ;
 		Path path = handleTable.getPath( handle) ;
 
@@ -2174,10 +2207,10 @@ public class NfsV2Program implements RpcProgram {
 	 * <p>メソッド名称： ファイルシステムブロックサイズ取得</p>
 	 *
 	 * @param store	ファイルストア
-	 * @return ブロックサイズ
+	 * @return	ブロックサイズ
 	 */
 	//--------------------------------------------------------------------------
-	private long readBlockSize(FileStore store) {
+	private long readBlockSize( FileStore store) {
 		try {
 			long value = store.getBlockSize() ;
 
@@ -2199,11 +2232,11 @@ public class NfsV2Program implements RpcProgram {
 	 * <p>メソッド名称： ディレクトリ一覧</p>
 	 *
 	 * @param directory	ディレクトリ
-	 * @return ディレクトリエントリ
-	 * @throws IOException 読込異常
+	 * @return	ディレクトリエントリ
+	 * @throws IOException	読込異常
 	 */
 	//--------------------------------------------------------------------------
-	private List<DirectoryEntry> listDirectory(Path directory) throws IOException {
+	private List<DirectoryEntry> listDirectory( Path directory) throws IOException {
 		List<DirectoryEntry> entries = new ArrayList<DirectoryEntry>() ;
 		entries.add( new DirectoryEntry( ".", directory, 1)) ;
 		entries.add( new DirectoryEntry( "..", resolveLookupPath( directory, ".."), 2)) ;
@@ -2222,12 +2255,12 @@ public class NfsV2Program implements RpcProgram {
 	 *
 	 * <p>メソッド名称： READDIR cookie作成</p>
 	 *
-	 * @param name		名前
+	 * @param name	名前
 	 * @param entries	作成済みエントリ
-	 * @return cookie
+	 * @return	cookie
 	 */
 	//--------------------------------------------------------------------------
-	private int createReadDirCookie(String name, List<DirectoryEntry> entries) {
+	private int createReadDirCookie( String name, List<DirectoryEntry> entries) {
 		int cookie = READDIR_COOKIE_BASE + (name.hashCode() & 0x3fffffff) ;
 
 		// cookie衝突を回避する
@@ -2246,10 +2279,12 @@ public class NfsV2Program implements RpcProgram {
 	 *
 	 * @param entries	エントリ
 	 * @param cookie	cookie
-	 * @return true:存在あり false:存在なし
+	 * @return	判定結果<ul>
+	 * 			false	: 存在なし<br>
+	 * 			true	: 存在あり</ul>
 	 */
 	//--------------------------------------------------------------------------
-	private boolean containsReadDirCookie(List<DirectoryEntry> entries, int cookie) {
+	private boolean containsReadDirCookie( List<DirectoryEntry> entries, int cookie) {
 		// エントリを検索する
 		for( DirectoryEntry entry : entries) {
 			// cookieが一致する場合
@@ -2268,10 +2303,10 @@ public class NfsV2Program implements RpcProgram {
 	 * <p>メソッド名称： ファイルハンドル読込</p>
 	 *
 	 * @param reader	XDR読込
-	 * @return ファイルハンドル
+	 * @return	ファイルハンドル
 	 */
 	//--------------------------------------------------------------------------
-	private FileHandle readHandle(XdrReader reader) {
+	private FileHandle readHandle( XdrReader reader) {
 		return new FileHandle( reader.readFixedOpaque( FileHandle.LENGTH)) ;
 	}
 
@@ -2282,12 +2317,12 @@ public class NfsV2Program implements RpcProgram {
 	 * <p>メソッド名称： ステータス属性書込</p>
 	 *
 	 * @param response	応答
-	 * @param path		パス
+	 * @param path	パス
 	 * @param handle	ファイルハンドル
-	 * @throws IOException 属性取得異常
+	 * @throws IOException	属性取得異常
 	 */
 	//--------------------------------------------------------------------------
-	private void writeStatusAttr(XdrWriter response, Path path, FileHandle handle) throws IOException {
+	private void writeStatusAttr( XdrWriter response, Path path, FileHandle handle) throws IOException {
 		// パスが存在しない場合
 		if( !Files.exists( path, LinkOption.NOFOLLOW_LINKS)) {
 			response.writeInt( NfsStatus.NOENT) ;
@@ -2305,12 +2340,12 @@ public class NfsV2Program implements RpcProgram {
 	 * <p>メソッド名称： ディレクトリ操作結果書込</p>
 	 *
 	 * @param response	応答
-	 * @param path		パス
+	 * @param path	パス
 	 * @param handle	ファイルハンドル
-	 * @throws IOException 属性取得異常
+	 * @throws IOException	属性取得異常
 	 */
 	//--------------------------------------------------------------------------
-	private void writeDiropResult(XdrWriter response, Path path, FileHandle handle) throws IOException {
+	private void writeDiropResult( XdrWriter response, Path path, FileHandle handle) throws IOException {
 		// パスが存在しない場合
 		if( !Files.exists( path, LinkOption.NOFOLLOW_LINKS)) {
 			response.writeInt( NfsStatus.NOENT) ;
@@ -2329,12 +2364,12 @@ public class NfsV2Program implements RpcProgram {
 	 * <p>メソッド名称： NFSv2属性書込</p>
 	 *
 	 * @param response	応答
-	 * @param path		パス
+	 * @param path	パス
 	 * @param handle	ファイルハンドル
-	 * @throws IOException 属性取得異常
+	 * @throws IOException	属性取得異常
 	 */
 	//--------------------------------------------------------------------------
-	private void writeAttributes(XdrWriter response, Path path, FileHandle handle) throws IOException {
+	private void writeAttributes( XdrWriter response, Path path, FileHandle handle) throws IOException {
 		BasicFileAttributes attributes = Files.readAttributes( path, BasicFileAttributes.class, LinkOption.NOFOLLOW_LINKS) ;
 		boolean directory = attributes.isDirectory() ;
 		boolean symbolicLink = attributes.isSymbolicLink() ;
@@ -2386,10 +2421,10 @@ public class NfsV2Program implements RpcProgram {
 	 * <p>メソッド名称： 種別モード取得</p>
 	 *
 	 * @param type	NFS種別
-	 * @return 種別モード
+	 * @return	種別モード
 	 */
 	//--------------------------------------------------------------------------
-	private int getTypeMode(int type) {
+	private int getTypeMode( int type) {
 		// ディレクトリの場合
 		if( type == NFDIR) {
 			return 0040000 ;
@@ -2408,10 +2443,10 @@ public class NfsV2Program implements RpcProgram {
 	 *
 	 * <p>メソッド名称： 応答属性UID解決</p>
 	 *
-	 * @return UID
+	 * @return	UID
 	 */
 	//--------------------------------------------------------------------------
-	private int resolveAttributeUid(Path path) {
+	private int resolveAttributeUid( Path path) {
 		return modeStore.getUid( path, resolveDefaultAttributeUid()) ;
 	}
 
@@ -2421,7 +2456,7 @@ public class NfsV2Program implements RpcProgram {
 	 *
 	 * <p>メソッド名称： 既定応答属性UID解決</p>
 	 *
-	 * @return UID
+	 * @return	UID
 	 */
 	//--------------------------------------------------------------------------
 	private int resolveDefaultAttributeUid() {
@@ -2439,10 +2474,10 @@ public class NfsV2Program implements RpcProgram {
 	 *
 	 * <p>メソッド名称： 応答属性GID解決</p>
 	 *
-	 * @return GID
+	 * @return	GID
 	 */
 	//--------------------------------------------------------------------------
-	private int resolveAttributeGid(Path path) {
+	private int resolveAttributeGid( Path path) {
 		return modeStore.getGid( path, resolveDefaultAttributeGid()) ;
 	}
 
@@ -2452,7 +2487,7 @@ public class NfsV2Program implements RpcProgram {
 	 *
 	 * <p>メソッド名称： 既定応答属性GID解決</p>
 	 *
-	 * @return GID
+	 * @return	GID
 	 */
 	//--------------------------------------------------------------------------
 	private int resolveDefaultAttributeGid() {
@@ -2471,11 +2506,13 @@ public class NfsV2Program implements RpcProgram {
 	 * <p>メソッド名称： 読込専用属性取得</p>
 	 *
 	 * @param path	対象パス
-	 * @return true:読込専用 false:書込可能
-	 * @throws IOException 属性取得異常
+	 * @return	判定結果<ul>
+	 * 			false	: 書込可能<br>
+	 * 			true	: 読込専用</ul>
+	 * @throws IOException	属性取得異常
 	 */
 	//--------------------------------------------------------------------------
-	private boolean isReadOnlyPath(Path path) throws IOException {
+	private boolean isReadOnlyPath( Path path) throws IOException {
 		try {
 			DosFileAttributes attributes = Files.readAttributes( path, DosFileAttributes.class, LinkOption.NOFOLLOW_LINKS) ;
 			return attributes.isReadOnly() ;
@@ -2490,13 +2527,13 @@ public class NfsV2Program implements RpcProgram {
 	 *
 	 * <p>メソッド名称： リンク数取得</p>
 	 *
-	 * @param path		対象パス
+	 * @param path	対象パス
 	 * @param directory	ディレクトリ有無
-	 * @return リンク数
-	 * @throws IOException 属性取得異常
+	 * @return	リンク数
+	 * @throws IOException	属性取得異常
 	 */
 	//--------------------------------------------------------------------------
-	private long readLinkCount(Path path, boolean directory) throws IOException {
+	private long readLinkCount( Path path, boolean directory) throws IOException {
 		try {
 			Object value = Files.getAttribute( path, "unix:nlink", LinkOption.NOFOLLOW_LINKS) ;
 
@@ -2526,7 +2563,7 @@ public class NfsV2Program implements RpcProgram {
 	 * @param target	リンク先
 	 */
 	//--------------------------------------------------------------------------
-	private synchronized void trackHardLink(Path source, Path target) {
+	private synchronized void trackHardLink( Path source, Path target) {
 		Path sourceKey = hardLinkKey( source) ;
 		Path targetKey = hardLinkKey( target) ;
 		HardLinkGroup group = hardLinkGroups.get( sourceKey) ;
@@ -2551,7 +2588,7 @@ public class NfsV2Program implements RpcProgram {
 	 * @param path	対象パス
 	 */
 	//--------------------------------------------------------------------------
-	private synchronized void forgetHardLink(Path path) {
+	private synchronized void forgetHardLink( Path path) {
 		Path key = hardLinkKey( path) ;
 		HardLinkGroup group = hardLinkGroups.remove( key) ;
 
@@ -2573,7 +2610,7 @@ public class NfsV2Program implements RpcProgram {
 	 * @param target	移動先
 	 */
 	//--------------------------------------------------------------------------
-	private synchronized void moveHardLink(Path source, Path target) {
+	private synchronized void moveHardLink( Path source, Path target) {
 		Path sourceKey = hardLinkKey( source) ;
 		Path targetKey = hardLinkKey( target) ;
 		HardLinkGroup group = hardLinkGroups.remove( sourceKey) ;
@@ -2598,10 +2635,10 @@ public class NfsV2Program implements RpcProgram {
 	 * <p>メソッド名称： 追跡hard link数取得</p>
 	 *
 	 * @param path	対象パス
-	 * @return hard link数
+	 * @return	hard link数
 	 */
 	//--------------------------------------------------------------------------
-	private synchronized long getTrackedHardLinkCount(Path path) {
+	private synchronized long getTrackedHardLinkCount( Path path) {
 		HardLinkGroup group = hardLinkGroups.get( hardLinkKey( path)) ;
 
 		// グループが存在しない場合
@@ -2619,10 +2656,10 @@ public class NfsV2Program implements RpcProgram {
 	 * <p>メソッド名称： hard link追跡キー取得</p>
 	 *
 	 * @param path	対象パス
-	 * @return 追跡キー
+	 * @return	追跡キー
 	 */
 	//--------------------------------------------------------------------------
-	private Path hardLinkKey(Path path) {
+	private Path hardLinkKey( Path path) {
 		return path.toAbsolutePath().normalize() ;
 	}
 
@@ -2633,10 +2670,10 @@ public class NfsV2Program implements RpcProgram {
 	 * <p>メソッド名称： 符号なし32bit範囲丸め</p>
 	 *
 	 * @param value	値
-	 * @return 丸め後の値
+	 * @return	丸め後の値
 	 */
 	//--------------------------------------------------------------------------
-	private long clampUnsignedInt(long value) {
+	private long clampUnsignedInt( long value) {
 		return Math.max( 0L, Math.min( value, 0xffffffffL)) ;
 	}
 
@@ -2647,10 +2684,10 @@ public class NfsV2Program implements RpcProgram {
 	 * <p>メソッド名称： NFS時刻書込</p>
 	 *
 	 * @param response	応答
-	 * @param time		時刻
+	 * @param time	時刻
 	 */
 	//--------------------------------------------------------------------------
-	private void writeTime(XdrWriter response, FileTime time) {
+	private void writeTime( XdrWriter response, FileTime time) {
 		long totalMicroseconds = time.to( TimeUnit.MICROSECONDS) ;
 		long seconds = totalMicroseconds / 1000000L ;
 		long microseconds = totalMicroseconds % 1000000L ;
@@ -2663,6 +2700,15 @@ public class NfsV2Program implements RpcProgram {
 	 * SETATTR属性クラスです。<br><br>
 	 *
 	 * <p>クラス名称： SETATTR属性</p>
+	 *
+	 * <p>著作権： Copyright (c) 2026 EnterOgawa. All Rights Reserved.</p>
+	 *
+	 * <p>更新履歴：
+	 * <pre>
+	 *     VerNo.         author        update     comment
+	 *     Ver.01.00.00   Shunji Ogawa  2026/09/02 新規作成
+	 * </pre>
+	 * </p>
 	 *
 	 * @author Shunji Ogawa
 	 * @version 01.00.00
@@ -2694,15 +2740,15 @@ public class NfsV2Program implements RpcProgram {
 		 *
 		 * <p>メソッド名称： コンストラクタ</p>
 		 *
-		 * @param mode			モード
-		 * @param uid			UID
-		 * @param gid			GID
-		 * @param size			サイズ
+		 * @param mode	モード
+		 * @param uid	UID
+		 * @param gid	GID
+		 * @param size	サイズ
 		 * @param accessTime	アクセス時刻
 		 * @param modifiedTime	更新時刻
 		 */
 		//----------------------------------------------------------------------
-		SetAttributes(int mode, int uid, int gid, int size, FileTime accessTime, FileTime modifiedTime) {
+		SetAttributes( int mode, int uid, int gid, int size, FileTime accessTime, FileTime modifiedTime) {
 			this.mode = mode ;
 			this.uid = uid ;
 			this.gid = gid ;
@@ -2717,7 +2763,9 @@ public class NfsV2Program implements RpcProgram {
 		 *
 		 * <p>メソッド名称： サイズ指定有無取得</p>
 		 *
-		 * @return true:指定あり false:指定なし
+		 * @return	判定結果<ul>
+		 * 			false	: 指定なし<br>
+		 * 			true	: 指定あり</ul>
 		 */
 		//----------------------------------------------------------------------
 		boolean hasSize() {
@@ -2730,7 +2778,9 @@ public class NfsV2Program implements RpcProgram {
 		 *
 		 * <p>メソッド名称： モード指定有無取得</p>
 		 *
-		 * @return true:指定あり false:指定なし
+		 * @return	判定結果<ul>
+		 * 			false	: 指定なし<br>
+		 * 			true	: 指定あり</ul>
 		 */
 		//----------------------------------------------------------------------
 		boolean hasMode() {
@@ -2743,7 +2793,9 @@ public class NfsV2Program implements RpcProgram {
 		 *
 		 * <p>メソッド名称： UID指定有無取得</p>
 		 *
-		 * @return true:指定あり false:指定なし
+		 * @return	判定結果<ul>
+		 * 			false	: 指定なし<br>
+		 * 			true	: 指定あり</ul>
 		 */
 		//----------------------------------------------------------------------
 		boolean hasUid() {
@@ -2756,7 +2808,9 @@ public class NfsV2Program implements RpcProgram {
 		 *
 		 * <p>メソッド名称： GID指定有無取得</p>
 		 *
-		 * @return true:指定あり false:指定なし
+		 * @return	判定結果<ul>
+		 * 			false	: 指定なし<br>
+		 * 			true	: 指定あり</ul>
 		 */
 		//----------------------------------------------------------------------
 		boolean hasGid() {
@@ -2769,7 +2823,7 @@ public class NfsV2Program implements RpcProgram {
 		 *
 		 * <p>メソッド名称： モード取得</p>
 		 *
-		 * @return モード
+		 * @return	モード
 		 */
 		//----------------------------------------------------------------------
 		int getMode() {
@@ -2782,7 +2836,7 @@ public class NfsV2Program implements RpcProgram {
 		 *
 		 * <p>メソッド名称： UID取得</p>
 		 *
-		 * @return UID
+		 * @return	UID
 		 */
 		//----------------------------------------------------------------------
 		int getUid() {
@@ -2795,7 +2849,7 @@ public class NfsV2Program implements RpcProgram {
 		 *
 		 * <p>メソッド名称： GID取得</p>
 		 *
-		 * @return GID
+		 * @return	GID
 		 */
 		//----------------------------------------------------------------------
 		int getGid() {
@@ -2808,7 +2862,7 @@ public class NfsV2Program implements RpcProgram {
 		 *
 		 * <p>メソッド名称： サイズ取得</p>
 		 *
-		 * @return サイズ
+		 * @return	サイズ
 		 */
 		//----------------------------------------------------------------------
 		long getSize() {
@@ -2821,7 +2875,7 @@ public class NfsV2Program implements RpcProgram {
 		 *
 		 * <p>メソッド名称： アクセス時刻取得</p>
 		 *
-		 * @return アクセス時刻
+		 * @return	アクセス時刻
 		 */
 		//----------------------------------------------------------------------
 		FileTime getAccessTime() {
@@ -2834,7 +2888,7 @@ public class NfsV2Program implements RpcProgram {
 		 *
 		 * <p>メソッド名称： 更新時刻取得</p>
 		 *
-		 * @return 更新時刻
+		 * @return	更新時刻
 		 */
 		//----------------------------------------------------------------------
 		FileTime getModifiedTime() {
@@ -2847,7 +2901,7 @@ public class NfsV2Program implements RpcProgram {
 		 *
 		 * <p>メソッド名称： ログ用説明取得</p>
 		 *
-		 * @return ログ用説明
+		 * @return	ログ用説明
 		 */
 		//----------------------------------------------------------------------
 		String describe() {
@@ -2893,6 +2947,15 @@ public class NfsV2Program implements RpcProgram {
 	 *
 	 * <p>クラス名称： 解決済みパス</p>
 	 *
+	 * <p>著作権： Copyright (c) 2026 EnterOgawa. All Rights Reserved.</p>
+	 *
+	 * <p>更新履歴：
+	 * <pre>
+	 *     VerNo.         author        update     comment
+	 *     Ver.01.00.00   Shunji Ogawa  2026/09/02 新規作成
+	 * </pre>
+	 * </p>
+	 *
 	 * @author Shunji Ogawa
 	 * @version 01.00.00
 	 */
@@ -2912,10 +2975,10 @@ public class NfsV2Program implements RpcProgram {
 		 * <p>メソッド名称： コンストラクタ</p>
 		 *
 		 * @param status	ステータス
-		 * @param path		パス
+		 * @param path	パス
 		 */
 		//----------------------------------------------------------------------
-		private ResolvedPath(int status, Path path) {
+		private ResolvedPath( int status, Path path) {
 			this.status = status ;
 			this.path = path ;
 		}
@@ -2927,10 +2990,10 @@ public class NfsV2Program implements RpcProgram {
 		 * <p>メソッド名称： 正常パス生成</p>
 		 *
 		 * @param path	パス
-		 * @return 解決済みパス
+		 * @return	解決済みパス
 		 */
 		//----------------------------------------------------------------------
-		static ResolvedPath path(Path path) {
+		static ResolvedPath path( Path path) {
 			return new ResolvedPath( NfsStatus.OK, path) ;
 		}
 
@@ -2941,10 +3004,10 @@ public class NfsV2Program implements RpcProgram {
 		 * <p>メソッド名称： ステータス生成</p>
 		 *
 		 * @param status	ステータス
-		 * @return 解決済みパス
+		 * @return	解決済みパス
 		 */
 		//----------------------------------------------------------------------
-		static ResolvedPath status(int status) {
+		static ResolvedPath status( int status) {
 			return new ResolvedPath( status, null) ;
 		}
 
@@ -2954,7 +3017,9 @@ public class NfsV2Program implements RpcProgram {
 		 *
 		 * <p>メソッド名称： 正常有無取得</p>
 		 *
-		 * @return true:正常 false:異常
+		 * @return	判定結果<ul>
+		 * 			false	: 異常<br>
+		 * 			true	: 正常</ul>
 		 */
 		//----------------------------------------------------------------------
 		boolean isOk() {
@@ -2967,7 +3032,7 @@ public class NfsV2Program implements RpcProgram {
 		 *
 		 * <p>メソッド名称： ステータス取得</p>
 		 *
-		 * @return ステータス
+		 * @return	ステータス
 		 */
 		//----------------------------------------------------------------------
 		int getStatus() {
@@ -2980,7 +3045,7 @@ public class NfsV2Program implements RpcProgram {
 		 *
 		 * <p>メソッド名称： パス取得</p>
 		 *
-		 * @return パス
+		 * @return	パス
 		 */
 		//----------------------------------------------------------------------
 		Path getPath() {
@@ -2993,6 +3058,15 @@ public class NfsV2Program implements RpcProgram {
 	 * ディレクトリエントリクラスです。<br><br>
 	 *
 	 * <p>クラス名称： ディレクトリエントリ</p>
+	 *
+	 * <p>著作権： Copyright (c) 2026 EnterOgawa. All Rights Reserved.</p>
+	 *
+	 * <p>更新履歴：
+	 * <pre>
+	 *     VerNo.         author        update     comment
+	 *     Ver.01.00.00   Shunji Ogawa  2026/09/02 新規作成
+	 * </pre>
+	 * </p>
 	 *
 	 * @author Shunji Ogawa
 	 * @version 01.00.00
@@ -3015,12 +3089,12 @@ public class NfsV2Program implements RpcProgram {
 		 *
 		 * <p>メソッド名称： コンストラクタ</p>
 		 *
-		 * @param name		名前
-		 * @param path		パス
+		 * @param name	名前
+		 * @param path	パス
 		 * @param cookie	cookie
 		 */
 		//----------------------------------------------------------------------
-		DirectoryEntry(String name, Path path, int cookie) {
+		DirectoryEntry( String name, Path path, int cookie) {
 			this.name = name ;
 			this.path = path ;
 			this.cookie = cookie ;
@@ -3032,7 +3106,7 @@ public class NfsV2Program implements RpcProgram {
 		 *
 		 * <p>メソッド名称： 名前取得</p>
 		 *
-		 * @return 名前
+		 * @return	名前
 		 */
 		//----------------------------------------------------------------------
 		String getName() {
@@ -3045,7 +3119,7 @@ public class NfsV2Program implements RpcProgram {
 		 *
 		 * <p>メソッド名称： パス取得</p>
 		 *
-		 * @return パス
+		 * @return	パス
 		 */
 		//----------------------------------------------------------------------
 		Path getPath() {
@@ -3058,7 +3132,7 @@ public class NfsV2Program implements RpcProgram {
 		 *
 		 * <p>メソッド名称： cookie取得</p>
 		 *
-		 * @return cookie
+		 * @return	cookie
 		 */
 		//----------------------------------------------------------------------
 		int getCookie() {
@@ -3086,7 +3160,7 @@ public class NfsV2Program implements RpcProgram {
 		 * @param path	パス
 		 */
 		//----------------------------------------------------------------------
-		void add(Path path) {
+		void add( Path path) {
 			paths.add( path) ;
 		}
 
@@ -3099,7 +3173,7 @@ public class NfsV2Program implements RpcProgram {
 		 * @param path	パス
 		 */
 		//----------------------------------------------------------------------
-		void remove(Path path) {
+		void remove( Path path) {
 			paths.remove( path) ;
 		}
 
@@ -3109,7 +3183,7 @@ public class NfsV2Program implements RpcProgram {
 		 *
 		 * <p>メソッド名称： パス数取得</p>
 		 *
-		 * @return パス数
+		 * @return	パス数
 		 */
 		//----------------------------------------------------------------------
 		long size() {

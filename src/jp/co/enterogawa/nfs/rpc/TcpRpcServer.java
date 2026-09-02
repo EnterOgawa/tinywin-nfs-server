@@ -22,6 +22,15 @@ import java.util.concurrent.atomic.AtomicInteger;
  *
  * <p>クラス名称： TCP RPCサーバー</p>
  *
+ * <p>著作権： Copyright (c) 2026 EnterOgawa. All Rights Reserved.</p>
+ *
+ * <p>更新履歴：
+ * <pre>
+ *     VerNo.         author        update     comment
+ *     Ver.01.00.00   Shunji Ogawa  2026/09/02 新規作成
+ * </pre>
+ * </p>
+ *
  * @author Shunji Ogawa
  * @version 01.00.00
  */
@@ -74,12 +83,12 @@ public class TcpRpcServer implements RpcServer {
 	 *
 	 * <p>メソッド名称： コンストラクタ</p>
 	 *
-	 * @param name		サーバー名
-	 * @param port		ポート
+	 * @param name	サーバー名
+	 * @param port	ポート
 	 * @param program	RPCプログラム
 	 */
 	//--------------------------------------------------------------------------
-	public TcpRpcServer(String name, int port, RpcProgram program) {
+	public TcpRpcServer( String name, int port, RpcProgram program) {
 		this( name, port, program, DEFAULT_CLIENT_TIMEOUT_MILLIS) ;
 	}
 
@@ -89,13 +98,13 @@ public class TcpRpcServer implements RpcServer {
 	 *
 	 * <p>メソッド名称： コンストラクタ</p>
 	 *
-	 * @param name					サーバー名
-	 * @param port					ポート
-	 * @param program				RPCプログラム
+	 * @param name	サーバー名
+	 * @param port	ポート
+	 * @param program	RPCプログラム
 	 * @param clientTimeoutMillis	クライアントタイムアウト
 	 */
 	//--------------------------------------------------------------------------
-	public TcpRpcServer(String name, int port, RpcProgram program, int clientTimeoutMillis) {
+	public TcpRpcServer( String name, int port, RpcProgram program, int clientTimeoutMillis) {
 		this.name = name ;
 		this.port = port ;
 		handler = new RpcCallHandler( name, program) ;
@@ -108,7 +117,7 @@ public class TcpRpcServer implements RpcServer {
 	 *
 	 * <p>メソッド名称： サーバー開始</p>
 	 *
-	 * @throws IOException 開始異常
+	 * @throws IOException	開始異常
 	 */
 	//--------------------------------------------------------------------------
 	@Override
@@ -168,6 +177,7 @@ public class TcpRpcServer implements RpcServer {
 	 */
 	//--------------------------------------------------------------------------
 	private void acceptLoop() {
+		// 停止要求を受けるまでTCP接続の受付を継続する
 		while( running) {
 			try {
 				Socket client = serverSocket.accept() ;
@@ -194,7 +204,7 @@ public class TcpRpcServer implements RpcServer {
 	 * @param client	クライアントソケット
 	 */
 	//--------------------------------------------------------------------------
-	private void startClientThread(Socket client) {
+	private void startClientThread( Socket client) {
 		Thread clientThread = new Thread( () -> handleClient( client), name + "-client-" + clientSequence.getAndIncrement()) ;
 		clientThread.setDaemon( true) ;
 		clientThread.start() ;
@@ -209,7 +219,7 @@ public class TcpRpcServer implements RpcServer {
 	 * @param client	クライアントソケット
 	 */
 	//--------------------------------------------------------------------------
-	private void handleClient(Socket client) {
+	private void handleClient( Socket client) {
 		connections.add( client) ;
 
 		try( Socket socket = client) {
@@ -217,7 +227,8 @@ public class TcpRpcServer implements RpcServer {
 			InputStream input = socket.getInputStream() ;
 			OutputStream output = socket.getOutputStream() ;
 
-			while( running && !socket.isClosed()) {
+			// サーバー停止またはクライアント切断までRPC recordを処理する
+			while(( running && !socket.isClosed())) {
 				byte[] request = readRecord( input) ;
 
 				// クライアントが正常切断した場合
@@ -251,15 +262,16 @@ public class TcpRpcServer implements RpcServer {
 	 * <p>メソッド名称： TCP RPC record読込</p>
 	 *
 	 * @param input	入力
-	 * @return record。正常切断時はnull。
-	 * @throws IOException 読込異常
+	 * @return	record。正常切断時はnull。
+	 * @throws IOException	読込異常
 	 */
 	//--------------------------------------------------------------------------
-	private byte[] readRecord(InputStream input) throws IOException {
+	private byte[] readRecord( InputStream input) throws IOException {
 		DataInputStream dataInput = new DataInputStream( input) ;
 		ByteArrayOutputStream record = new ByteArrayOutputStream() ;
 		boolean last = false ;
 
+		// 最終fragmentを受信するまでTCP RPC recordを組み立てる
 		while( !last) {
 			int header ;
 
@@ -308,10 +320,10 @@ public class TcpRpcServer implements RpcServer {
 	 *
 	 * @param output	出力
 	 * @param record	record
-	 * @throws IOException 書込異常
+	 * @throws IOException	書込異常
 	 */
 	//--------------------------------------------------------------------------
-	private void writeRecord(OutputStream output, byte[] record) throws IOException {
+	private void writeRecord( OutputStream output, byte[] record) throws IOException {
 		DataOutputStream dataOutput = new DataOutputStream( output) ;
 		dataOutput.writeInt( LAST_FRAGMENT | record.length) ;
 		dataOutput.write( record) ;

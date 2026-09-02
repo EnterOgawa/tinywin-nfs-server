@@ -17,6 +17,15 @@ import jp.co.enterogawa.nfs.config.NfsServerConfig;
  *
  * <p>クラス名称： 書込ファイルキャッシュ</p>
  *
+ * <p>著作権： Copyright (c) 2026 EnterOgawa. All Rights Reserved.</p>
+ *
+ * <p>更新履歴：
+ * <pre>
+ *     VerNo.         author        update     comment
+ *     Ver.01.00.00   Shunji Ogawa  2026/09/02 新規作成
+ * </pre>
+ * </p>
+ *
  * @author Shunji Ogawa
  * @version 01.00.00
  */
@@ -50,7 +59,7 @@ public class WriteFileCache implements AutoCloseable {
 	 * @param config	設定
 	 */
 	//--------------------------------------------------------------------------
-	public WriteFileCache(NfsServerConfig config) {
+	public WriteFileCache( NfsServerConfig config) {
 		enabled = config.isWriteCacheEnabled() ;
 		maxOpenFiles = config.getWriteCacheMaxOpenFiles() ;
 		idleMillis = config.getWriteCacheIdleMillis() ;
@@ -74,13 +83,13 @@ public class WriteFileCache implements AutoCloseable {
 	 *
 	 * @param path	対象パス
 	 * @param offset	オフセット
-	 * @param data		データ
+	 * @param data	データ
 	 * @param length	書込長
-	 * @param sync		同期有無
-	 * @throws IOException 書込異常
+	 * @param sync	同期有無
+	 * @throws IOException	書込異常
 	 */
 	//--------------------------------------------------------------------------
-	public synchronized void write(Path path, long offset, byte[] data, int length, boolean sync) throws IOException {
+	public synchronized void write( Path path, long offset, byte[] data, int length, boolean sync) throws IOException {
 		// キャッシュが無効な場合
 		if( !enabled) {
 			writeDirect( path, offset, data, length, sync) ;
@@ -121,10 +130,10 @@ public class WriteFileCache implements AutoCloseable {
 	 * <p>メソッド名称： ファイル同期</p>
 	 *
 	 * @param path	対象パス
-	 * @throws IOException 同期異常
+	 * @throws IOException	同期異常
 	 */
 	//--------------------------------------------------------------------------
-	public synchronized void sync(Path path) throws IOException {
+	public synchronized void sync( Path path) throws IOException {
 		Path key = toKey( path) ;
 		Entry entry = entries.get( key) ;
 
@@ -145,10 +154,10 @@ public class WriteFileCache implements AutoCloseable {
 	 * <p>メソッド名称： ファイルクローズ</p>
 	 *
 	 * @param path	対象パス
-	 * @throws IOException クローズ異常
+	 * @throws IOException	クローズ異常
 	 */
 	//--------------------------------------------------------------------------
-	public synchronized void close(Path path) throws IOException {
+	public synchronized void close( Path path) throws IOException {
 		Path key = toKey( path) ;
 		Entry entry = entries.remove( key) ;
 
@@ -165,13 +174,14 @@ public class WriteFileCache implements AutoCloseable {
 	 * <p>メソッド名称： ツリー配下ファイルクローズ</p>
 	 *
 	 * @param path	対象パス
-	 * @throws IOException クローズ異常
+	 * @throws IOException	クローズ異常
 	 */
 	//--------------------------------------------------------------------------
-	public synchronized void closeTree(Path path) throws IOException {
+	public synchronized void closeTree( Path path) throws IOException {
 		Path root = toKey( path) ;
 		Iterator<Map.Entry<Path, Entry>> iterator = entries.entrySet().iterator() ;
 
+		// 対象ツリー配下のキャッシュエントリを順次閉じる
 		while( iterator.hasNext()) {
 			Map.Entry<Path, Entry> current = iterator.next() ;
 
@@ -189,7 +199,7 @@ public class WriteFileCache implements AutoCloseable {
 	 *
 	 * <p>メソッド名称： 全ファイルクローズ</p>
 	 *
-	 * @throws IOException クローズ異常
+	 * @throws IOException	クローズ異常
 	 */
 	//--------------------------------------------------------------------------
 	@Override
@@ -203,6 +213,7 @@ public class WriteFileCache implements AutoCloseable {
 
 		IOException failure = null ;
 
+		// 保持中の全キャッシュエントリを順次閉じる
 		for( Entry entry : entries.values()) {
 			try {
 				entry.close() ;
@@ -227,6 +238,7 @@ public class WriteFileCache implements AutoCloseable {
 	 */
 	//--------------------------------------------------------------------------
 	private void cleanerLoop() {
+		// 停止要求を受けるまで期限切れキャッシュのクリーンアップを継続する
 		while( running) {
 			try {
 				Thread.sleep( getCleanupIntervalMillis()) ;
@@ -249,7 +261,7 @@ public class WriteFileCache implements AutoCloseable {
 	 *
 	 * <p>メソッド名称： クリーンアップ間隔取得</p>
 	 *
-	 * @return クリーンアップ間隔
+	 * @return	クリーンアップ間隔
 	 */
 	//--------------------------------------------------------------------------
 	private long getCleanupIntervalMillis() {
@@ -264,13 +276,13 @@ public class WriteFileCache implements AutoCloseable {
 	 *
 	 * @param path	対象パス
 	 * @param offset	オフセット
-	 * @param data		データ
+	 * @param data	データ
 	 * @param length	書込長
-	 * @param sync		同期有無
-	 * @throws IOException 書込異常
+	 * @param sync	同期有無
+	 * @throws IOException	書込異常
 	 */
 	//--------------------------------------------------------------------------
-	private void writeDirect(Path path, long offset, byte[] data, int length, boolean sync) throws IOException {
+	private void writeDirect( Path path, long offset, byte[] data, int length, boolean sync) throws IOException {
 		try( RandomAccessFile file = new RandomAccessFile( path.toFile(), "rw")) {
 			file.seek( offset) ;
 			file.write( data, 0, length) ;
@@ -289,10 +301,10 @@ public class WriteFileCache implements AutoCloseable {
 	 * <p>メソッド名称： 直接同期</p>
 	 *
 	 * @param path	対象パス
-	 * @throws IOException 同期異常
+	 * @throws IOException	同期異常
 	 */
 	//--------------------------------------------------------------------------
-	private void syncDirect(Path path) throws IOException {
+	private void syncDirect( Path path) throws IOException {
 		// 通常ファイルではない場合
 		if( !Files.isRegularFile( path, LinkOption.NOFOLLOW_LINKS)) {
 			return ;
@@ -312,9 +324,10 @@ public class WriteFileCache implements AutoCloseable {
 	 * @param now	現在時刻
 	 */
 	//--------------------------------------------------------------------------
-	private void closeExpired(long now) {
+	private void closeExpired( long now) {
 		Iterator<Map.Entry<Path, Entry>> iterator = entries.entrySet().iterator() ;
 
+		// 期限切れキャッシュエントリを順次確認して閉じる
 		while( iterator.hasNext()) {
 			Map.Entry<Path, Entry> current = iterator.next() ;
 
@@ -336,6 +349,7 @@ public class WriteFileCache implements AutoCloseable {
 	 */
 	//--------------------------------------------------------------------------
 	private void closeEldestUntilOpenable() {
+		// 最大オープン数を下回るまで古いキャッシュエントリを閉じる
 		while( entries.size() >= maxOpenFiles) {
 			Iterator<Map.Entry<Path, Entry>> iterator = entries.entrySet().iterator() ;
 
@@ -358,10 +372,10 @@ public class WriteFileCache implements AutoCloseable {
 	 *
 	 * @param key	キー
 	 * @param entry	エントリ
-	 * @throws IOException クローズ異常
+	 * @throws IOException	クローズ異常
 	 */
 	//--------------------------------------------------------------------------
-	private void closeEntry(Path key, Entry entry) throws IOException {
+	private void closeEntry( Path key, Entry entry) throws IOException {
 		entries.remove( key) ;
 		entry.close() ;
 	}
@@ -375,7 +389,7 @@ public class WriteFileCache implements AutoCloseable {
 	 * @param entry	エントリ
 	 */
 	//--------------------------------------------------------------------------
-	private void closeQuietly(Entry entry) {
+	private void closeQuietly( Entry entry) {
 		try {
 			entry.close() ;
 		} catch( IOException ioex) {
@@ -390,10 +404,10 @@ public class WriteFileCache implements AutoCloseable {
 	 * <p>メソッド名称： キャッシュキー変換</p>
 	 *
 	 * @param path	パス
-	 * @return キャッシュキー
+	 * @return	キャッシュキー
 	 */
 	//--------------------------------------------------------------------------
-	private Path toKey(Path path) {
+	private Path toKey( Path path) {
 		return path.toAbsolutePath().normalize() ;
 	}
 
@@ -418,10 +432,10 @@ public class WriteFileCache implements AutoCloseable {
 		 * <p>メソッド名称： コンストラクタ</p>
 		 *
 		 * @param path	パス
-		 * @throws IOException オープン異常
+		 * @throws IOException	オープン異常
 		 */
 		//----------------------------------------------------------------------
-		Entry(Path path) throws IOException {
+		Entry( Path path) throws IOException {
 			file = new RandomAccessFile( path.toFile(), "rw") ;
 			lastAccessMillis = System.currentTimeMillis() ;
 		}
@@ -433,12 +447,12 @@ public class WriteFileCache implements AutoCloseable {
 		 * <p>メソッド名称： 書込</p>
 		 *
 		 * @param offset	オフセット
-		 * @param data		データ
+		 * @param data	データ
 		 * @param length	書込長
-		 * @throws IOException 書込異常
+		 * @throws IOException	書込異常
 		 */
 		//----------------------------------------------------------------------
-		void write(long offset, byte[] data, int length) throws IOException {
+		void write( long offset, byte[] data, int length) throws IOException {
 			file.seek( offset) ;
 			file.write( data, 0, length) ;
 		}
@@ -449,7 +463,7 @@ public class WriteFileCache implements AutoCloseable {
 		 *
 		 * <p>メソッド名称： 同期</p>
 		 *
-		 * @throws IOException 同期異常
+		 * @throws IOException	同期異常
 		 */
 		//----------------------------------------------------------------------
 		void sync() throws IOException {
@@ -462,7 +476,7 @@ public class WriteFileCache implements AutoCloseable {
 		 *
 		 * <p>メソッド名称： クローズ</p>
 		 *
-		 * @throws IOException クローズ異常
+		 * @throws IOException	クローズ異常
 		 */
 		//----------------------------------------------------------------------
 		void close() throws IOException {
@@ -478,7 +492,7 @@ public class WriteFileCache implements AutoCloseable {
 		 * @param value	時刻
 		 */
 		//----------------------------------------------------------------------
-		void touch(long value) {
+		void touch( long value) {
 			lastAccessMillis = value ;
 		}
 
@@ -488,7 +502,7 @@ public class WriteFileCache implements AutoCloseable {
 		 *
 		 * <p>メソッド名称： 最終アクセス時刻取得</p>
 		 *
-		 * @return 最終アクセス時刻
+		 * @return	最終アクセス時刻
 		 */
 		//----------------------------------------------------------------------
 		long getLastAccessMillis() {

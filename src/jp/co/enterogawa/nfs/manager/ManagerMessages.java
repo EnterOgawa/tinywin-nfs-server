@@ -11,6 +11,15 @@ import java.util.ResourceBundle;
  *
  * <p>クラス名称： 管理ツール表示メッセージ</p>
  *
+ * <p>著作権： Copyright (c) 2026 EnterOgawa. All Rights Reserved.</p>
+ *
+ * <p>更新履歴：
+ * <pre>
+ *     VerNo.         author        update     comment
+ *     Ver.01.00.00   Shunji Ogawa  2026/09/02 新規作成
+ * </pre>
+ * </p>
+ *
  * @author Shunji Ogawa
  * @version 01.00.00
  */
@@ -37,10 +46,10 @@ class ManagerMessages {
 	 * <p>メソッド名称： コンストラクタ</p>
 	 *
 	 * @param languageCode	言語コード
-	 * @param bundle		リソース
+	 * @param bundle	リソース
 	 */
 	//--------------------------------------------------------------------------
-	private ManagerMessages(String languageCode, ResourceBundle bundle) {
+	private ManagerMessages( String languageCode, ResourceBundle bundle) {
 		this.languageCode = languageCode ;
 		this.bundle = bundle ;
 	}
@@ -52,10 +61,10 @@ class ManagerMessages {
 	 * <p>メソッド名称： メッセージ読込</p>
 	 *
 	 * @param configuredLanguage	設定言語
-	 * @return メッセージ
+	 * @return	メッセージ
 	 */
 	//--------------------------------------------------------------------------
-	static ManagerMessages load(String configuredLanguage) {
+	static ManagerMessages load( String configuredLanguage) {
 		String language = normalizeLanguage( configuredLanguage) ;
 		Locale locale = "auto".equals( language) ? Locale.getDefault() : Locale.forLanguageTag( language) ;
 		ResourceBundle resourceBundle = ResourceBundle.getBundle( BUNDLE_NAME, locale) ;
@@ -68,7 +77,7 @@ class ManagerMessages {
 	 *
 	 * <p>メソッド名称： 言語コード取得</p>
 	 *
-	 * @return 言語コード
+	 * @return	言語コード
 	 */
 	//--------------------------------------------------------------------------
 	String getLanguageCode() {
@@ -82,10 +91,10 @@ class ManagerMessages {
 	 * <p>メソッド名称： メッセージ取得</p>
 	 *
 	 * @param key	キー
-	 * @return メッセージ
+	 * @return	メッセージ
 	 */
 	//--------------------------------------------------------------------------
-	String text(String key) {
+	String text( String key) {
 		try {
 			return bundle.getString( key) ;
 		} catch( MissingResourceException mrex) {
@@ -103,12 +112,12 @@ class ManagerMessages {
 	 *
 	 * <p>メソッド名称： メッセージ書式化</p>
 	 *
-	 * @param key		キー
+	 * @param key	キー
 	 * @param arguments	引数
-	 * @return メッセージ
+	 * @return	メッセージ
 	 */
 	//--------------------------------------------------------------------------
-	String format(String key, Object... arguments) {
+	String format( String key, Object... arguments) {
 		return MessageFormat.format( text( key), arguments) ;
 	}
 
@@ -119,24 +128,24 @@ class ManagerMessages {
 	 * <p>メソッド名称： 言語コード正規化</p>
 	 *
 	 * @param language	言語コード
-	 * @return 言語コード
+	 * @return	言語コード
 	 */
 	//--------------------------------------------------------------------------
-	static String normalizeLanguage(String language) {
+	static String normalizeLanguage( String language) {
 		// 設定がない場合
-		if( language == null || language.isBlank()) {
+		if(( language == null || language.isBlank())) {
 			return "auto" ;
 		}
 
 		String normalized = language.trim().toLowerCase( Locale.ROOT) ;
 
 		// 日本語の場合
-		if( normalized.equals( "ja") || normalized.startsWith( "ja-" ) || normalized.startsWith( "ja_" )) {
+		if(( normalized.equals( "ja") || normalized.startsWith( "ja-" ) || normalized.startsWith( "ja_" ))) {
 			return "ja" ;
 		}
 
 		// 英語の場合
-		if( normalized.equals( "en") || normalized.startsWith( "en-" ) || normalized.startsWith( "en_" )) {
+		if(( normalized.equals( "en") || normalized.startsWith( "en-" ) || normalized.startsWith( "en_" ))) {
 			return "en" ;
 		}
 

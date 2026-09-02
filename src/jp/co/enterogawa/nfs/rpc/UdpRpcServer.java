@@ -17,6 +17,15 @@ import java.util.concurrent.atomic.AtomicInteger;
  *
  * <p>クラス名称： UDP RPCサーバー</p>
  *
+ * <p>著作権： Copyright (c) 2026 EnterOgawa. All Rights Reserved.</p>
+ *
+ * <p>更新履歴：
+ * <pre>
+ *     VerNo.         author        update     comment
+ *     Ver.01.00.00   Shunji Ogawa  2026/09/02 新規作成
+ * </pre>
+ * </p>
+ *
  * @author Shunji Ogawa
  * @version 01.00.00
  */
@@ -60,12 +69,12 @@ public class UdpRpcServer implements RpcServer {
 	 *
 	 * <p>メソッド名称： コンストラクタ</p>
 	 *
-	 * @param name		サーバー名
-	 * @param port		ポート
+	 * @param name	サーバー名
+	 * @param port	ポート
 	 * @param program	RPCプログラム
 	 */
 	//--------------------------------------------------------------------------
-	public UdpRpcServer(String name, int port, RpcProgram program) {
+	public UdpRpcServer( String name, int port, RpcProgram program) {
 		this(
 				name,
 				port,
@@ -80,14 +89,14 @@ public class UdpRpcServer implements RpcServer {
 	 *
 	 * <p>メソッド名称： コンストラクタ</p>
 	 *
-	 * @param name			サーバー名
-	 * @param port			ポート
-	 * @param program		RPCプログラム
+	 * @param name	サーバー名
+	 * @param port	ポート
+	 * @param program	RPCプログラム
 	 * @param workerCount	ワーカー数
-	 * @param queueSize		キューサイズ
+	 * @param queueSize	キューサイズ
 	 */
 	//--------------------------------------------------------------------------
-	public UdpRpcServer(String name, int port, RpcProgram program, int workerCount, int queueSize) {
+	public UdpRpcServer( String name, int port, RpcProgram program, int workerCount, int queueSize) {
 		this.name = name ;
 		this.port = port ;
 		handler = new RpcCallHandler( name, program) ;
@@ -101,7 +110,7 @@ public class UdpRpcServer implements RpcServer {
 	 *
 	 * <p>メソッド名称： サーバー開始</p>
 	 *
-	 * @throws SocketException ソケット異常
+	 * @throws SocketException	ソケット異常
 	 */
 	//--------------------------------------------------------------------------
 	public void start() throws SocketException {
@@ -149,6 +158,7 @@ public class UdpRpcServer implements RpcServer {
 	private void receiveLoop() {
 		byte[] buffer = new byte[BUFFER_SIZE] ;
 
+		// 停止要求を受けるまでUDPパケット受信を継続する
 		while( running) {
 			DatagramPacket packet = new DatagramPacket( buffer, buffer.length) ;
 
@@ -177,7 +187,7 @@ public class UdpRpcServer implements RpcServer {
 	 * @param packet	受信パケット
 	 */
 	//--------------------------------------------------------------------------
-	private void dispatchPacket(DatagramPacket packet) {
+	private void dispatchPacket( DatagramPacket packet) {
 		byte[] data = Arrays.copyOf( packet.getData(), packet.getLength()) ;
 		RpcDatagram datagram = new RpcDatagram( data, packet.getAddress(), packet.getPort()) ;
 
@@ -199,7 +209,7 @@ public class UdpRpcServer implements RpcServer {
 	 * @param datagram	受信データ
 	 */
 	//--------------------------------------------------------------------------
-	private void handlePacketQuietly(RpcDatagram datagram) {
+	private void handlePacketQuietly( RpcDatagram datagram) {
 		try {
 			handlePacket( datagram) ;
 		} catch( SocketException sex) {
@@ -219,10 +229,10 @@ public class UdpRpcServer implements RpcServer {
 	 * <p>メソッド名称： RPCパケット処理</p>
 	 *
 	 * @param datagram	受信データ
-	 * @throws IOException 送信異常
+	 * @throws IOException	送信異常
 	 */
 	//--------------------------------------------------------------------------
-	private void handlePacket(RpcDatagram datagram) throws IOException {
+	private void handlePacket( RpcDatagram datagram) throws IOException {
 		byte[] response = handler.handle(
 				datagram.getData(),
 				datagram.getData().length,
@@ -238,7 +248,7 @@ public class UdpRpcServer implements RpcServer {
 	 *
 	 * <p>メソッド名称： ワーカープール生成</p>
 	 *
-	 * @return ワーカープール
+	 * @return	ワーカープール
 	 */
 	//--------------------------------------------------------------------------
 	private ThreadPoolExecutor createWorkerPool() {
@@ -265,7 +275,7 @@ public class UdpRpcServer implements RpcServer {
 	 *
 	 * <p>メソッド名称： デフォルトワーカー数取得</p>
 	 *
-	 * @return デフォルトワーカー数
+	 * @return	デフォルトワーカー数
 	 */
 	//--------------------------------------------------------------------------
 	private static int defaultWorkerCount() {
@@ -295,12 +305,12 @@ public class UdpRpcServer implements RpcServer {
 		 *
 		 * <p>メソッド名称： コンストラクタ</p>
 		 *
-		 * @param data		データ
+		 * @param data	データ
 		 * @param address	アドレス
-		 * @param port		ポート
+		 * @param port	ポート
 		 */
 		//----------------------------------------------------------------------
-		RpcDatagram(byte[] data, InetAddress address, int port) {
+		RpcDatagram( byte[] data, InetAddress address, int port) {
 			this.data = data ;
 			this.address = address ;
 			this.port = port ;
@@ -312,7 +322,7 @@ public class UdpRpcServer implements RpcServer {
 		 *
 		 * <p>メソッド名称： データ取得</p>
 		 *
-		 * @return データ
+		 * @return	データ
 		 */
 		//----------------------------------------------------------------------
 		byte[] getData() {
@@ -325,7 +335,7 @@ public class UdpRpcServer implements RpcServer {
 		 *
 		 * <p>メソッド名称： アドレス取得</p>
 		 *
-		 * @return アドレス
+		 * @return	アドレス
 		 */
 		//----------------------------------------------------------------------
 		InetAddress getAddress() {
@@ -338,7 +348,7 @@ public class UdpRpcServer implements RpcServer {
 		 *
 		 * <p>メソッド名称： ポート取得</p>
 		 *
-		 * @return ポート
+		 * @return	ポート
 		 */
 		//----------------------------------------------------------------------
 		int getPort() {

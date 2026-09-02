@@ -8,6 +8,15 @@ import jp.co.enterogawa.nfs.xdr.XdrReader;
  *
  * <p>クラス名称： RPC認証情報</p>
  *
+ * <p>著作権： Copyright (c) 2026 EnterOgawa. All Rights Reserved.</p>
+ *
+ * <p>更新履歴：
+ * <pre>
+ *     VerNo.         author        update     comment
+ *     Ver.01.00.00   Shunji Ogawa  2026/09/02 新規作成
+ * </pre>
+ * </p>
+ *
  * @author Shunji Ogawa
  * @version 01.00.00
  */
@@ -36,10 +45,10 @@ public class RpcCredential {
 	 * <p>メソッド名称： コンストラクタ</p>
 	 *
 	 * @param flavor	認証方式
-	 * @param body		認証データ
+	 * @param body	認証データ
 	 */
 	//--------------------------------------------------------------------------
-	public RpcCredential(int flavor, byte[] body) {
+	public RpcCredential( int flavor, byte[] body) {
 		this.flavor = flavor ;
 		this.body = body.clone() ;
 		AuthSysFields authSysFields = readAuthSysFields( flavor, this.body) ;
@@ -54,7 +63,7 @@ public class RpcCredential {
 	 *
 	 * <p>メソッド名称： 認証方式取得</p>
 	 *
-	 * @return 認証方式
+	 * @return	認証方式
 	 */
 	//--------------------------------------------------------------------------
 	public int getFlavor() {
@@ -67,7 +76,7 @@ public class RpcCredential {
 	 *
 	 * <p>メソッド名称： 認証データ取得</p>
 	 *
-	 * @return 認証データ
+	 * @return	認証データ
 	 */
 	//--------------------------------------------------------------------------
 	public byte[] getBody() {
@@ -80,7 +89,9 @@ public class RpcCredential {
 	 *
 	 * <p>メソッド名称： AUTH_SYS認証情報判定</p>
 	 *
-	 * @return true:AUTH_SYS false:その他
+	 * @return	判定結果<ul>
+	 * 			false	: その他<br>
+	 * 			true	: AUTH_SYS</ul>
 	 */
 	//--------------------------------------------------------------------------
 	public boolean isAuthSys() {
@@ -93,7 +104,7 @@ public class RpcCredential {
 	 *
 	 * <p>メソッド名称： AUTH_SYSホスト名取得</p>
 	 *
-	 * @return ホスト名
+	 * @return	ホスト名
 	 */
 	//--------------------------------------------------------------------------
 	public String getAuthSysMachineName() {
@@ -106,7 +117,7 @@ public class RpcCredential {
 	 *
 	 * <p>メソッド名称： AUTH_SYS UID取得</p>
 	 *
-	 * @return UID
+	 * @return	UID
 	 */
 	//--------------------------------------------------------------------------
 	public Integer getAuthSysUid() {
@@ -119,7 +130,7 @@ public class RpcCredential {
 	 *
 	 * <p>メソッド名称： AUTH_SYS GID取得</p>
 	 *
-	 * @return GID
+	 * @return	GID
 	 */
 	//--------------------------------------------------------------------------
 	public Integer getAuthSysGid() {
@@ -133,11 +144,11 @@ public class RpcCredential {
 	 * <p>メソッド名称： AUTH_SYS認証情報読込</p>
 	 *
 	 * @param flavor	認証方式
-	 * @param body		認証データ
-	 * @return AUTH_SYSフィールド
+	 * @param body	認証データ
+	 * @return	AUTH_SYSフィールド
 	 */
 	//--------------------------------------------------------------------------
-	private AuthSysFields readAuthSysFields(int flavor, byte[] body) {
+	private AuthSysFields readAuthSysFields( int flavor, byte[] body) {
 		// AUTH_SYS以外の場合
 		if( flavor != RpcConstants.AUTH_SYS) {
 			return AuthSysFields.EMPTY ;
@@ -160,6 +171,15 @@ public class RpcCredential {
 	 * AUTH_SYSフィールドクラスです。<br><br>
 	 *
 	 * <p>クラス名称： AUTH_SYSフィールド</p>
+	 *
+	 * <p>著作権： Copyright (c) 2026 EnterOgawa. All Rights Reserved.</p>
+	 *
+	 * <p>更新履歴：
+	 * <pre>
+	 *     VerNo.         author        update     comment
+	 *     Ver.01.00.00   Shunji Ogawa  2026/09/02 新規作成
+	 * </pre>
+	 * </p>
 	 *
 	 * @author Shunji Ogawa
 	 * @version 01.00.00
@@ -187,11 +207,11 @@ public class RpcCredential {
 		 * <p>メソッド名称： コンストラクタ</p>
 		 *
 		 * @param machineName	ホスト名
-		 * @param uid			UID
-		 * @param gid			GID
+		 * @param uid	UID
+		 * @param gid	GID
 		 */
 		//----------------------------------------------------------------------
-		AuthSysFields(String machineName, Integer uid, Integer gid) {
+		AuthSysFields( String machineName, Integer uid, Integer gid) {
 			this.machineName = machineName ;
 			this.uid = uid ;
 			this.gid = gid ;

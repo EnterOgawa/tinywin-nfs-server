@@ -8,6 +8,15 @@ import java.io.IOException;
  *
  * <p>クラス名称： RPCサーバー</p>
  *
+ * <p>著作権： Copyright (c) 2026 EnterOgawa. All Rights Reserved.</p>
+ *
+ * <p>更新履歴：
+ * <pre>
+ *     VerNo.         author        update     comment
+ *     Ver.01.00.00   Shunji Ogawa  2026/09/02 新規作成
+ * </pre>
+ * </p>
+ *
  * @author Shunji Ogawa
  * @version 01.00.00
  */
@@ -19,7 +28,7 @@ public interface RpcServer {
 	 *
 	 * <p>メソッド名称： サーバー開始</p>
 	 *
-	 * @throws IOException 開始異常
+	 * @throws IOException	開始異常
 	 */
 	//--------------------------------------------------------------------------
 	void start() throws IOException ;

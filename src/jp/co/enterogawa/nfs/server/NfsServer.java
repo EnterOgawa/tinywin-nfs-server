@@ -27,6 +27,15 @@ import jp.co.enterogawa.nfs.rpc.UdpRpcServer;
  *
  * <p>クラス名称： NFSサーバー</p>
  *
+ * <p>著作権： Copyright (c) 2026 EnterOgawa. All Rights Reserved.</p>
+ *
+ * <p>更新履歴：
+ * <pre>
+ *     VerNo.         author        update     comment
+ *     Ver.01.00.00   Shunji Ogawa  2026/09/02 新規作成
+ * </pre>
+ * </p>
+ *
  * @author Shunji Ogawa
  * @version 01.00.00
  */
@@ -60,7 +69,7 @@ public class NfsServer {
 	 * @param config	設定
 	 */
 	//--------------------------------------------------------------------------
-	public NfsServer(NfsServerConfig config) {
+	public NfsServer( NfsServerConfig config) {
 		this.config = config ;
 		handleTable = new FileHandleTable( config.getExports()) ;
 		modeStore = new NfsModeStore( config.getExports()) ;
@@ -111,7 +120,7 @@ public class NfsServer {
 	 *
 	 * <p>メソッド名称： サーバー開始</p>
 	 *
-	 * @throws IOException ソケット異常
+	 * @throws IOException	ソケット異常
 	 */
 	//--------------------------------------------------------------------------
 	public synchronized void start() throws IOException {
@@ -180,7 +189,7 @@ public class NfsServer {
 	 *
 	 * <p>メソッド名称： 設定取得</p>
 	 *
-	 * @return 設定
+	 * @return	設定
 	 */
 	//--------------------------------------------------------------------------
 	public NfsServerConfig getConfig() {
@@ -203,7 +212,7 @@ public class NfsServer {
 			}
 
 			// 書込可能設定だがフォルダへ書き込めない場合
-			if( export.isWritable() && !Files.isWritable( export.getPath())) {
+			if(( export.isWritable() && !Files.isWritable( export.getPath()))) {
 				throw new IllegalStateException( "Export path is not writable: " + export.getPath()) ;
 			}
 		}

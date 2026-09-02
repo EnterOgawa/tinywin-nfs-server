@@ -15,6 +15,15 @@ import java.time.format.DateTimeFormatter;
  *
  * <p>クラス名称： サーバーログ出力</p>
  *
+ * <p>著作権： Copyright (c) 2026 EnterOgawa. All Rights Reserved.</p>
+ *
+ * <p>更新履歴：
+ * <pre>
+ *     VerNo.         author        update     comment
+ *     Ver.01.00.00   Shunji Ogawa  2026/09/02 新規作成
+ * </pre>
+ * </p>
+ *
  * @author Shunji Ogawa
  * @version 01.00.00
  */
@@ -56,7 +65,7 @@ public final class ServerLog {
 	 * @param message	メッセージ
 	 */
 	//--------------------------------------------------------------------------
-	public static void info(String message) {
+	public static void info( String message) {
 		// コンソールログが有効な場合
 		if( isConsoleEnabled()) {
 			System.out.println( message) ;
@@ -69,7 +78,7 @@ public final class ServerLog {
 				Path path = getLogPath() ;
 
 				// ログパスが変わった場合
-				if( writer == null || writerPath == null || !writerPath.equals( path)) {
+				if(( writer == null || writerPath == null || !writerPath.equals( path))) {
 					openWriter( path) ;
 				}
 
@@ -87,7 +96,9 @@ public final class ServerLog {
 	 *
 	 * <p>メソッド名称： 要求ログ有効可否取得</p>
 	 *
-	 * @return true:有効 false:無効
+	 * @return	判定結果<ul>
+	 * 			false	: 無効<br>
+	 * 			true	: 有効</ul>
 	 */
 	//--------------------------------------------------------------------------
 	public static boolean isRequestLogEnabled() {
@@ -102,12 +113,14 @@ public final class ServerLog {
 	 *
 	 * @param operation	操作名
 	 * @param status	ステータス
-	 * @return true:出力 false:抑制
+	 * @return	判定結果<ul>
+	 * 			false	: 抑制<br>
+	 * 			true	: 出力</ul>
 	 */
 	//--------------------------------------------------------------------------
-	public static boolean shouldLogOperation(String operation, int status) {
+	public static boolean shouldLogOperation( String operation, int status) {
 		// デバッグログまたは詳細変更ログが有効な場合
-		if( isDebugEnabled() || isVerboseMutationLogEnabled()) {
+		if(( isDebugEnabled() || isVerboseMutationLogEnabled())) {
 			return true ;
 		}
 
@@ -125,7 +138,9 @@ public final class ServerLog {
 	 *
 	 * <p>メソッド名称： デバッグログ有効可否取得</p>
 	 *
-	 * @return true:有効 false:無効
+	 * @return	判定結果<ul>
+	 * 			false	: 無効<br>
+	 * 			true	: 有効</ul>
 	 */
 	//--------------------------------------------------------------------------
 	public static boolean isDebugEnabled() {
@@ -138,7 +153,9 @@ public final class ServerLog {
 	 *
 	 * <p>メソッド名称： 詳細変更ログ有効可否取得</p>
 	 *
-	 * @return true:有効 false:無効
+	 * @return	判定結果<ul>
+	 * 			false	: 無効<br>
+	 * 			true	: 有効</ul>
 	 */
 	//--------------------------------------------------------------------------
 	private static boolean isVerboseMutationLogEnabled() {
@@ -151,7 +168,9 @@ public final class ServerLog {
 	 *
 	 * <p>メソッド名称： コンソールログ有効可否取得</p>
 	 *
-	 * @return true:有効 false:無効
+	 * @return	判定結果<ul>
+	 * 			false	: 無効<br>
+	 * 			true	: 有効</ul>
 	 */
 	//--------------------------------------------------------------------------
 	private static boolean isConsoleEnabled() {
@@ -164,7 +183,7 @@ public final class ServerLog {
 	 *
 	 * <p>メソッド名称： ログパス取得</p>
 	 *
-	 * @return ログパス
+	 * @return	ログパス
 	 */
 	//--------------------------------------------------------------------------
 	private static Path getLogPath() {
@@ -178,10 +197,10 @@ public final class ServerLog {
 	 * <p>メソッド名称： ログWriterオープン</p>
 	 *
 	 * @param path	ログパス
-	 * @throws IOException オープン異常
+	 * @throws IOException	オープン異常
 	 */
 	//--------------------------------------------------------------------------
-	private static void openWriter(Path path) throws IOException {
+	private static void openWriter( Path path) throws IOException {
 		closeWriter() ;
 		Path directory = path.getParent() ;
 
@@ -204,7 +223,7 @@ public final class ServerLog {
 	 *
 	 * <p>メソッド名称： ログWriterクローズ</p>
 	 *
-	 * @throws IOException クローズ異常
+	 * @throws IOException	クローズ異常
 	 */
 	//--------------------------------------------------------------------------
 	private static void closeWriter() throws IOException {

@@ -10,6 +10,15 @@ import jp.co.enterogawa.nfs.xdr.XdrWriter;
  *
  * <p>クラス名称： RPCプログラム</p>
  *
+ * <p>著作権： Copyright (c) 2026 EnterOgawa. All Rights Reserved.</p>
+ *
+ * <p>更新履歴：
+ * <pre>
+ *     VerNo.         author        update     comment
+ *     Ver.01.00.00   Shunji Ogawa  2026/09/02 新規作成
+ * </pre>
+ * </p>
+ *
  * @author Shunji Ogawa
  * @version 01.00.00
  */
@@ -21,7 +30,7 @@ public interface RpcProgram {
 	 *
 	 * <p>メソッド名称： Program番号取得</p>
 	 *
-	 * @return Program番号
+	 * @return	Program番号
 	 */
 	//--------------------------------------------------------------------------
 	int getProgramNumber() ;
@@ -32,7 +41,7 @@ public interface RpcProgram {
 	 *
 	 * <p>メソッド名称： Version取得</p>
 	 *
-	 * @return Version
+	 * @return	Version
 	 */
 	//--------------------------------------------------------------------------
 	int getVersion() ;
@@ -44,10 +53,12 @@ public interface RpcProgram {
 	 * <p>メソッド名称： Version対応可否確認</p>
 	 *
 	 * @param version	Version
-	 * @return true:対応 false:未対応
+	 * @return	判定結果<ul>
+	 * 			false	: 未対応<br>
+	 * 			true	: 対応</ul>
 	 */
 	//--------------------------------------------------------------------------
-	default boolean supportsVersion(int version) {
+	default boolean supportsVersion( int version) {
 		return getVersion() == version ;
 	}
 
@@ -57,13 +68,13 @@ public interface RpcProgram {
 	 *
 	 * <p>メソッド名称： RPC呼出処理</p>
 	 *
-	 * @param call		RPC呼出
+	 * @param call	RPC呼出
 	 * @param response	応答本文
-	 * @return ACCEPTステータス
-	 * @throws IOException 処理異常
+	 * @return	ACCEPTステータス
+	 * @throws IOException	処理異常
 	 */
 	//--------------------------------------------------------------------------
-	int handle(RpcCall call, XdrWriter response) throws IOException ;
+	int handle( RpcCall call, XdrWriter response) throws IOException ;
 
 	//--------------------------------------------------------------------------
 	/**
@@ -71,14 +82,14 @@ public interface RpcProgram {
 	 *
 	 * <p>メソッド名称： RPC呼出処理</p>
 	 *
-	 * @param call		RPC呼出
+	 * @param call	RPC呼出
 	 * @param context	要求コンテキスト
 	 * @param response	応答本文
-	 * @return ACCEPTステータス
-	 * @throws IOException 処理異常
+	 * @return	ACCEPTステータス
+	 * @throws IOException	処理異常
 	 */
 	//--------------------------------------------------------------------------
-	default int handle(RpcCall call, RpcRequestContext context, XdrWriter response) throws IOException {
+	default int handle( RpcCall call, RpcRequestContext context, XdrWriter response) throws IOException {
 		RpcRequestContext previous = RpcRequestContext.setCurrent( context) ;
 
 		try {

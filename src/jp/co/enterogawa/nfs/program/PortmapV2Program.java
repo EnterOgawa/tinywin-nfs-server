@@ -14,6 +14,15 @@ import jp.co.enterogawa.nfs.xdr.XdrWriter;
  *
  * <p>クラス名称： Portmap Version 2プログラム</p>
  *
+ * <p>著作権： Copyright (c) 2026 EnterOgawa. All Rights Reserved.</p>
+ *
+ * <p>更新履歴：
+ * <pre>
+ *     VerNo.         author        update     comment
+ *     Ver.01.00.00   Shunji Ogawa  2026/09/02 新規作成
+ * </pre>
+ * </p>
+ *
  * @author Shunji Ogawa
  * @version 01.00.00
  */
@@ -49,11 +58,11 @@ public class PortmapV2Program implements RpcProgram {
 	 * <p>メソッド名称： コンストラクタ</p>
 	 *
 	 * @param portmapPort	Portmapポート
-	 * @param nfsPort		NFSポート
-	 * @param mountPort		MOUNTポート
+	 * @param nfsPort	NFSポート
+	 * @param mountPort	MOUNTポート
 	 */
 	//--------------------------------------------------------------------------
-	public PortmapV2Program(int portmapPort, int nfsPort, int mountPort) {
+	public PortmapV2Program( int portmapPort, int nfsPort, int mountPort) {
 		this.portmapPort = portmapPort ;
 		this.nfsPort = nfsPort ;
 		this.mountPort = mountPort ;
@@ -65,7 +74,7 @@ public class PortmapV2Program implements RpcProgram {
 	 *
 	 * <p>メソッド名称： Program番号取得</p>
 	 *
-	 * @return Program番号
+	 * @return	Program番号
 	 */
 	//--------------------------------------------------------------------------
 	@Override
@@ -79,7 +88,7 @@ public class PortmapV2Program implements RpcProgram {
 	 *
 	 * <p>メソッド名称： Version取得</p>
 	 *
-	 * @return Version
+	 * @return	Version
 	 */
 	//--------------------------------------------------------------------------
 	@Override
@@ -93,14 +102,15 @@ public class PortmapV2Program implements RpcProgram {
 	 *
 	 * <p>メソッド名称： RPC呼出処理</p>
 	 *
-	 * @param call		RPC呼出
+	 * @param call	RPC呼出
 	 * @param response	応答
-	 * @return ACCEPTステータス
-	 * @throws IOException 処理異常
+	 * @return	ACCEPTステータス
+	 * @throws IOException	処理異常
 	 */
 	//--------------------------------------------------------------------------
 	@Override
-	public int handle(RpcCall call, XdrWriter response) throws IOException {
+	public int handle( RpcCall call, XdrWriter response) throws IOException {
+		// Portmap手続き番号に応じた応答を返す
 		switch( call.getProcedure()) {
 		case PROC_NULL:
 			return RpcConstants.ACCEPT_SUCCESS ;
@@ -128,7 +138,7 @@ public class PortmapV2Program implements RpcProgram {
 	 * @param response	応答
 	 */
 	//--------------------------------------------------------------------------
-	private void handleGetPort(XdrReader arguments, XdrWriter response) {
+	private void handleGetPort( XdrReader arguments, XdrWriter response) {
 		int program = arguments.readInt() ;
 		int version = arguments.readInt() ;
 		int protocol = arguments.readInt() ;
@@ -137,17 +147,17 @@ public class PortmapV2Program implements RpcProgram {
 		int port = 0 ;
 
 		// TCP/UDP要求の場合
-		if( protocol == RpcConstants.IPPROTO_UDP || protocol == RpcConstants.IPPROTO_TCP) {
+		if(( protocol == RpcConstants.IPPROTO_UDP || protocol == RpcConstants.IPPROTO_TCP)) {
 			// NFS要求の場合
-			if( program == RpcConstants.PROGRAM_NFS && (version == 2 || version == 3)) {
+			if(( program == RpcConstants.PROGRAM_NFS && (version == 2 || version == 3))) {
 				port = nfsPort ;
 			}
 			// MOUNT要求の場合
-			else if( program == RpcConstants.PROGRAM_MOUNT && (version == 1 || version == 2 || version == 3)) {
+			else if(( program == RpcConstants.PROGRAM_MOUNT && (version == 1 || version == 2 || version == 3))) {
 				port = mountPort ;
 			}
 			// Portmap v2要求の場合
-			else if( program == RpcConstants.PROGRAM_PORTMAP && version == VERSION) {
+			else if(( program == RpcConstants.PROGRAM_PORTMAP && version == VERSION)) {
 				port = portmapPort ;
 			}
 		}
@@ -173,7 +183,7 @@ public class PortmapV2Program implements RpcProgram {
 	 * @param response	応答
 	 */
 	//--------------------------------------------------------------------------
-	private void handleDump(XdrWriter response) {
+	private void handleDump( XdrWriter response) {
 		writeMapping( response, RpcConstants.PROGRAM_PORTMAP, VERSION, RpcConstants.IPPROTO_UDP, portmapPort) ;
 		writeMapping( response, RpcConstants.PROGRAM_PORTMAP, VERSION, RpcConstants.IPPROTO_TCP, portmapPort) ;
 		writeMapping( response, RpcConstants.PROGRAM_NFS, 2, RpcConstants.IPPROTO_UDP, nfsPort) ;
@@ -199,10 +209,10 @@ public class PortmapV2Program implements RpcProgram {
 	 * @param program	Program
 	 * @param version	Version
 	 * @param protocol	Protocol
-	 * @param port		Port
+	 * @param port	Port
 	 */
 	//--------------------------------------------------------------------------
-	private void writeMapping(XdrWriter response, int program, int version, int protocol, int port) {
+	private void writeMapping( XdrWriter response, int program, int version, int protocol, int port) {
 		response.writeBoolean( true) ;
 		response.writeInt( program) ;
 		response.writeInt( version) ;
