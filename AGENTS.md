@@ -21,7 +21,7 @@
 
 ## 開発環境
 - Java は Java 21（JavaSE-21）を使用する。
-- 利用する JDK は `C:\develop\tools\eclipse202503\eclipse\jdk-21.0.8+9` とする。
+- 利用する JDK は `C:\develop\tools\eclipse202503\eclipse\jdk-21.0.11+10` とする。
 - Eclipse で作業可能な通常の Java プロジェクトとして作成する。
 - Eclipse RCP / PDE / OSGi の定義は本プロジェクトには持ち込まない。
 - 既存の Eclipse RCP プロジェクトは、コメント形式やプロジェクト運用ルールの参考としてのみ扱う。
