@@ -46,6 +46,16 @@ import jp.co.enterogawa.nfs.xdr.XdrWriter;
  */
 //------------------------------------------------------------------------------
 public class AllTests {
+	//--------------------------------------------------------------------------
+	/**
+	 * インスタンスを生成します。<br><br>
+	 *
+	 * <p>メソッド名称： コンストラクタ</p>
+	 */
+	//--------------------------------------------------------------------------
+	public AllTests() {
+	}
+
 	//	定数定義	------------------------------------------------------------
 	/** テスト用Portmapポート */
 	private static final int				TEST_PORTMAP_PORT = 11111 ;
@@ -69,12 +79,18 @@ public class AllTests {
 	 *
 	 * <p>メソッド名称： テスト開始</p>
 	 *
-	 * @param args	起動引数
+	 * @param args	テスト種別（unit、transport、all）。省略時はunit
 	 * @throws Exception テスト異常
 	 */
 	//--------------------------------------------------------------------------
-	public static void main(String[] args) throws Exception {
-		new AllTests().run() ;
+	public static void main( String[] args) throws Exception {
+		String suite = args.length == 0 ? "unit" : args[0] ;
+		// テスト種別が不正な場合
+		if(( args.length > 1 || !List.of( "unit", "transport", "all").contains( suite))) {
+			throw new IllegalArgumentException( "Expected unit, transport, or all") ;
+		}
+
+		new AllTests().run( suite) ;
 	}
 
 	//--------------------------------------------------------------------------
@@ -83,14 +99,26 @@ public class AllTests {
 	 *
 	 * <p>メソッド名称： テスト実行</p>
 	 *
+	 * @param suite	テスト種別
 	 * @throws Exception テスト異常
 	 */
 	//--------------------------------------------------------------------------
-	private void run() throws Exception {
+	private void run( String suite) throws Exception {
+		// 通信テストだけを実行する場合
+		if( "transport".equals( suite)) {
+			runTest( "TCP RPC transport", this::testTcpRpcTransport) ;
+			System.out.println( "TEST PASSED: " + runCount + " tests") ;
+			return ;
+		}
+
 		runTest( "XDR round trip", this::testXdrRoundTrip) ;
 		runTest( "RPC call parse", this::testRpcCallParse) ;
 		runTest( "Portmap GETPORT", this::testPortmapGetPort) ;
-		runTest( "TCP RPC transport", this::testTcpRpcTransport) ;
+		// 通信テストを含めて実行する場合
+		if( "all".equals( suite)) {
+			runTest( "TCP RPC transport", this::testTcpRpcTransport) ;
+		}
+
 		runTest( "Mount MNT", this::testMount) ;
 		runTest( "Mount MNT v2", this::testMountV2) ;
 		runTest( "Multiple exports", this::testMultipleExports) ;
@@ -816,6 +844,7 @@ public class AllTests {
 		try {
 			FileHandle rootHandle = context.getHandleTable().getRootHandle() ;
 
+			// 複数ページの READDIR 応答を検証するために大量のファイルを用意する
 			for( int i = 0; i < 180; i++) {
 				Files.writeString( context.getRoot().resolve( String.format( "bulk-%03d.txt", i)), "bulk-" + i, StandardCharsets.UTF_8) ;
 			}
@@ -824,6 +853,7 @@ public class AllTests {
 			boolean eof = false ;
 			List<String> names = new ArrayList<String>() ;
 
+			// EOF になるまで上限ページ数の範囲でディレクトリを読み込む
 			for( int page = 0; page < 40 && !eof; page++) {
 				ReadDirPage current = readDirPage( program, rootHandle, cookie, 512) ;
 				assertTrue( "large readdir page not empty", current.isEof() || !current.getNames().isEmpty()) ;
@@ -1533,6 +1563,7 @@ public class AllTests {
 		String linkTarget = "missing-target.txt" ;
 		Path linkPath = root.resolve( linkName) ;
 
+		// Windows 側で symlink を作成できない場合は検証を省略する
 		if( !createLocalSymbolicLink( linkPath, linkTarget)) {
 			return ;
 		}
@@ -2876,6 +2907,7 @@ public class AllTests {
 		String linkTarget = "missing-target.txt" ;
 		Path linkPath = root.resolve( linkName) ;
 
+		// Windows 側で symlink を作成できない場合は検証を省略する
 		if( !createLocalSymbolicLink( linkPath, linkTarget)) {
 			return ;
 		}

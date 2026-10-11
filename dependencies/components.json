@@ -1,0 +1,75 @@
+{
+  "schemaVersion": 1,
+  "swt": {
+    "version": "3.129.0",
+    "license": "EPL-2.0",
+    "binary": {
+      "fileName": "org.eclipse.swt.win32.win32.x86_64-3.129.0.jar",
+      "url": "https://repo.maven.apache.org/maven2/org/eclipse/platform/org.eclipse.swt.win32.win32.x86_64/3.129.0/org.eclipse.swt.win32.win32.x86_64-3.129.0.jar",
+      "sha256": "5315B5A2E1260CEB125B421CBCD467935ED9666374E57C38AECBAA04E01DFC85"
+    },
+    "sources": [
+      {
+        "fileName": "org.eclipse.swt.win32.win32.x86_64-3.129.0-sources.jar",
+        "url": "https://repo.maven.apache.org/maven2/org/eclipse/platform/org.eclipse.swt.win32.win32.x86_64/3.129.0/org.eclipse.swt.win32.win32.x86_64-3.129.0-sources.jar",
+        "sha256": "8B2DF1B91451FB00793764B9B07D25737A543D509829B4B884B7AFB82B0BCE0A"
+      },
+      {
+        "fileName": "swt-native-sources.zip",
+        "url": "https://github.com/eclipse-platform/eclipse.platform.swt/archive/9f602795596c64003ea7b8c83e0153e5657a84f2.zip",
+        "sha256": "95E2F24E0EE0C0A0414471460D5E8608F5ADD4478F83CEE116D072C781595A55"
+      }
+    ]
+  },
+  "winsw": {
+    "version": "2.12.0",
+    "variant": "NET461",
+    "runtimeRequirement": ".NET Framework 4.8 or later",
+    "license": "MIT",
+    "bundledLibraries": [
+      { "name": "log4net", "version": "2.0.12", "license": "Apache-2.0" },
+      { "name": "YamlDotNet", "version": "8.1.2", "license": "MIT" }
+    ],
+    "binary": {
+      "fileName": "WinSW.NET461.exe",
+      "url": "https://github.com/winsw/winsw/releases/download/v2.12.0/WinSW.NET461.exe",
+      "sha256": "B5066B7BBDFBA1293E5D15CDA3CAAEA88FBEAB35BD5B38C41C913D492AADFC4F"
+    },
+    "sources": [
+      {
+        "fileName": "winsw-sources.zip",
+        "url": "https://github.com/winsw/winsw/archive/eef5bade59fca0254e387ac73ed7625ba6aa7147.zip",
+        "sha256": "15581A065018D6828041DFD764876B1BF9087A8FE0CC26506E1E9F5A81951C43"
+      },
+      {
+        "fileName": "log4net-sources.zip",
+        "url": "https://github.com/apache/logging-log4net/archive/dbad144815221ffe4ed85efa73134583253dc75b.zip",
+        "sha256": "426A63529AA0B468A74D423EB1B60B36F0366C4D4F889C68E536B1DDFC18F2FF"
+      },
+      {
+        "fileName": "yamldotnet-sources.zip",
+        "url": "https://github.com/aaubry/YamlDotNet/archive/60139851a1fcf9e252b9336a4fe69235137694de.zip",
+        "sha256": "B1A6BD00D92A9A577BA5DED2D8197D69DDF4F6CEE3B6FBE099BC761755706444"
+      }
+    ]
+  },
+  "runtime": {
+    "version": "21.0.11",
+    "implementor": "Eclipse Adoptium",
+    "implementorVersion": "Temurin-21.0.11+10",
+    "architecture": "x86_64",
+    "license": "GPL-2.0-only WITH Classpath-exception-2.0",
+    "sources": [
+      {
+        "fileName": "OpenJDK21U-jdk-sources_21.0.11_10.tar.gz",
+        "url": "https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.11%2B10/OpenJDK21U-jdk-sources_21.0.11_10.tar.gz",
+        "sha256": "891A3DD2341C37580FB81B56C4262F135E90C8F2ACB059ADB6FF0FDD76AE4385"
+      },
+      {
+        "fileName": "temurin-build-sources.zip",
+        "url": "https://github.com/adoptium/temurin-build/archive/a612825ee82a20ac872d60958c349854c1f29a8e.zip",
+        "sha256": "DCCCA499B606D803137B13DCB090C509CE9A4141090274D58953658876AA48EE"
+      }
+    ]
+  }
+}

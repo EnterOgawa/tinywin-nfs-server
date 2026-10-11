@@ -20,12 +20,11 @@ import jp.co.enterogawa.nfs.config.NfsExport;
  *
  * <p>著作権： Copyright (c) 2026 EnterOgawa. All Rights Reserved.</p>
  *
- * <p>更新履歴：
+ * <p>更新履歴：</p>
  * <pre>
  *     VerNo.         author        update     comment
  *     Ver.01.00.00   Shunji Ogawa  2026/09/02 新規作成
  * </pre>
- * </p>
  *
  * @author Shunji Ogawa
  * @version 01.00.00
@@ -504,9 +503,11 @@ public class NfsModeStore {
 	 *
 	 * @param values	値
 	 * @param prefix	接頭辞
-	 * @return	判定結果<ul>
-	 * 			false	: 削除なし<br>
-	 * 			true	: 削除あり</ul>
+	 * @return	判定結果
+	 * <ul>
+	 * <li>false: 削除なし</li>
+	 * <li>true: 削除あり</li>
+	 * </ul>
 	 */
 	//--------------------------------------------------------------------------
 	private boolean removeTreeValues( Map<String, Integer> values, String prefix) {
@@ -522,9 +523,11 @@ public class NfsModeStore {
 	 * @param values	値
 	 * @param sourcePrefix	移動元接頭辞
 	 * @param targetPrefix	移動先接頭辞
-	 * @return	判定結果<ul>
-	 * 			false	: 移動なし<br>
-	 * 			true	: 移動あり</ul>
+	 * @return	判定結果
+	 * <ul>
+	 * <li>false: 移動なし</li>
+	 * <li>true: 移動あり</li>
+	 * </ul>
 	 */
 	//--------------------------------------------------------------------------
 	private boolean moveValues( Map<String, Integer> values, String sourcePrefix, String targetPrefix) {

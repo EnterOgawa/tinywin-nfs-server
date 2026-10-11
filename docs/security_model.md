@@ -7,6 +7,8 @@
 TinyWinNFS Server は、信頼できる LAN 内で Windows フォルダを NFSv2/NFSv3 として公開する用途を想定しています。
 インターネットへ直接公開する用途は対象外です。
 
+脆弱性の詳細は公開 issue に記載せず、[SECURITY.md](../SECURITY.md) の非公開報告手順に従ってください。
+
 ## セキュリティ境界
 
 | 境界 | 実装/運用 |

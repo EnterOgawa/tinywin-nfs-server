@@ -1,0 +1,20 @@
+name: 機能提案
+description: 利用場面と実現したい結果を記載します。
+title: "[提案] "
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: 現在困っていることと利用場面
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: 提案する機能・期待する結果
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: 現在の回避方法・互換性への影響

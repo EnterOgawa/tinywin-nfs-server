@@ -26,10 +26,12 @@ import jp.co.enterogawa.nfs.xdr.XdrWriter;
 
 //------------------------------------------------------------------------------
 /**
- * Local RPC benchmark runner.
+ * ローカルRPCベンチマーククラスです。<br><br>
  *
- * <p>This runner calls NFSv2 procedures in-process. It intentionally does not
- * start the Windows service or bind network ports.</p>
+ * <p>クラス名称： ローカルRPCベンチマーク</p>
+ *
+ * <p>NFSv2手続きをプロセス内で呼び出して測定します。
+ * Windowsサービスの起動やネットワークポートへのバインドは行いません。</p>
  *
  * @author Shunji Ogawa
  * @version 01.00.00
@@ -37,23 +39,32 @@ import jp.co.enterogawa.nfs.xdr.XdrWriter;
 //------------------------------------------------------------------------------
 public class LocalRpcBenchmark {
 	//	Constants	------------------------------------------------------------
+	/** NFSプログラム番号 */
 	private static final int				PROGRAM_NFS = RpcConstants.PROGRAM_NFS ;
 
+	/** NFSバージョン */
 	private static final int				NFS_VERSION = 2 ;
 
+	/** ローカルRPC要求のトランザクションID */
 	private static final int				XID = 0x11223344 ;
 
+	/** レポートファイル名の日時書式 */
 	private static final DateTimeFormatter TIMESTAMP_FORMAT = DateTimeFormatter.ofPattern( "yyyyMMdd-HHmmss") ;
 
 	//	Internal fields	--------------------------------------------------------
+	/** 測定オプション */
 	private final Options				options ;
 
+	/** 測定対象のNFSv2プログラム */
 	private NfsV2Program					program ;
 
+	/** 測定用ファイルハンドル表 */
 	private FileHandleTable				handleTable ;
 
+	/** 測定用の共有ルート */
 	private Path						root ;
 
+	/** 操作ごとの測定結果 */
 	private final List<Result>			results = new ArrayList<Result>() ;
 
 	//--------------------------------------------------------------------------
@@ -114,15 +125,18 @@ public class LocalRpcBenchmark {
 				loop++ ;
 				runOneLoop( loop) ;
 
+				// 回数指定の測定で繰り返し回数に達した場合
 				if( !options.longRun && loop >= options.loops) {
 					break ;
 				}
 
+				// 長時間測定の終了時刻に達した場合
 				if( options.longRun && System.nanoTime() >= deadline) {
 					break ;
 				}
 			}
 		} finally {
+			// NFS プログラムの初期化が完了している場合
 			if( program != null) {
 				program.close() ;
 			}
@@ -147,6 +161,7 @@ public class LocalRpcBenchmark {
 		long started ;
 
 		started = System.nanoTime() ;
+		// 指定した数のファイルを作成し、データを書き込む
 		for( int i = 0; i < options.files; i++) {
 			DirectoryNode directory = directories.get( i % directories.size()) ;
 			String name = String.format( "file-%05d.bin", i) ;
@@ -157,6 +172,7 @@ public class LocalRpcBenchmark {
 		record( "作成と書込 loop=" + loop, started, System.nanoTime(), files.size()) ;
 
 		started = System.nanoTime() ;
+		// 作成した全ファイルの LOOKUP を測定する
 		for( FileEntry file : files) {
 			lookup( file.directory.handle, file.name) ;
 		}
@@ -164,12 +180,14 @@ public class LocalRpcBenchmark {
 
 		started = System.nanoTime() ;
 		int readdirCount = 0 ;
+		// 作成した全ディレクトリの READDIR を測定する
 		for( DirectoryNode directory : directories) {
 			readdirCount += readDirectory( directory.handle) ;
 		}
 		record( "READDIR loop=" + loop, started, System.nanoTime(), readdirCount) ;
 
 		started = System.nanoTime() ;
+		// 作成した全ファイルの RENAME を測定する
 		for( FileEntry file : files) {
 			String targetName = file.name + ".renamed" ;
 			rename( file.directory.handle, file.name, file.directory.handle, targetName) ;
@@ -178,11 +196,14 @@ public class LocalRpcBenchmark {
 		record( "RENAME loop=" + loop, started, System.nanoTime(), files.size()) ;
 
 		started = System.nanoTime() ;
+		// 作成した全ファイルを削除する
 		for( FileEntry file : files) {
 			remove( file.directory.handle, file.name) ;
 		}
+		// 子ディレクトリから親ディレクトリの順に削除する
 		for( int i = directories.size() - 1; i >= 0; i--) {
 			DirectoryNode directory = directories.get( i) ;
+			// 測定用のルート以外のディレクトリである場合
 			if( directory.parent != null) {
 				rmdir( directory.parent.handle, directory.name) ;
 			}
@@ -205,9 +226,11 @@ public class LocalRpcBenchmark {
 		int depth = Math.max( 1, options.depth) ;
 		List<DirectoryNode> leaves = new ArrayList<DirectoryNode>() ;
 
+		// 指定した数のディレクトリツリーを作成する
 		for( int i = 0; i < directoryCount; i++) {
 			DirectoryNode parent = new DirectoryNode( null, "root", rootHandle) ;
 
+			// 指定した深さまで子ディレクトリを作成する
 			for( int level = 0; level < depth; level++) {
 				String name = String.format( "loop-%03d-dir-%03d-level-%02d", loop, i, level) ;
 				FileHandle handle = mkdir( parent.handle, name) ;
@@ -237,7 +260,9 @@ public class LocalRpcBenchmark {
 			current = current.parent ;
 		}
 
+		// 祖先ディレクトリを親から子の順に測定対象へ追加する
 		for( DirectoryNode node : stack) {
+			// 測定対象にまだ登録されていないディレクトリの場合
 			if( !directories.contains( node)) {
 				directories.add( node) ;
 			}
@@ -257,6 +282,7 @@ public class LocalRpcBenchmark {
 		int size = options.minSize + (index % range) ;
 		byte[] data = new byte[size] ;
 
+		// ファイル番号と位置から再現可能な書き込みデータを生成する
 		for( int i = 0; i < data.length; i++) {
 			data[i] = (byte)('A' + ((index + i) % 26)) ;
 		}
@@ -379,6 +405,7 @@ public class LocalRpcBenchmark {
 
 			eof = reader.readBoolean() ;
 
+			// エントリがなく EOF でもない不正な READDIR 応答の場合
 			if( !any && !eof) {
 				throw new IOException( "READDIR returned no entries without EOF." ) ;
 			}
@@ -463,6 +490,7 @@ public class LocalRpcBenchmark {
 				call.getCredential()) ;
 		int status = program.handle( call, context, response) ;
 
+		// RPC 要求が受け付けられなかった場合
 		if( status != RpcConstants.ACCEPT_SUCCESS) {
 			throw new IOException( "RPC accept status=" + status + " procedure=" + procedure) ;
 		}
@@ -540,6 +568,7 @@ public class LocalRpcBenchmark {
 	private void expectStatus(String operation, XdrReader reader, int expected) throws IOException {
 		int actual = reader.readInt() ;
 
+		// NFS ステータスが期待値と異なる場合
 		if( actual != expected) {
 			throw new IOException( operation + " failed. status=" + actual + " expected=" + expected) ;
 		}
@@ -586,6 +615,7 @@ public class LocalRpcBenchmark {
 		markdown.append( "| 処理 | 件数 | 経過ms | 件/秒 | 使用メモリbytes |\n" ) ;
 		markdown.append( "| --- | ---: | ---: | ---: | ---: |\n" ) ;
 
+		// 各測定結果を Markdown と CSV の行に変換する
 		for( Result result : results) {
 			double millis = result.elapsedNanos / 1_000_000.0 ;
 			double opsPerSecond = result.operations == 0 || result.elapsedNanos == 0
@@ -683,6 +713,7 @@ public class LocalRpcBenchmark {
 	 */
 	//--------------------------------------------------------------------------
 	private void deleteDirectory(Path path) throws IOException {
+		// 削除対象のパスが存在しない場合
 		if( !Files.exists( path, LinkOption.NOFOLLOW_LINKS)) {
 			return ;
 		}
@@ -690,6 +721,7 @@ public class LocalRpcBenchmark {
 		try( var stream = Files.walk( path)) {
 			List<Path> paths = stream.sorted( Comparator.reverseOrder()).toList() ;
 
+			// 子から親の順に測定用ファイルとディレクトリを削除する
 			for( Path target : paths) {
 				Files.deleteIfExists( target) ;
 			}
@@ -698,54 +730,95 @@ public class LocalRpcBenchmark {
 
 	//------------------------------------------------------------------------------
 	/**
-	 * Options.
+	 * 測定オプションクラスです。<br><br>
+	 *
+	 * <p>クラス名称： 測定オプション</p>
 	 */
 	//------------------------------------------------------------------------------
 	private static class Options {
+		/** 各測定ループで作成するファイル数 */
 		int files = 1000 ;
 
+		/** ディレクトリツリー数 */
 		int directories = 10 ;
 
+		/** 各ディレクトリツリーの深さ */
 		int depth = 1 ;
 
+		/** 測定用ファイルの最小サイズ */
 		int minSize = 1024 ;
 
+		/** 測定用ファイルの最大サイズ */
 		int maxSize = 8192 ;
 
+		/** 回数指定の測定における繰り返し回数 */
 		int loops = 1 ;
 
+		/** 終了時刻まで測定を繰り返すか */
 		boolean longRun ;
 
+		/** 長時間測定の継続秒数 */
 		int durationSeconds ;
 
+		/** WRITE応答前の同期有無 */
 		boolean writeSync ;
 
+		/** 書込ファイルキャッシュの有効化 */
 		boolean writeCacheEnabled = true ;
 
+		/** 書込キャッシュの最大オープンファイル数 */
 		int writeCacheMaxOpenFiles = 64 ;
 
+		/** 書込キャッシュのアイドル保持時間 */
 		int writeCacheIdleMillis = 3000 ;
 
+		/** 測定用設定に保存するUDPワーカー数 */
 		int udpWorkers = 8 ;
 
+		/** 測定用設定に保存するUDPキューサイズ */
 		int udpQueueSize = 1024 ;
 
+		/** 測定用設定に保存するTCP読込タイムアウト */
 		int tcpTimeoutMillis = 30000 ;
 
+		/** レポートの出力先ディレクトリ */
 		Path outputDirectory = Path.of( "work", "analysis", "v1.12.0-benchmark") ;
 
+		//----------------------------------------------------------------------
+		/**
+		 * インスタンスを生成します。<br><br>
+		 *
+		 * <p>メソッド名称： コンストラクタ</p>
+		 */
+		//----------------------------------------------------------------------
+		private Options() {
+		}
+
+		//----------------------------------------------------------------------
+		/**
+		 * コマンドライン引数から測定設定を読み込みます。<br><br>
+		 *
+		 * <p>メソッド名称： 測定設定読込</p>
+		 *
+		 * @param args	コマンドライン引数
+		 * @return	読み込んだ測定設定
+		 */
+		//----------------------------------------------------------------------
 		static Options parse(String[] args) {
 			Options options = new Options() ;
 			Map<String, String> values = new HashMap<String, String>() ;
 
+			// コマンドライン引数から測定オプションを読み取る
 			for( int i = 0; i < args.length; i++) {
 				String arg = args[i] ;
 
+				// 長時間測定モードが指定された場合
 				if( "--long-run".equals( arg)) {
 					options.longRun = true ;
 					continue ;
 				}
 
+				// 値を伴うオプション名と後続の値が指定された場合
 				if( arg.startsWith( "--" ) && i + 1 < args.length) {
 					values.put( arg.substring( 2), args[++i]) ;
 				}
@@ -766,10 +839,12 @@ public class LocalRpcBenchmark {
 			options.udpQueueSize = intValue( values, "udp-queue-size", options.udpQueueSize) ;
 			options.tcpTimeoutMillis = intValue( values, "tcp-timeout-millis", options.tcpTimeoutMillis) ;
 
+			// 結果の出力先が指定された場合
 			if( values.containsKey( "out" )) {
 				options.outputDirectory = Path.of( values.get( "out" )) ;
 			}
 
+			// 最大ファイルサイズが最小ファイルサイズより小さい場合
 			if( options.maxSize < options.minSize) {
 				throw new IllegalArgumentException( "max-size must be greater than or equal to min-size." ) ;
 			}
@@ -777,11 +852,39 @@ public class LocalRpcBenchmark {
 			return options ;
 		}
 
+		//----------------------------------------------------------------------
+		/**
+		 * 整数の測定オプションを取得します。<br><br>
+		 *
+		 * <p>メソッド名称： 整数オプション取得</p>
+		 *
+		 * @param values	オプション名と値の対応表
+		 * @param key	取得するオプション名
+		 * @param defaultValue	値が指定されていない場合の既定値
+		 * @return	オプション値または既定値
+		 */
+		//----------------------------------------------------------------------
 		private static int intValue(Map<String, String> values, String key, int defaultValue) {
 			String value = values.get( key) ;
 			return value == null ? defaultValue : Integer.parseInt( value) ;
 		}
 
+		//----------------------------------------------------------------------
+		/**
+		 * booleanの測定オプションを取得します。<br><br>
+		 *
+		 * <p>メソッド名称： booleanオプション取得</p>
+		 *
+		 * @param values	オプション名と値の対応表
+		 * @param key	取得するオプション名
+		 * @param defaultValue	値が指定されていない場合の既定値
+		 * @return	オプション値または既定値
+		 * <ul>
+		 * <li>false: 無効</li>
+		 * <li>true: 有効</li>
+		 * </ul>
+		 */
+		//----------------------------------------------------------------------
 		private static boolean booleanValue(Map<String, String> values, String key, boolean defaultValue) {
 			String value = values.get( key) ;
 			return value == null ? defaultValue : Boolean.parseBoolean( value) ;
@@ -790,16 +893,32 @@ public class LocalRpcBenchmark {
 
 	//------------------------------------------------------------------------------
 	/**
-	 * Directory node.
+	 * 測定用ディレクトリクラスです。<br><br>
+	 *
+	 * <p>クラス名称： 測定用ディレクトリ</p>
 	 */
 	//------------------------------------------------------------------------------
 	private static class DirectoryNode {
+		/** 親ディレクトリ。測定用ルートの場合は null */
 		final DirectoryNode				parent ;
 
+		/** ディレクトリ名 */
 		final String					name ;
 
+		/** ディレクトリのファイルハンドル */
 		final FileHandle				handle ;
 
+		//----------------------------------------------------------------------
+		/**
+		 * インスタンスを生成します。<br><br>
+		 *
+		 * <p>メソッド名称： コンストラクタ</p>
+		 *
+		 * @param parent	親ディレクトリ。測定用ルートの場合は null
+		 * @param name	ディレクトリ名
+		 * @param handle	ディレクトリのファイルハンドル
+		 */
+		//----------------------------------------------------------------------
 		DirectoryNode(DirectoryNode parent, String name, FileHandle handle) {
 			this.parent = parent ;
 			this.name = name ;
@@ -809,14 +928,28 @@ public class LocalRpcBenchmark {
 
 	//------------------------------------------------------------------------------
 	/**
-	 * File entry.
+	 * 測定用ファイルクラスです。<br><br>
+	 *
+	 * <p>クラス名称： 測定用ファイル</p>
 	 */
 	//------------------------------------------------------------------------------
 	private static class FileEntry {
+		/** ファイルを保持するディレクトリ */
 		final DirectoryNode				directory ;
 
+		/** 現在のファイル名 */
 		String							name ;
 
+		//----------------------------------------------------------------------
+		/**
+		 * インスタンスを生成します。<br><br>
+		 *
+		 * <p>メソッド名称： コンストラクタ</p>
+		 *
+		 * @param directory	ファイルを保持するディレクトリ
+		 * @param name	ファイル名
+		 */
+		//----------------------------------------------------------------------
 		FileEntry(DirectoryNode directory, String name) {
 			this.directory = directory ;
 			this.name = name ;
@@ -825,18 +958,36 @@ public class LocalRpcBenchmark {
 
 	//------------------------------------------------------------------------------
 	/**
-	 * Result row.
+	 * 操作別測定結果クラスです。<br><br>
+	 *
+	 * <p>クラス名称： 操作別測定結果</p>
 	 */
 	//------------------------------------------------------------------------------
 	private static class Result {
+		/** 測定した操作の名前 */
 		final String					name ;
 
+		/** 操作回数 */
 		final int						operations ;
 
+		/** 経過時間のナノ秒値 */
 		final long						elapsedNanos ;
 
+		/** 測定時の使用メモリバイト数 */
 		final long						usedMemoryBytes ;
 
+		//----------------------------------------------------------------------
+		/**
+		 * インスタンスを生成します。<br><br>
+		 *
+		 * <p>メソッド名称： コンストラクタ</p>
+		 *
+		 * @param name	測定した操作の名前
+		 * @param operations	操作回数
+		 * @param elapsedNanos	経過時間のナノ秒値
+		 * @param usedMemoryBytes	測定時の使用メモリバイト数
+		 */
+		//----------------------------------------------------------------------
 		Result(String name, int operations, long elapsedNanos, long usedMemoryBytes) {
 			this.name = name ;
 			this.operations = operations ;

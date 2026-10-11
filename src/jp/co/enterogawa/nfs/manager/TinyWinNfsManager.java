@@ -56,12 +56,11 @@ import jp.co.enterogawa.nfs.xdr.XdrWriter;
  *
  * <p>著作権： Copyright (c) 2026 EnterOgawa. All Rights Reserved.</p>
  *
- * <p>更新履歴：
+ * <p>更新履歴：</p>
  * <pre>
  *     VerNo.         author        update     comment
  *     Ver.01.00.00   Shunji Ogawa  2026/09/02 新規作成
  * </pre>
- * </p>
  *
  * @author Shunji Ogawa
  * @version 01.00.00
@@ -587,6 +586,12 @@ public class TinyWinNfsManager extends JFrame {
 	 * 設定を保存します。<br><br>
 	 *
 	 * <p>メソッド名称： 設定保存</p>
+	 *
+	 * @return	保存結果
+	 * <ul>
+	 * <li>false: 保存失敗</li>
+	 * <li>true: 保存成功</li>
+	 * </ul>
 	 */
 	//--------------------------------------------------------------------------
 	private boolean saveConfig() {
@@ -1263,9 +1268,11 @@ public class TinyWinNfsManager extends JFrame {
 	 *
 	 * <p>メソッド名称： 管理者権限確認</p>
 	 *
-	 * @return	判定結果<ul>
-	 * 			false	: 一般ユーザー<br>
-	 * 			true	: 管理者</ul>
+	 * @return	判定結果
+	 * <ul>
+	 * <li>false: 一般ユーザー</li>
+	 * <li>true: 管理者</li>
+	 * </ul>
 	 */
 	//--------------------------------------------------------------------------
 	private boolean isAdministrator() {
@@ -1504,12 +1511,11 @@ public class TinyWinNfsManager extends JFrame {
 	 *
 	 * <p>著作権： Copyright (c) 2026 EnterOgawa. All Rights Reserved.</p>
 	 *
-	 * <p>更新履歴：
+	 * <p>更新履歴：</p>
 	 * <pre>
 	 *     VerNo.         author        update     comment
 	 *     Ver.01.00.00   Shunji Ogawa  2026/09/02 新規作成
 	 * </pre>
-	 * </p>
 	 *
 	 * @author Shunji Ogawa
 	 * @version 01.00.00
@@ -1573,12 +1579,11 @@ public class TinyWinNfsManager extends JFrame {
 	 *
 	 * <p>著作権： Copyright (c) 2026 EnterOgawa. All Rights Reserved.</p>
 	 *
-	 * <p>更新履歴：
+	 * <p>更新履歴：</p>
 	 * <pre>
 	 *     VerNo.         author        update     comment
 	 *     Ver.01.00.00   Shunji Ogawa  2026/09/02 新規作成
 	 * </pre>
-	 * </p>
 	 *
 	 * @author Shunji Ogawa
 	 * @version 01.00.00

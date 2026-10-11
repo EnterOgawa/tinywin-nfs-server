@@ -72,12 +72,11 @@ import jp.co.enterogawa.nfs.xdr.XdrWriter;
  *
  * <p>著作権： Copyright (c) 2026 EnterOgawa. All Rights Reserved.</p>
  *
- * <p>更新履歴：
+ * <p>更新履歴：</p>
  * <pre>
  *     VerNo.         author        update     comment
  *     Ver.01.00.00   Shunji Ogawa  2026/09/02 新規作成
  * </pre>
- * </p>
  *
  * @author Shunji Ogawa
  * @version 01.00.00
@@ -466,6 +465,7 @@ public class TinyWinNfsSwtManager {
 	 * @param folder	タブフォルダ
 	 * @param text	表示文字
 	 * @param control	タブ内容
+	 * @return	作成したタブ
 	 */
 	//--------------------------------------------------------------------------
 	private TabItem addTab( TabFolder folder, String text, Composite control) {
@@ -815,7 +815,6 @@ public class TinyWinNfsSwtManager {
 	 *
 	 * @param parent	親Composite
 	 * @param label	ラベル
-	 * @param button	ボタン
 	 * @return	テキスト
 	 */
 	//--------------------------------------------------------------------------
@@ -1472,9 +1471,11 @@ public class TinyWinNfsSwtManager {
 	 * <p>メソッド名称： 公開名検証</p>
 	 *
 	 * @param value	公開名
-	 * @return	判定結果<ul>
-	 * 			false	: 異常<br>
-	 * 			true	: 正常</ul>
+	 * @return	判定結果
+	 * <ul>
+	 * <li>false: 異常</li>
+	 * <li>true: 正常</li>
+	 * </ul>
 	 */
 	//--------------------------------------------------------------------------
 	private boolean isValidExportName( String value) {
@@ -1549,9 +1550,11 @@ public class TinyWinNfsSwtManager {
 	 * <p>メソッド名称： IPv4アドレス確認</p>
 	 *
 	 * @param value	値
-	 * @return	判定結果<ul>
-	 * 			false	: IPv4以外<br>
-	 * 			true	: IPv4</ul>
+	 * @return	判定結果
+	 * <ul>
+	 * <li>false: IPv4以外</li>
+	 * <li>true: IPv4</li>
+	 * </ul>
 	 */
 	//--------------------------------------------------------------------------
 	private boolean isExactIpv4Address( String value) {
@@ -1685,9 +1688,11 @@ public class TinyWinNfsSwtManager {
 	 *
 	 * <p>メソッド名称： 設定保存</p>
 	 *
-	 * @return	判定結果<ul>
-	 * 			false	: 保存失敗<br>
-	 * 			true	: 保存成功</ul>
+	 * @return	判定結果
+	 * <ul>
+	 * <li>false: 保存失敗</li>
+	 * <li>true: 保存成功</li>
+	 * </ul>
 	 */
 	//--------------------------------------------------------------------------
 	private boolean saveConfig() {
@@ -1817,6 +1822,7 @@ public class TinyWinNfsSwtManager {
 	 *
 	 * @param configDirectory	設定ディレクトリ
 	 * @param lines	設定行
+	 * @return	既存設定のバックアップパス。バックアップがない場合は null
 	 * @throws IOException	書込異常
 	 */
 	//--------------------------------------------------------------------------
@@ -2003,9 +2009,11 @@ public class TinyWinNfsSwtManager {
 	 * <p>メソッド名称： 設定保存権限確認</p>
 	 *
 	 * @param configDirectory	設定ディレクトリ
-	 * @return	判定結果<ul>
-	 * 			false	: 不要<br>
-	 * 			true	: 管理者権限が必要</ul>
+	 * @return	判定結果
+	 * <ul>
+	 * <li>false: 不要</li>
+	 * <li>true: 管理者権限が必要</li>
+	 * </ul>
 	 */
 	//--------------------------------------------------------------------------
 	private boolean shouldRequireAdministratorForConfigSave( Path configDirectory) {
@@ -2024,9 +2032,11 @@ public class TinyWinNfsSwtManager {
 	 * <p>メソッド名称： 保護インストール先確認</p>
 	 *
 	 * @param path	確認パス
-	 * @return	判定結果<ul>
-	 * 			false	: 非保護パス<br>
-	 * 			true	: 保護パス</ul>
+	 * @return	判定結果
+	 * <ul>
+	 * <li>false: 非保護パス</li>
+	 * <li>true: 保護パス</li>
+	 * </ul>
 	 */
 	//--------------------------------------------------------------------------
 	private boolean isProtectedInstallPath( Path path) {
@@ -2044,9 +2054,11 @@ public class TinyWinNfsSwtManager {
 	 *
 	 * @param path	確認パス
 	 * @param variableName	環境変数名
-	 * @return	判定結果<ul>
-	 * 			false	: 配下ではない<br>
-	 * 			true	: 配下</ul>
+	 * @return	判定結果
+	 * <ul>
+	 * <li>false: 配下ではない</li>
+	 * <li>true: 配下</li>
+	 * </ul>
 	 */
 	//--------------------------------------------------------------------------
 	private boolean isUnderEnvironmentPath( Path path, String variableName) {
@@ -2161,9 +2173,11 @@ public class TinyWinNfsSwtManager {
 	 * <p>メソッド名称： クライアント側mount point検証</p>
 	 *
 	 * @param value	値
-	 * @return	判定結果<ul>
-	 * 			false	: 異常<br>
-	 * 			true	: 正常</ul>
+	 * @return	判定結果
+	 * <ul>
+	 * <li>false: 異常</li>
+	 * <li>true: 正常</li>
+	 * </ul>
 	 */
 	//--------------------------------------------------------------------------
 	private boolean isValidClientMountPoint( String value) {
@@ -2521,9 +2535,11 @@ public class TinyWinNfsSwtManager {
 	 * <p>メソッド名称： Windows mount point確認</p>
 	 *
 	 * @param value	値
-	 * @return	判定結果<ul>
-	 * 			false	: その他<br>
-	 * 			true	: Windows mount point</ul>
+	 * @return	判定結果
+	 * <ul>
+	 * <li>false: その他</li>
+	 * <li>true: Windows mount point</li>
+	 * </ul>
 	 */
 	//--------------------------------------------------------------------------
 	private boolean isValidWindowsMountPoint( String value) {
@@ -2837,9 +2853,11 @@ public class TinyWinNfsSwtManager {
 	 * <p>メソッド名称： 診断重大度フィルタ一致確認</p>
 	 *
 	 * @param row	診断行
-	 * @return	判定結果<ul>
-	 * 			false	: 不一致<br>
-	 * 			true	: 一致</ul>
+	 * @return	判定結果
+	 * <ul>
+	 * <li>false: 不一致</li>
+	 * <li>true: 一致</li>
+	 * </ul>
 	 */
 	//--------------------------------------------------------------------------
 	private boolean matchesDiagnosticSeverity( DiagnosticRow row) {
@@ -3136,9 +3154,11 @@ public class TinyWinNfsSwtManager {
 	 *
 	 * @param file	ファイル
 	 * @param extensions	拡張子
-	 * @return	判定結果<ul>
-	 * 			false	: 不一致<br>
-	 * 			true	: 一致</ul>
+	 * @return	判定結果
+	 * <ul>
+	 * <li>false: 不一致</li>
+	 * <li>true: 一致</li>
+	 * </ul>
 	 */
 	//--------------------------------------------------------------------------
 	private boolean hasAnyExtension( Path file, String... extensions) {
@@ -3484,9 +3504,11 @@ public class TinyWinNfsSwtManager {
 	 *
 	 * @param line	ログ行
 	 * @param filter	フィルタ
-	 * @return	判定結果<ul>
-	 * 			false	: 不一致<br>
-	 * 			true	: 一致</ul>
+	 * @return	判定結果
+	 * <ul>
+	 * <li>false: 不一致</li>
+	 * <li>true: 一致</li>
+	 * </ul>
 	 */
 	//--------------------------------------------------------------------------
 	private boolean matchesLogFilter( String line, int filter) {
@@ -3519,9 +3541,11 @@ public class TinyWinNfsSwtManager {
 	 *
 	 * @param value	値
 	 * @param keywords	語句
-	 * @return	判定結果<ul>
-	 * 			false	: 含まない<br>
-	 * 			true	: 含む</ul>
+	 * @return	判定結果
+	 * <ul>
+	 * <li>false: 含まない</li>
+	 * <li>true: 含む</li>
+	 * </ul>
 	 */
 	//--------------------------------------------------------------------------
 	private boolean containsAny( String value, String... keywords) {
@@ -4101,9 +4125,11 @@ public class TinyWinNfsSwtManager {
 	 *
 	 * <p>メソッド名称： 管理者権限確認</p>
 	 *
-	 * @return	判定結果<ul>
-	 * 			false	: 一般ユーザー<br>
-	 * 			true	: 管理者</ul>
+	 * @return	判定結果
+	 * <ul>
+	 * <li>false: 一般ユーザー</li>
+	 * <li>true: 管理者</li>
+	 * </ul>
 	 */
 	//--------------------------------------------------------------------------
 	private boolean isAdministrator() {
@@ -4394,12 +4420,11 @@ public class TinyWinNfsSwtManager {
 	 *
 	 * <p>著作権： Copyright (c) 2026 EnterOgawa. All Rights Reserved.</p>
 	 *
-	 * <p>更新履歴：
+	 * <p>更新履歴：</p>
 	 * <pre>
 	 *     VerNo.         author        update     comment
 	 *     Ver.01.00.00   Shunji Ogawa  2026/09/02 新規作成
 	 * </pre>
-	 * </p>
 	 *
 	 * @author Shunji Ogawa
 	 * @version 01.00.00
@@ -4463,12 +4488,11 @@ public class TinyWinNfsSwtManager {
 	 *
 	 * <p>著作権： Copyright (c) 2026 EnterOgawa. All Rights Reserved.</p>
 	 *
-	 * <p>更新履歴：
+	 * <p>更新履歴：</p>
 	 * <pre>
 	 *     VerNo.         author        update     comment
 	 *     Ver.01.00.00   Shunji Ogawa  2026/09/02 新規作成
 	 * </pre>
-	 * </p>
 	 *
 	 * @author Shunji Ogawa
 	 * @version 01.00.00
@@ -4573,12 +4597,11 @@ public class TinyWinNfsSwtManager {
 	 *
 	 * <p>著作権： Copyright (c) 2026 EnterOgawa. All Rights Reserved.</p>
 	 *
-	 * <p>更新履歴：
+	 * <p>更新履歴：</p>
 	 * <pre>
 	 *     VerNo.         author        update     comment
 	 *     Ver.01.00.00   Shunji Ogawa  2026/09/02 新規作成
 	 * </pre>
-	 * </p>
 	 *
 	 * @author Shunji Ogawa
 	 * @version 01.00.00
@@ -4678,12 +4701,11 @@ public class TinyWinNfsSwtManager {
 	 *
 	 * <p>著作権： Copyright (c) 2026 EnterOgawa. All Rights Reserved.</p>
 	 *
-	 * <p>更新履歴：
+	 * <p>更新履歴：</p>
 	 * <pre>
 	 *     VerNo.         author        update     comment
 	 *     Ver.01.00.00   Shunji Ogawa  2026/09/02 新規作成
 	 * </pre>
-	 * </p>
 	 *
 	 * @author Shunji Ogawa
 	 * @version 01.00.00
@@ -4754,9 +4776,11 @@ public class TinyWinNfsSwtManager {
 		 *
 		 * <p>メソッド名称： 書込可否取得</p>
 		 *
-		 * @return	判定結果<ul>
-		 * 			false	: 読込専用<br>
-		 * 			true	: 書込可</ul>
+		 * @return	判定結果
+		 * <ul>
+		 * <li>false: 読込専用</li>
+		 * <li>true: 書込可</li>
+		 * </ul>
 		 */
 		//----------------------------------------------------------------------
 		boolean isWritable() {
@@ -4785,12 +4809,11 @@ public class TinyWinNfsSwtManager {
 	 *
 	 * <p>著作権： Copyright (c) 2026 EnterOgawa. All Rights Reserved.</p>
 	 *
-	 * <p>更新履歴：
+	 * <p>更新履歴：</p>
 	 * <pre>
 	 *     VerNo.         author        update     comment
 	 *     Ver.01.00.00   Shunji Ogawa  2026/09/02 新規作成
 	 * </pre>
-	 * </p>
 	 *
 	 * @author Shunji Ogawa
 	 * @version 01.00.00
@@ -4818,12 +4841,11 @@ public class TinyWinNfsSwtManager {
 	 *
 	 * <p>著作権： Copyright (c) 2026 EnterOgawa. All Rights Reserved.</p>
 	 *
-	 * <p>更新履歴：
+	 * <p>更新履歴：</p>
 	 * <pre>
 	 *     VerNo.         author        update     comment
 	 *     Ver.01.00.00   Shunji Ogawa  2026/09/02 新規作成
 	 * </pre>
-	 * </p>
 	 *
 	 * @author Shunji Ogawa
 	 * @version 01.00.00

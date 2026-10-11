@@ -1,0 +1,44 @@
+name: 不具合報告
+description: 動作上の不具合を報告します。脆弱性の詳細は SECURITY.md の手順で非公開にしてください。
+title: "[不具合] "
+body:
+  - type: input
+    id: version
+    attributes:
+      label: TinyWinNFS Server のバージョン
+      placeholder: v2.1.0
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: Windows・CPU・ファイルシステム
+      placeholder: Windows 11 Pro / x64 / NTFS
+    validations:
+      required: true
+  - type: input
+    id: client
+    attributes:
+      label: NFS クライアント・バージョン・通信方式
+      placeholder: QNX 4.25 / NFSv2 / UDP
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: 再現手順
+      description: 最小の再現手順を記載してください。共有内の実データは添付せず、見本ファイルを使用してください。
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: 期待する結果と実際の結果
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: 機密情報を取り除いたログ
+      description: ユーザー名、社内アドレス、実パス、ファイル内容などを確認し、必要な部分だけを記載してください。診断 ZIP 全体の公開添付は避けてください。
+      render: text

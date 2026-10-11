@@ -40,6 +40,9 @@ Type: files; Name: "{group}\TinyWinNFS Manager (Admin).lnk"
 [Files]
 Source: "{#SourceDir}\LICENSE"; DestDir: "{app}"; Flags: ignoreversion
 Source: "{#SourceDir}\THIRD_PARTY_NOTICES.md"; DestDir: "{app}"; Flags: ignoreversion
+Source: "{#SourceDir}\build-information.json"; DestDir: "{app}"; Flags: ignoreversion
+Source: "{#SourceDir}\licenses\*"; DestDir: "{app}\licenses"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "{#SourceDir}\dependencies\*"; DestDir: "{app}\dependencies"; Flags: ignoreversion recursesubdirs createallsubdirs
 Source: "{#SourceDir}\TinyWinNfsManager-Admin.cmd"; DestDir: "{app}"; Flags: ignoreversion
 Source: "{#SourceDir}\TinyWinNfsManager.exe"; DestDir: "{app}"; Flags: ignoreversion
 Source: "{#SourceDir}\app\*"; DestDir: "{app}\app"; Flags: ignoreversion recursesubdirs createallsubdirs
@@ -73,6 +76,22 @@ Filename: "{app}\{#AppExeName}"; Description: "TinyWinNFS Managerを起動する
 Filename: "powershell.exe"; Parameters: "-NoProfile -ExecutionPolicy Bypass -File ""{app}\scripts\uninstall-service.ps1"""; WorkingDir: "{app}"; StatusMsg: "Windowsサービスを削除しています..."; Flags: runhidden waituntilterminated; RunOnceId: "TinyWinNfsServerUninstallService"
 
 [Code]
+function InitializeSetup(): Boolean;
+var
+  FrameworkRelease: Cardinal;
+begin
+  FrameworkRelease := 0;
+  Result := RegQueryDWordValue(
+    HKLM64,
+    'SOFTWARE\Microsoft\NET Framework Setup\NDP\v4\Full',
+    'Release',
+    FrameworkRelease) and (FrameworkRelease >= 528040);
+  if not Result then
+  begin
+    MsgBox('.NET Framework 4.8 以降が必要です。Windows の更新または Microsoft の公式インストーラーで導入してから再実行してください。', mbError, MB_OK);
+  end;
+end;
+
 function RunPowerShell(Command: String): Integer;
 var
   ResultCode: Integer;

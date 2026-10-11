@@ -27,12 +27,11 @@ import jp.co.enterogawa.nfs.config.NfsExport;
  *
  * <p>著作権： Copyright (c) 2026 EnterOgawa. All Rights Reserved.</p>
  *
- * <p>更新履歴：
+ * <p>更新履歴：</p>
  * <pre>
  *     VerNo.         author        update     comment
  *     Ver.01.00.00   Shunji Ogawa  2026/09/02 新規作成
  * </pre>
- * </p>
  *
  * @author Shunji Ogawa
  * @version 01.00.00
@@ -207,9 +206,11 @@ public class FileHandleTable {
 	 * <p>メソッド名称： 公開ルート内確認</p>
 	 *
 	 * @param path	パス
-	 * @return	判定結果<ul>
-	 * 			false	: 公開ルート外<br>
-	 * 			true	: 公開ルート内</ul>
+	 * @return	判定結果
+	 * <ul>
+	 * <li>false: 公開ルート外</li>
+	 * <li>true: 公開ルート内</li>
+	 * </ul>
 	 */
 	//--------------------------------------------------------------------------
 	public boolean isInExportRoot( Path path) {
@@ -224,9 +225,11 @@ public class FileHandleTable {
 	 *
 	 * @param first	パス1
 	 * @param second	パス2
-	 * @return	判定結果<ul>
-	 * 			false	: 異なる公開ルート<br>
-	 * 			true	: 同一公開ルート</ul>
+	 * @return	判定結果
+	 * <ul>
+	 * <li>false: 異なる公開ルート</li>
+	 * <li>true: 同一公開ルート</li>
+	 * </ul>
 	 */
 	//--------------------------------------------------------------------------
 	public boolean isSameExport( Path first, Path second) {
@@ -242,9 +245,11 @@ public class FileHandleTable {
 	 * <p>メソッド名称： 書込可否取得</p>
 	 *
 	 * @param path	パス
-	 * @return	判定結果<ul>
-	 * 			false	: 読込専用<br>
-	 * 			true	: 書込可</ul>
+	 * @return	判定結果
+	 * <ul>
+	 * <li>false: 読込専用</li>
+	 * <li>true: 書込可</li>
+	 * </ul>
 	 */
 	//--------------------------------------------------------------------------
 	public boolean isWritable( Path path) {
@@ -496,7 +501,7 @@ public class FileHandleTable {
 	 *
 	 * <p>メソッド名称： 永続ファイルパス解決</p>
 	 *
-	 * @param rootPath	公開ルート
+	 * @param exports	公開定義一覧
 	 * @return	永続ファイルパス
 	 */
 	//--------------------------------------------------------------------------

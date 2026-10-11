@@ -1,7 +1,8 @@
 $ErrorActionPreference = "Stop"
 
 $root = Split-Path -Parent $PSScriptRoot
-$java = "C:\develop\tools\eclipse202503\eclipse\jdk-21.0.8+9\bin\java.exe"
+. (Join-Path $PSScriptRoot "build-environment.ps1")
+$java = (Get-TinyWinNfsBuildEnvironment -RequireSwt).Java
 $config = Join-Path $root "conf\nfs-server-wsl-test.properties"
 $bin = Join-Path $root "bin"
 

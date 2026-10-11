@@ -1,8 +1,15 @@
+param(
+	[string]$JdkPath = "",
+	[string]$SwtJarPath = ""
+)
+
 $ErrorActionPreference = "Stop"
 
 $root = Split-Path -Parent $PSScriptRoot
-$javac = "C:\develop\tools\eclipse202503\eclipse\jdk-21.0.8+9\bin\javac.exe"
-$swtJar = "C:\develop\tools\eclipse202503\eclipse\plugins\org.eclipse.swt.win32.win32.x86_64_3.129.0.v20250221-1734.jar"
+. (Join-Path $PSScriptRoot "build-environment.ps1")
+$buildEnvironment = Get-TinyWinNfsBuildEnvironment -JdkPath $JdkPath -SwtJarPath $SwtJarPath -RequireSwt
+$javac = $buildEnvironment.Javac
+$swtJar = $buildEnvironment.SwtJar
 $src = Join-Path $root "src"
 $bin = Join-Path $root "bin"
 
@@ -14,6 +21,7 @@ if( !(Test-Path -LiteralPath $swtJar)) {
 	throw "SWT jar is not found: $swtJar"
 }
 
+Assert-TinyWinNfsWorkspacePath -Path $bin
 if( Test-Path -LiteralPath $bin) {
 	Remove-Item -LiteralPath $bin -Recurse -Force
 }

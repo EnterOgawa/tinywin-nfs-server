@@ -23,12 +23,11 @@ import jp.co.enterogawa.nfs.config.NfsServerConfig;
  *
  * <p>著作権： Copyright (c) 2026 EnterOgawa. All Rights Reserved.</p>
  *
- * <p>更新履歴：
+ * <p>更新履歴：</p>
  * <pre>
  *     VerNo.         author        update     comment
  *     Ver.01.00.00   Shunji Ogawa  2026/09/02 新規作成
  * </pre>
- * </p>
  *
  * @author Shunji Ogawa
  * @version 01.00.00
@@ -413,6 +412,17 @@ public final class NfsDiagnostics {
 		 * インスタンスを生成します。<br><br>
 		 *
 		 * <p>メソッド名称： コンストラクタ</p>
+		 *
+		 * @param export	診断対象の公開定義
+		 * @param exists	共有フォルダの存在有無
+		 * @param directory	ディレクトリであるか
+		 * @param readable	読み込み可否
+		 * @param writable	書き込み可否
+		 * @param fileCount	通常ファイル数
+		 * @param directoryCount	ディレクトリ数
+		 * @param totalBytes	通常ファイルの合計サイズ
+		 * @param caseCollisions	大文字小文字が衝突する名前の一覧
+		 * @param messages	診断メッセージ一覧
 		 */
 		//--------------------------------------------------------------------------
 		private ExportReport( NfsExport export, boolean exists, boolean directory, boolean readable, boolean writable, long fileCount, long directoryCount, long totalBytes, List<CaseCollision> caseCollisions, List<DiagnosticMessage> messages) {
@@ -447,9 +457,11 @@ public final class NfsDiagnostics {
 		 *
 		 * <p>メソッド名称： 存在有無取得</p>
 		 *
-		 * @return	判定結果<ul>
-		 * 			false	: 不存在<br>
-		 * 			true	: 存在</ul>
+		 * @return	判定結果
+		 * <ul>
+		 * <li>false: 不存在</li>
+		 * <li>true: 存在</li>
+		 * </ul>
 		 */
 		//--------------------------------------------------------------------------
 		public boolean exists() {
@@ -462,9 +474,11 @@ public final class NfsDiagnostics {
 		 *
 		 * <p>メソッド名称： ディレクトリ有無取得</p>
 		 *
-		 * @return	判定結果<ul>
-		 * 			false	: ディレクトリ以外<br>
-		 * 			true	: ディレクトリ</ul>
+		 * @return	判定結果
+		 * <ul>
+		 * <li>false: ディレクトリ以外</li>
+		 * <li>true: ディレクトリ</li>
+		 * </ul>
 		 */
 		//--------------------------------------------------------------------------
 		public boolean isDirectory() {
@@ -477,9 +491,11 @@ public final class NfsDiagnostics {
 		 *
 		 * <p>メソッド名称： 読込可否取得</p>
 		 *
-		 * @return	判定結果<ul>
-		 * 			false	: 読込不可<br>
-		 * 			true	: 読込可</ul>
+		 * @return	判定結果
+		 * <ul>
+		 * <li>false: 読込不可</li>
+		 * <li>true: 読込可</li>
+		 * </ul>
 		 */
 		//--------------------------------------------------------------------------
 		public boolean isReadable() {
@@ -492,9 +508,11 @@ public final class NfsDiagnostics {
 		 *
 		 * <p>メソッド名称： 書込可否取得</p>
 		 *
-		 * @return	判定結果<ul>
-		 * 			false	: 書込不可<br>
-		 * 			true	: 書込可</ul>
+		 * @return	判定結果
+		 * <ul>
+		 * <li>false: 書込不可</li>
+		 * <li>true: 書込可</li>
+		 * </ul>
 		 */
 		//--------------------------------------------------------------------------
 		public boolean isWritable() {

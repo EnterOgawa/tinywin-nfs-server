@@ -10,12 +10,11 @@ import jp.co.enterogawa.nfs.xdr.XdrReader;
  *
  * <p>著作権： Copyright (c) 2026 EnterOgawa. All Rights Reserved.</p>
  *
- * <p>更新履歴：
+ * <p>更新履歴：</p>
  * <pre>
  *     VerNo.         author        update     comment
  *     Ver.01.00.00   Shunji Ogawa  2026/09/02 新規作成
  * </pre>
- * </p>
  *
  * @author Shunji Ogawa
  * @version 01.00.00
@@ -89,9 +88,11 @@ public class RpcCredential {
 	 *
 	 * <p>メソッド名称： AUTH_SYS認証情報判定</p>
 	 *
-	 * @return	判定結果<ul>
-	 * 			false	: その他<br>
-	 * 			true	: AUTH_SYS</ul>
+	 * @return	判定結果
+	 * <ul>
+	 * <li>false: その他</li>
+	 * <li>true: AUTH_SYS</li>
+	 * </ul>
 	 */
 	//--------------------------------------------------------------------------
 	public boolean isAuthSys() {
@@ -174,12 +175,11 @@ public class RpcCredential {
 	 *
 	 * <p>著作権： Copyright (c) 2026 EnterOgawa. All Rights Reserved.</p>
 	 *
-	 * <p>更新履歴：
+	 * <p>更新履歴：</p>
 	 * <pre>
 	 *     VerNo.         author        update     comment
 	 *     Ver.01.00.00   Shunji Ogawa  2026/09/02 新規作成
 	 * </pre>
-	 * </p>
 	 *
 	 * @author Shunji Ogawa
 	 * @version 01.00.00

@@ -1,6 +1,7 @@
 # Windows サービス
 
 サービスには WinSW v2.12.0 を使用します。
+次のパッケージでは NET461 版を使用するため、OS 側の .NET Framework 4.8 以降が必要です。インストーラーは前提条件を確認します。
 
 ## ファイル
 
@@ -19,6 +20,9 @@ allowed clients、AUTH_SYS、Windows 権限の扱いは [security_model.md](secu
 ## インストール
 
 PowerShell を管理者として実行します。
+
+ソースから開発用サービスを登録する場合は、依存取得とコンパイルを済ませ、システム環境変数 `TINYWIN_NFS_JDK` に Java 21 JDK の場所を設定してください。開発用 XML はその値を参照します。
+インストーラーから導入する場合は同梱 runtime を使うため、この JDK 設定は不要です。環境変数の変更やサービス操作は手動確認時に行います。
 
 ```powershell
 .\scripts\download-winsw.ps1

@@ -11,12 +11,11 @@ import java.util.List;
  *
  * <p>著作権： Copyright (c) 2026 EnterOgawa. All Rights Reserved.</p>
  *
- * <p>更新履歴：
+ * <p>更新履歴：</p>
  * <pre>
  *     VerNo.         author        update     comment
  *     Ver.01.00.00   Shunji Ogawa  2026/09/02 新規作成
  * </pre>
- * </p>
  *
  * @author Shunji Ogawa
  * @version 01.00.00
@@ -102,9 +101,11 @@ public class NfsExport {
 	 *
 	 * <p>メソッド名称： 書込可否取得</p>
 	 *
-	 * @return	判定結果<ul>
-	 * 			false	: 読込専用<br>
-	 * 			true	: 書込可</ul>
+	 * @return	判定結果
+	 * <ul>
+	 * <li>false: 読込専用</li>
+	 * <li>true: 書込可</li>
+	 * </ul>
 	 */
 	//--------------------------------------------------------------------------
 	public boolean isWritable() {
@@ -131,9 +132,11 @@ public class NfsExport {
 	 * <p>メソッド名称： クライアント許可可否取得</p>
 	 *
 	 * @param clientAddress	クライアントアドレス
-	 * @return	判定結果<ul>
-	 * 			false	: 拒否<br>
-	 * 			true	: 許可</ul>
+	 * @return	判定結果
+	 * <ul>
+	 * <li>false: 拒否</li>
+	 * <li>true: 許可</li>
+	 * </ul>
 	 */
 	//--------------------------------------------------------------------------
 	public boolean allowsClient( String clientAddress) {

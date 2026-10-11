@@ -1,11 +1,19 @@
+param(
+	[string]$JdkPath = "",
+	[string]$SwtJarPath = ""
+)
+
 $ErrorActionPreference = "Stop"
 
 $root = Split-Path -Parent $PSScriptRoot
-$jdk = "C:\develop\tools\eclipse202503\eclipse\jdk-21.0.8+9"
+. (Join-Path $PSScriptRoot "build-environment.ps1")
+& (Join-Path $PSScriptRoot "prepare-dependencies.ps1") -IncludeWinSW
+$buildEnvironment = Get-TinyWinNfsBuildEnvironment -JdkPath $JdkPath -SwtJarPath $SwtJarPath -RequireSwt
+$jdk = $buildEnvironment.Jdk
 $jar = Join-Path $jdk "bin\jar.exe"
 $jpackage = Join-Path $jdk "bin\jpackage.exe"
 $javaLauncher = Join-Path $jdk "bin\java.exe"
-$swtJar = "C:\develop\tools\eclipse202503\eclipse\plugins\org.eclipse.swt.win32.win32.x86_64_3.129.0.v20250221-1734.jar"
+$swtJar = $buildEnvironment.SwtJar
 $icon = Join-Path $root "assets\tinywin-nfs-server.ico"
 $iconScript = Join-Path $root "scripts\generate-icon.ps1"
 $work = Join-Path $root "work\tmp\package"
@@ -38,8 +46,11 @@ if( !(Test-Path -LiteralPath $icon)) {
 	throw "Application icon is not found: $icon"
 }
 
-& (Join-Path $root "scripts\compile.ps1")
+& (Join-Path $root "scripts\prepare-release-sources.ps1") -JdkPath $jdk
+& (Join-Path $root "scripts\compile.ps1") -JdkPath $jdk -SwtJarPath $swtJar
 
+Assert-TinyWinNfsWorkspacePath -Path $work
+Assert-TinyWinNfsWorkspacePath -Path $appImage
 if( Test-Path -LiteralPath $work) {
 	Remove-Item -LiteralPath $work -Recurse -Force
 }
@@ -87,9 +98,22 @@ Copy-Item -LiteralPath (Join-Path $root "service") -Destination (Join-Path $appI
 Copy-Item -LiteralPath (Join-Path $root "launcher\TinyWinNfsManager-Admin.cmd") -Destination (Join-Path $appImage "TinyWinNfsManager-Admin.cmd") -Force
 Copy-Item -LiteralPath (Join-Path $root "LICENSE") -Destination (Join-Path $appImage "LICENSE") -Force
 Copy-Item -LiteralPath (Join-Path $root "THIRD_PARTY_NOTICES.md") -Destination (Join-Path $appImage "THIRD_PARTY_NOTICES.md") -Force
+Copy-Item -LiteralPath (Join-Path $root "licenses") -Destination (Join-Path $appImage "licenses") -Recurse -Force
+Copy-Item -LiteralPath (Join-Path $root "dependencies") -Destination (Join-Path $appImage "dependencies") -Recurse -Force
+Copy-Item -LiteralPath (Join-Path $root "work\tmp\release-sources") -Destination (Join-Path $appImage "sources") -Recurse -Force
+[ordered]@{
+	appVersion = $appVersion
+	javaVersion = $buildEnvironment.Release.JAVA_VERSION
+	javaImplementor = $buildEnvironment.Release.IMPLEMENTOR_VERSION
+	swtVersion = (Get-TinyWinNfsComponents).swt.version
+	swtSha256 = (Get-FileHash -LiteralPath $swtJar -Algorithm SHA256).Hash
+	winswVersion = (Get-TinyWinNfsComponents).winsw.version
+	winswVariant = (Get-TinyWinNfsComponents).winsw.variant
+} | ConvertTo-Json | Set-Content -LiteralPath (Join-Path $appImage "build-information.json") -Encoding UTF8
 
 $scriptTarget = Join-Path $appImage "scripts"
 $runtimeScripts = @(
+	"build-environment.ps1",
 	"add-firewall-rules.ps1",
 	"install-service.ps1",
 	"restart-service.ps1",
@@ -121,13 +145,8 @@ Copy-Item -LiteralPath $packageXml -Destination $targetXml -Force
 
 $winsw = Join-Path $appImage "service\winsw\nfs-server.exe"
 
-if( !(Test-Path -LiteralPath $winsw)) {
-	Push-Location $appImage
-	try {
-		& (Join-Path $appImage "scripts\download-winsw.ps1")
-	} finally {
-		Pop-Location
-	}
+if( !(Test-Path -LiteralPath $winsw) -or (Get-FileHash -LiteralPath $winsw -Algorithm SHA256).Hash -ne (Get-TinyWinNfsComponents).winsw.binary.sha256) {
+	throw "Packaged WinSW binary is missing or has an unexpected SHA-256."
 }
 
 Write-Host "App image created: $appImage"

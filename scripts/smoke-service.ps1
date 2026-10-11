@@ -9,9 +9,7 @@ param(
 $ErrorActionPreference = "Stop"
 
 $root = Split-Path -Parent $PSScriptRoot
-$javac = "C:\develop\tools\eclipse202503\eclipse\jdk-21.0.8+9\bin\javac.exe"
 $java = Join-Path $root "runtime\bin\java.exe"
-$developerJava = "C:\develop\tools\eclipse202503\eclipse\jdk-21.0.8+9\bin\java.exe"
 $bin = Join-Path $root "bin"
 $testBin = Join-Path $root "work\tmp\test-bin"
 $smokeTest = Join-Path $root "test\jp\co\enterogawa\nfs\ServiceSmokeTest.java"
@@ -81,6 +79,11 @@ if( (Test-Path -LiteralPath $appJar) -and (Test-Path -LiteralPath $java)) {
 		Pop-Location
 	}
 }
+
+. (Join-Path $PSScriptRoot "build-environment.ps1")
+$buildEnvironment = Get-TinyWinNfsBuildEnvironment -RequireSwt
+$javac = $buildEnvironment.Javac
+$developerJava = $buildEnvironment.Java
 
 if( !(Test-Path -LiteralPath $javac)) {
 	throw "javac.exe is not found: $javac"

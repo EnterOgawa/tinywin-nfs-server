@@ -31,6 +31,16 @@ import jp.co.enterogawa.nfs.xdr.XdrWriter;
  */
 //------------------------------------------------------------------------------
 public class ServiceSmokeTest {
+	//--------------------------------------------------------------------------
+	/**
+	 * インスタンスを生成します。<br><br>
+	 *
+	 * <p>メソッド名称： コンストラクタ</p>
+	 */
+	//--------------------------------------------------------------------------
+	public ServiceSmokeTest() {
+	}
+
 	//	定数定義	------------------------------------------------------------
 	/** 接続先 */
 	private static final String			HOST = "127.0.0.1" ;
@@ -72,23 +82,28 @@ public class ServiceSmokeTest {
 	public static void main(String[] args) throws Exception {
 		ServiceSmokeTest test = new ServiceSmokeTest() ;
 
+		// 確認対象を指定する引数がある場合
 		if( args.length > 0) {
+			// TCP 通信の確認が指定された場合
 			if( args.length == 1 && "tcp".equals( args[0])) {
 				test.tcpTransport = true ;
 				test.run() ;
 				return ;
 			}
 
+			// 再起動後のファイルハンドル確認の準備が指定された場合
 			if( args.length == 2 && "prepare-handle-persistence".equals( args[0])) {
 				test.prepareHandlePersistence( Path.of( args[1])) ;
 				return ;
 			}
 
+			// 再起動後のファイルハンドル確認が指定された場合
 			if( args.length == 2 && "verify-handle-persistence".equals( args[0])) {
 				test.verifyHandlePersistence( Path.of( args[1])) ;
 				return ;
 			}
 
+			// ファイル整合性の確認が指定された場合
 			if( args.length == 2 && "verify-file-integrity".equals( args[0])) {
 				test.verifyFileIntegrity( Path.of( args[1])) ;
 				return ;
@@ -143,6 +158,7 @@ public class ServiceSmokeTest {
 		Path absoluteStatePath = statePath.toAbsolutePath().normalize() ;
 		Path parent = absoluteStatePath.getParent() ;
 
+		// 状態ファイルに親ディレクトリがある場合
 		if( parent != null) {
 			Files.createDirectories( parent) ;
 		}
@@ -213,6 +229,7 @@ public class ServiceSmokeTest {
 		renameFile( rootHandle, temporaryName, fileName) ;
 		assertDiskContent( filePath, "rename replacement") ;
 
+		// RENAME 後も移動元の一時ファイルが残っている場合
 		if( Files.exists( temporaryPath)) {
 			throw new AssertionError( "Temporary file still exists: " + temporaryPath) ;
 		}

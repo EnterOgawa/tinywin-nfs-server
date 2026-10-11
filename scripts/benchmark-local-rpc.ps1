@@ -20,9 +20,11 @@ param(
 $ErrorActionPreference = "Stop"
 
 $root = Split-Path -Parent $PSScriptRoot
-$javac = "C:\develop\tools\eclipse202503\eclipse\jdk-21.0.8+9\bin\javac.exe"
-$java = "C:\develop\tools\eclipse202503\eclipse\jdk-21.0.8+9\bin\java.exe"
-$swtJar = "C:\develop\tools\eclipse202503\eclipse\plugins\org.eclipse.swt.win32.win32.x86_64_3.129.0.v20250221-1734.jar"
+. (Join-Path $PSScriptRoot "build-environment.ps1")
+$buildEnvironment = Get-TinyWinNfsBuildEnvironment -RequireSwt
+$javac = $buildEnvironment.Javac
+$java = $buildEnvironment.Java
+$swtJar = $buildEnvironment.SwtJar
 $bin = Join-Path $root "bin"
 $testBin = Join-Path $root "work\tmp\test-bin"
 $outputPath = if( [System.IO.Path]::IsPathRooted($Out)) { $Out } else { Join-Path $root $Out }
@@ -41,6 +43,7 @@ if( !(Test-Path -LiteralPath $swtJar)) {
 
 & (Join-Path $root "scripts\compile.ps1")
 
+Assert-TinyWinNfsWorkspacePath -Path $testBin
 if( Test-Path -LiteralPath $testBin) {
 	Remove-Item -LiteralPath $testBin -Recurse -Force
 }

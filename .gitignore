@@ -7,5 +7,6 @@
 /service/winsw/nfs-server.exe
 /service/winsw/*.log
 /dist/
+/lib/*.jar
 *.class
 *.log

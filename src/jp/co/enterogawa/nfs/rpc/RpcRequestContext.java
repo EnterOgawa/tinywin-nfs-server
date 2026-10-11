@@ -8,12 +8,11 @@ package jp.co.enterogawa.nfs.rpc;
  *
  * <p>著作権： Copyright (c) 2026 EnterOgawa. All Rights Reserved.</p>
  *
- * <p>更新履歴：
+ * <p>更新履歴：</p>
  * <pre>
  *     VerNo.         author        update     comment
  *     Ver.01.00.00   Shunji Ogawa  2026/09/02 新規作成
  * </pre>
- * </p>
  *
  * @author Shunji Ogawa
  * @version 01.00.00
@@ -266,9 +265,11 @@ public class RpcRequestContext {
 	 *
 	 * <p>メソッド名称： AUTH_SYS資格情報有無取得</p>
 	 *
-	 * @return	判定結果<ul>
-	 * 			false	: なし<br>
-	 * 			true	: あり</ul>
+	 * @return	判定結果
+	 * <ul>
+	 * <li>false: なし</li>
+	 * <li>true: あり</li>
+	 * </ul>
 	 */
 	//--------------------------------------------------------------------------
 	public boolean hasAuthSysIdentity() {

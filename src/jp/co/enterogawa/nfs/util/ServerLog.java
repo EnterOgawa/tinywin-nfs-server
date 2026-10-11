@@ -17,12 +17,11 @@ import java.time.format.DateTimeFormatter;
  *
  * <p>著作権： Copyright (c) 2026 EnterOgawa. All Rights Reserved.</p>
  *
- * <p>更新履歴：
+ * <p>更新履歴：</p>
  * <pre>
  *     VerNo.         author        update     comment
  *     Ver.01.00.00   Shunji Ogawa  2026/09/02 新規作成
  * </pre>
- * </p>
  *
  * @author Shunji Ogawa
  * @version 01.00.00
@@ -96,9 +95,11 @@ public final class ServerLog {
 	 *
 	 * <p>メソッド名称： 要求ログ有効可否取得</p>
 	 *
-	 * @return	判定結果<ul>
-	 * 			false	: 無効<br>
-	 * 			true	: 有効</ul>
+	 * @return	判定結果
+	 * <ul>
+	 * <li>false: 無効</li>
+	 * <li>true: 有効</li>
+	 * </ul>
 	 */
 	//--------------------------------------------------------------------------
 	public static boolean isRequestLogEnabled() {
@@ -113,9 +114,11 @@ public final class ServerLog {
 	 *
 	 * @param operation	操作名
 	 * @param status	ステータス
-	 * @return	判定結果<ul>
-	 * 			false	: 抑制<br>
-	 * 			true	: 出力</ul>
+	 * @return	判定結果
+	 * <ul>
+	 * <li>false: 抑制</li>
+	 * <li>true: 出力</li>
+	 * </ul>
 	 */
 	//--------------------------------------------------------------------------
 	public static boolean shouldLogOperation( String operation, int status) {
@@ -138,9 +141,11 @@ public final class ServerLog {
 	 *
 	 * <p>メソッド名称： デバッグログ有効可否取得</p>
 	 *
-	 * @return	判定結果<ul>
-	 * 			false	: 無効<br>
-	 * 			true	: 有効</ul>
+	 * @return	判定結果
+	 * <ul>
+	 * <li>false: 無効</li>
+	 * <li>true: 有効</li>
+	 * </ul>
 	 */
 	//--------------------------------------------------------------------------
 	public static boolean isDebugEnabled() {
@@ -153,9 +158,11 @@ public final class ServerLog {
 	 *
 	 * <p>メソッド名称： 詳細変更ログ有効可否取得</p>
 	 *
-	 * @return	判定結果<ul>
-	 * 			false	: 無効<br>
-	 * 			true	: 有効</ul>
+	 * @return	判定結果
+	 * <ul>
+	 * <li>false: 無効</li>
+	 * <li>true: 有効</li>
+	 * </ul>
 	 */
 	//--------------------------------------------------------------------------
 	private static boolean isVerboseMutationLogEnabled() {
@@ -168,9 +175,11 @@ public final class ServerLog {
 	 *
 	 * <p>メソッド名称： コンソールログ有効可否取得</p>
 	 *
-	 * @return	判定結果<ul>
-	 * 			false	: 無効<br>
-	 * 			true	: 有効</ul>
+	 * @return	判定結果
+	 * <ul>
+	 * <li>false: 無効</li>
+	 * <li>true: 有効</li>
+	 * </ul>
 	 */
 	//--------------------------------------------------------------------------
 	private static boolean isConsoleEnabled() {

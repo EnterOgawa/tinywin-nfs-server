@@ -1,4 +1,4 @@
-param(
+﻿param(
 	[string]$DriveLetter = "Z",
 	[string]$ServerHost = "127.0.0.1",
 	[string]$ExportName = "export",
@@ -12,7 +12,8 @@ param(
 $ErrorActionPreference = "Stop"
 
 $root = Split-Path -Parent $PSScriptRoot
-$java = "C:\develop\tools\eclipse202503\eclipse\jdk-21.0.8+9\bin\java.exe"
+. (Join-Path $PSScriptRoot "build-environment.ps1")
+$java = (Get-TinyWinNfsBuildEnvironment -RequireSwt).Java
 $bin = Join-Path $root "bin"
 $workRoot = Join-Path $root "work\tmp\windows-nfs-client-test"
 $exportRoot = Join-Path $workRoot "export"

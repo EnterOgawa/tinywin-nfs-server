@@ -1,0 +1,35 @@
+name: ビルドと単体テスト
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  unit-tests:
+    name: Windows / Java 21
+    runs-on: windows-2022
+    timeout-minutes: 15
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - name: ソースを取得
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Java 21 を設定
+        uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
+        with:
+          distribution: temurin
+          java-version: '21.0.11+10'
+      - name: 依存ファイルを取得・検証
+        run: ./scripts/prepare-dependencies.ps1
+      - name: サーバーを起動しない単体テスト
+        run: ./scripts/test.ps1 -Suite Unit -JdkPath "$env:JAVA_HOME"

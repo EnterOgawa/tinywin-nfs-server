@@ -13,12 +13,11 @@ import jp.co.enterogawa.nfs.xdr.XdrWriter;
  *
  * <p>著作権： Copyright (c) 2026 EnterOgawa. All Rights Reserved.</p>
  *
- * <p>更新履歴：
+ * <p>更新履歴：</p>
  * <pre>
  *     VerNo.         author        update     comment
  *     Ver.01.00.00   Shunji Ogawa  2026/09/02 新規作成
  * </pre>
- * </p>
  *
  * @author Shunji Ogawa
  * @version 01.00.00
@@ -135,9 +134,11 @@ public class RpcCallHandler {
 	 * @param call	RPC呼出
 	 * @param acceptStatus	ACCEPTステータス
 	 * @param resultStatus	結果ステータス
-	 * @return	判定結果<ul>
-	 * 			false	: 抑制<br>
-	 * 			true	: 出力</ul>
+	 * @return	判定結果
+	 * <ul>
+	 * <li>false: 抑制</li>
+	 * <li>true: 出力</li>
+	 * </ul>
 	 */
 	//--------------------------------------------------------------------------
 	private boolean shouldLogRequest( RpcCall call, int acceptStatus, Integer resultStatus) {

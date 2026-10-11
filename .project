@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <projectDescription>
 	<name>jp.co.enterogawa.nfs</name>
-	<comment>QNX 4.25 compatible NFSv2 server for Windows Pro.</comment>
+	<comment>TinyWinNFS Server: Java 21 NFSv2/NFSv3 server for Windows.</comment>
 	<projects>
 	</projects>
 	<buildSpec>

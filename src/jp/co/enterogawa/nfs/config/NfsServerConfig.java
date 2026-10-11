@@ -20,12 +20,11 @@ import java.util.Set;
  *
  * <p>著作権： Copyright (c) 2026 EnterOgawa. All Rights Reserved.</p>
  *
- * <p>更新履歴：
+ * <p>更新履歴：</p>
  * <pre>
  *     VerNo.         author        update     comment
  *     Ver.01.00.00   Shunji Ogawa  2026/09/02 新規作成
  * </pre>
- * </p>
  *
  * @author Shunji Ogawa
  * @version 01.00.00
@@ -177,6 +176,7 @@ public class NfsServerConfig {
 	 * <p>メソッド名称： 公開定義読込</p>
 	 *
 	 * @param properties	設定値
+	 * @param configBasePath	共有の相対パスを解決する基準パス
 	 * @return	公開定義
 	 */
 	//--------------------------------------------------------------------------
@@ -596,9 +596,11 @@ public class NfsServerConfig {
 	 * <p>メソッド名称： 空白文字有無確認</p>
 	 *
 	 * @param value	値
-	 * @return	判定結果<ul>
-	 * 			false	: なし<br>
-	 * 			true	: あり</ul>
+	 * @return	判定結果
+	 * <ul>
+	 * <li>false: なし</li>
+	 * <li>true: あり</li>
+	 * </ul>
 	 */
 	//--------------------------------------------------------------------------
 	private boolean containsWhitespace( String value) {
@@ -620,9 +622,11 @@ public class NfsServerConfig {
 	 * <p>メソッド名称： 親ディレクトリセグメント有無確認</p>
 	 *
 	 * @param value	値
-	 * @return	判定結果<ul>
-	 * 			false	: なし<br>
-	 * 			true	: あり</ul>
+	 * @return	判定結果
+	 * <ul>
+	 * <li>false: なし</li>
+	 * <li>true: あり</li>
+	 * </ul>
 	 */
 	//--------------------------------------------------------------------------
 	private boolean hasParentSegment( String value) {
@@ -646,9 +650,11 @@ public class NfsServerConfig {
 	 * <p>メソッド名称： IPv4アドレス確認</p>
 	 *
 	 * @param value	値
-	 * @return	判定結果<ul>
-	 * 			false	: IPv4以外<br>
-	 * 			true	: IPv4</ul>
+	 * @return	判定結果
+	 * <ul>
+	 * <li>false: IPv4以外</li>
+	 * <li>true: IPv4</li>
+	 * </ul>
 	 */
 	//--------------------------------------------------------------------------
 	private static boolean isExactIpv4Address( String value) {
@@ -843,9 +849,11 @@ public class NfsServerConfig {
 	 *
 	 * <p>メソッド名称： 公開書込可否取得</p>
 	 *
-	 * @return	判定結果<ul>
-	 * 			false	: 読込専用<br>
-	 * 			true	: 書込可</ul>
+	 * @return	判定結果
+	 * <ul>
+	 * <li>false: 読込専用</li>
+	 * <li>true: 書込可</li>
+	 * </ul>
 	 */
 	//--------------------------------------------------------------------------
 	public boolean isExportWritable() {
@@ -884,9 +892,11 @@ public class NfsServerConfig {
 	 *
 	 * <p>メソッド名称： クライアント資格情報属性反映有無取得</p>
 	 *
-	 * @return	判定結果<ul>
-	 * 			false	: 固定<br>
-	 * 			true	: 反映</ul>
+	 * @return	判定結果
+	 * <ul>
+	 * <li>false: 固定</li>
+	 * <li>true: 反映</li>
+	 * </ul>
 	 */
 	//--------------------------------------------------------------------------
 	public boolean isClientIdentityEnabled() {
@@ -1029,9 +1039,11 @@ public class NfsServerConfig {
 	 *
 	 * <p>メソッド名称： 同期書込有無取得</p>
 	 *
-	 * @return	判定結果<ul>
-	 * 			false	: 非同期書込<br>
-	 * 			true	: 同期書込</ul>
+	 * @return	判定結果
+	 * <ul>
+	 * <li>false: 非同期書込</li>
+	 * <li>true: 同期書込</li>
+	 * </ul>
 	 */
 	//--------------------------------------------------------------------------
 	public boolean isWriteSync() {
@@ -1044,9 +1056,11 @@ public class NfsServerConfig {
 	 *
 	 * <p>メソッド名称： 書込ファイルキャッシュ有効有無取得</p>
 	 *
-	 * @return	判定結果<ul>
-	 * 			false	: 無効<br>
-	 * 			true	: 有効</ul>
+	 * @return	判定結果
+	 * <ul>
+	 * <li>false: 無効</li>
+	 * <li>true: 有効</li>
+	 * </ul>
 	 */
 	//--------------------------------------------------------------------------
 	public boolean isWriteCacheEnabled() {

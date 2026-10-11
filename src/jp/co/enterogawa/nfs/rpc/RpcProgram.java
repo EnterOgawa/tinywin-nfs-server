@@ -12,12 +12,11 @@ import jp.co.enterogawa.nfs.xdr.XdrWriter;
  *
  * <p>著作権： Copyright (c) 2026 EnterOgawa. All Rights Reserved.</p>
  *
- * <p>更新履歴：
+ * <p>更新履歴：</p>
  * <pre>
  *     VerNo.         author        update     comment
  *     Ver.01.00.00   Shunji Ogawa  2026/09/02 新規作成
  * </pre>
- * </p>
  *
  * @author Shunji Ogawa
  * @version 01.00.00
@@ -53,9 +52,11 @@ public interface RpcProgram {
 	 * <p>メソッド名称： Version対応可否確認</p>
 	 *
 	 * @param version	Version
-	 * @return	判定結果<ul>
-	 * 			false	: 未対応<br>
-	 * 			true	: 対応</ul>
+	 * @return	判定結果
+	 * <ul>
+	 * <li>false: 未対応</li>
+	 * <li>true: 対応</li>
+	 * </ul>
 	 */
 	//--------------------------------------------------------------------------
 	default boolean supportsVersion( int version) {

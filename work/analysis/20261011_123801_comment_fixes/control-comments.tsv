@@ -1,0 +1,849 @@
+Source	Kind	Line	CommentBefore	Previous	Code
+src\jp\co\enterogawa\nfs\NfsServerMain.java	if	55	true	// ローカル設定ファイルが存在する場合	if( Files.exists( localConfigPath)) {
+src\jp\co\enterogawa\nfs\NfsServerMain.java	if	60	true	// 設定ファイル指定がある場合	if( args.length > 0) {
+src\jp\co\enterogawa\nfs\config\ConfigBackup.java	if	85	true	// バックアップ元が存在しない場合	if( !Files.exists( normalizedSource)) {
+src\jp\co\enterogawa\nfs\config\ConfigBackup.java	for	113	true	// 同一ミリ秒内の重複を避けるため連番を確認する	for( int i = 0; i < 100; i++) {
+src\jp\co\enterogawa\nfs\config\ConfigBackup.java	if	118	true	// バックアップファイルが未使用の場合	if( !Files.exists( candidate)) {
+src\jp\co\enterogawa\nfs\config\ConfigBackup.java	for	145	true	// 保持世代を超えたバックアップを削除する	for( int i = MAX_BACKUP_COUNT; i < backups.size(); i++) {
+src\jp\co\enterogawa\nfs\config\NfsExport.java	if	144	true	// 許可クライアントが未設定の場合	if( allowedClients.isEmpty()) {
+src\jp\co\enterogawa\nfs\config\NfsServerConfig.java	if	188	true	// 複数公開定義がある場合	if( count > 0) {
+src\jp\co\enterogawa\nfs\config\NfsServerConfig.java	for	190	true	// 設定ファイル上の公開定義を順に読み込む	for( int i = 1; i <= count; i++) {
+src\jp\co\enterogawa\nfs\config\NfsServerConfig.java	if	198	true	// 公開定義が不足している場合	if(( name == null || name.isBlank() || path == null || path.isBlank())) {
+src\jp\co\enterogawa\nfs\config\NfsServerConfig.java	if	232	true	// 設定ファイルが存在する場合	if( Files.exists( configPath)) {
+src\jp\co\enterogawa\nfs\config\NfsServerConfig.java	if	257	true	// 設定がない場合	if(( value == null || value.isBlank())) {
+src\jp\co\enterogawa\nfs\config\NfsServerConfig.java	if	280	true	// 設定がない場合	if(( value == null || value.isBlank())) {
+src\jp\co\enterogawa\nfs\config\NfsServerConfig.java	if	303	true	// 設定がない場合	if(( value == null || value.isBlank())) {
+src\jp\co\enterogawa\nfs\config\NfsServerConfig.java	if	326	true	// 設定がない場合	if(( value == null || value.isBlank())) {
+src\jp\co\enterogawa\nfs\config\NfsServerConfig.java	if	349	true	// 設定がない場合	if(( value == null || value.isBlank())) {
+src\jp\co\enterogawa\nfs\config\NfsServerConfig.java	if	356	true	// trueの場合	if( "true".equalsIgnoreCase( normalized)) {
+src\jp\co\enterogawa\nfs\config\NfsServerConfig.java	if	361	true	// falseの場合	if( "false".equalsIgnoreCase( normalized)) {
+src\jp\co\enterogawa\nfs\config\NfsServerConfig.java	if	383	true	// 設定がない場合	if(( value == null || value.isBlank())) {
+src\jp\co\enterogawa\nfs\config\NfsServerConfig.java	for-each	391	true	// 許可クライアントを分割して検証する	for( String entry : entries) {
+src\jp\co\enterogawa\nfs\config\NfsServerConfig.java	if	395	true	// 空要素の場合	if( address.isEmpty()) {
+src\jp\co\enterogawa\nfs\config\NfsServerConfig.java	if	400	true	// IPv4アドレスではない場合	if( !isExactIpv4Address( address)) {
+src\jp\co\enterogawa\nfs\config\NfsServerConfig.java	if	423	true	// UDPワーカー数が不正な場合	if( rpcUdpWorkers <= 0) {
+src\jp\co\enterogawa\nfs\config\NfsServerConfig.java	if	428	true	// UDPキューサイズが不正な場合	if( rpcUdpQueueSize <= 0) {
+src\jp\co\enterogawa\nfs\config\NfsServerConfig.java	if	433	true	// TCPタイムアウトが不正な場合	if( rpcTcpTimeoutMillis <= 0) {
+src\jp\co\enterogawa\nfs\config\NfsServerConfig.java	if	438	true	// 公開定義が存在しない場合	if( exports.isEmpty()) {
+src\jp\co\enterogawa\nfs\config\NfsServerConfig.java	for-each	446	true	// 公開定義を検証する	for( NfsExport export : exports) {
+src\jp\co\enterogawa\nfs\config\NfsServerConfig.java	if	451	true	// 公開名が重複している場合	if( !names.add( export.getName())) {
+src\jp\co\enterogawa\nfs\config\NfsServerConfig.java	if	456	true	// 公開パスが重複している場合	if( !paths.add( export.getPath())) {
+src\jp\co\enterogawa\nfs\config\NfsServerConfig.java	for-each	462	true	// 公開パスの入れ子を検証する	for( NfsExport first : exports) {
+src\jp\co\enterogawa\nfs\config\NfsServerConfig.java	for-each	464	true	// 比較対象の公開定義を順次確認する	for( NfsExport second : exports) {
+src\jp\co\enterogawa\nfs\config\NfsServerConfig.java	if	466	true	// 同一公開定義の場合	if( first == second) {
+src\jp\co\enterogawa\nfs\config\NfsServerConfig.java	if	471	true	// 公開パスが入れ子の場合	if( first.getPath().startsWith( second.getPath())) {
+src\jp\co\enterogawa\nfs\config\NfsServerConfig.java	if	478	true	// ブロックサイズが不正な場合	if( blockSize <= 0) {
+src\jp\co\enterogawa\nfs\config\NfsServerConfig.java	if	483	true	// 読込サイズが不正な場合	if( readSize <= 0) {
+src\jp\co\enterogawa\nfs\config\NfsServerConfig.java	if	488	true	// 書込サイズが不正な場合	if( writeSize <= 0) {
+src\jp\co\enterogawa\nfs\config\NfsServerConfig.java	if	493	true	// ディレクトリ推奨サイズが不正な場合	if( directoryPreferredSize <= 0) {
+src\jp\co\enterogawa\nfs\config\NfsServerConfig.java	if	498	true	// 最大ファイルサイズが不正な場合	if( maxFileSize <= 0L) {
+src\jp\co\enterogawa\nfs\config\NfsServerConfig.java	if	503	true	// 時刻精度が不正な場合	if(( timeDeltaNanos <= 0 || timeDeltaNanos > 999999999)) {
+src\jp\co\enterogawa\nfs\config\NfsServerConfig.java	if	508	true	// PATHCONF link最大値が不正な場合	if( pathconfLinkMax <= 0) {
+src\jp\co\enterogawa\nfs\config\NfsServerConfig.java	if	513	true	// PATHCONF name最大値が不正な場合	if(( pathconfNameMax <= 0 || pathconfNameMax > 255)) {
+src\jp\co\enterogawa\nfs\config\NfsServerConfig.java	if	518	true	// 権限ID反映設定が不正な場合	if(( !clientIdentityEnabled && !"fixed".equalsIgnoreCase( permissionIdentity))) {
+src\jp\co\enterogawa\nfs\config\NfsServerConfig.java	if	523	true	// 書込ファイルキャッシュ最大オープン数が不正な場合	if( writeCacheMaxOpenFiles <= 0) {
+src\jp\co\enterogawa\nfs\config\NfsServerConfig.java	if	528	true	// 書込ファイルキャッシュアイドル保持時間が不正な場合	if( writeCacheIdleMillis <= 0) {
+src\jp\co\enterogawa\nfs\config\NfsServerConfig.java	if	546	true	// 公開パスが存在しない場合	if( !Files.exists( path, LinkOption.NOFOLLOW_LINKS)) {
+src\jp\co\enterogawa\nfs\config\NfsServerConfig.java	if	551	true	// 公開パスがディレクトリではない場合	if( !Files.isDirectory( path, LinkOption.NOFOLLOW_LINKS)) {
+src\jp\co\enterogawa\nfs\config\NfsServerConfig.java	if	556	true	// 公開パスが読込不可の場合	if( !Files.isReadable( path)) {
+src\jp\co\enterogawa\nfs\config\NfsServerConfig.java	if	561	true	// 書込共有だが公開パスが書込不可の場合	if(( export.isWritable() && !Files.isWritable( path))) {
+src\jp\co\enterogawa\nfs\config\NfsServerConfig.java	if	577	true	// 公開名が絶対パス形式ではない場合	if(( name == null || name.isBlank() || !name.startsWith( "/"))) {
+src\jp\co\enterogawa\nfs\config\NfsServerConfig.java	if	582	true	// 公開名がルートのみの場合	if( "/".equals( name)) {
+src\jp\co\enterogawa\nfs\config\NfsServerConfig.java	if	587	true	// 公開名が不正な文字を含む場合	if(( name.contains( "\\" ) || name.contains( "//") || containsWhitespace( name) || hasParentSegment( name))) {
+src\jp\co\enterogawa\nfs\config\NfsServerConfig.java	for	608	true	// 文字列の空白文字を確認する	for( int i = 0; i < value.length(); i++) {
+src\jp\co\enterogawa\nfs\config\NfsServerConfig.java	if	610	true	// 空白文字の場合	if( Character.isWhitespace( value.charAt( i))) {
+src\jp\co\enterogawa\nfs\config\NfsServerConfig.java	for-each	636	true	// パスセグメントを検証する	for( String segment : segments) {
+src\jp\co\enterogawa\nfs\config\NfsServerConfig.java	if	638	true	// 親ディレクトリセグメントの場合	if( "..".equals( segment)) {
+src\jp\co\enterogawa\nfs\config\NfsServerConfig.java	if	664	true	// 4オクテットではない場合	if( parts.length != 4) {
+src\jp\co\enterogawa\nfs\config\NfsServerConfig.java	for-each	669	true	// 各オクテットを確認する	for( String part : parts) {
+src\jp\co\enterogawa\nfs\config\NfsServerConfig.java	if	671	true	// 空オクテットの場合	if( part.isEmpty()) {
+src\jp\co\enterogawa\nfs\config\NfsServerConfig.java	if	679	true	// 範囲外の場合	if(( octet < 0 || octet > 255)) {
+src\jp\co\enterogawa\nfs\config\NfsServerConfig.java	if	702	true	// ポート番号が範囲外の場合	if(( port <= 0 || port > 65535)) {
+src\jp\co\enterogawa\nfs\config\NfsServerConfig.java	for-each	810	true	// 公開定義を検索する	for( NfsExport export : exports) {
+src\jp\co\enterogawa\nfs\config\NfsServerConfig.java	if	812	true	// 公開名が一致する場合	if( export.getName().equals( name)) {
+src\jp\co\enterogawa\nfs\config\TinyWinNfsPaths.java	if	58	true	// データルート環境変数が指定されている場合	if(( configuredRoot != null && !configuredRoot.isBlank())) {
+src\jp\co\enterogawa\nfs\config\TinyWinNfsPaths.java	if	65	true	// ProgramDataが取得できる場合	if(( programData != null && !programData.isBlank())) {
+src\jp\co\enterogawa\nfs\config\TinyWinNfsPaths.java	if	143	true	// 設定ディレクトリが存在しない場合	if( configDirectory == null) {
+src\jp\co\enterogawa\nfs\config\TinyWinNfsPaths.java	if	150	true	// confディレクトリ配下の設定ファイルの場合	if(( directoryName != null && "conf".equalsIgnoreCase( directoryName.toString()) && configDirectory.getParent() != null)) {
+src\jp\co\enterogawa\nfs\config\TinyWinNfsPaths.java	if	172	true	// 絶対パスの場合	if( path.isAbsolute()) {
+src\jp\co\enterogawa\nfs\diagnostic\NfsDiagnostics.java	for-each	62	true	// 公開定義を診断する	for( NfsExport export : config.getExports()) {
+src\jp\co\enterogawa\nfs\diagnostic\NfsDiagnostics.java	if	86	true	// ポート番号が重複している場合	if(( portmapPort == nfsPort || portmapPort == mountPort || nfsPort == mountPort)) {
+src\jp\co\enterogawa\nfs\diagnostic\NfsDiagnostics.java	if	91	true	// 管理者権限が必要な既定ポートを利用する場合	if(( portmapPort <= 1024 || nfsPort <= 1024 || mountPort <= 1024)) {
+src\jp\co\enterogawa\nfs\diagnostic\NfsDiagnostics.java	if	96	true	// 書込サイズが読込サイズと異なる場合	if( config.getWriteSize() != config.getReadSize()) {
+src\jp\co\enterogawa\nfs\diagnostic\NfsDiagnostics.java	if	101	true	// UDPで扱いづらい転送サイズの場合	if(( config.getReadSize() > 65536 || config.getWriteSize() > 65536)) {
+src\jp\co\enterogawa\nfs\diagnostic\NfsDiagnostics.java	if	106	true	// ファイル名文字コードがUTF-8以外の場合	if( !Charset.forName( "UTF-8").equals( config.getFilenameCharset())) {
+src\jp\co\enterogawa\nfs\diagnostic\NfsDiagnostics.java	for-each	111	true	// 許可クライアントが未設定の公開を確認する	for( NfsExport export : config.getExports()) {
+src\jp\co\enterogawa\nfs\diagnostic\NfsDiagnostics.java	if	113	true	// すべてのクライアントを許可する場合	if( export.getAllowedClients().isEmpty()) {
+src\jp\co\enterogawa\nfs\diagnostic\NfsDiagnostics.java	for-each	135	true	// 相対パスを大文字小文字非区別キーへ分類する	for( String relativePath : relativePaths) {
+src\jp\co\enterogawa\nfs\diagnostic\NfsDiagnostics.java	for-each	144	true	// 分類結果から衝突を抽出する	for( Map.Entry<String, List<String>> entry : groups.entrySet()) {
+src\jp\co\enterogawa\nfs\diagnostic\NfsDiagnostics.java	if	148	true	// 同一キーに複数表記が存在する場合	if( distinctPaths.size() > 1) {
+src\jp\co\enterogawa\nfs\diagnostic\NfsDiagnostics.java	if	179	true	// 公開パスが存在しない場合	if( !exists) {
+src\jp\co\enterogawa\nfs\diagnostic\NfsDiagnostics.java	if	185	true	// 公開パスがディレクトリではない場合	if( !directory) {
+src\jp\co\enterogawa\nfs\diagnostic\NfsDiagnostics.java	if	191	true	// 公開パスが読込不可の場合	if( !readable) {
+src\jp\co\enterogawa\nfs\diagnostic\NfsDiagnostics.java	if	196	true	// 書込共有だが公開パスが書込不可の場合	if(( export.isWritable() && !writable)) {
+src\jp\co\enterogawa\nfs\diagnostic\NfsDiagnostics.java	for-each	204	true	// 公開配下のファイルとディレクトリを集計する	for( Path entry : entries) {
+src\jp\co\enterogawa\nfs\diagnostic\NfsDiagnostics.java	if	206	true	// 公開ルート自身の場合	if( path.equals( entry)) {
+src\jp\co\enterogawa\nfs\diagnostic\NfsDiagnostics.java	if	214	true	// ディレクトリの場合	if( Files.isDirectory( entry, LinkOption.NOFOLLOW_LINKS)) {
+src\jp\co\enterogawa\nfs\diagnostic\NfsDiagnostics.java	if	218	true	// 通常ファイルの場合	else if( Files.isRegularFile( entry, LinkOption.NOFOLLOW_LINKS)) {
+src\jp\co\enterogawa\nfs\diagnostic\NfsDiagnostics.java	if	230	true	// 大文字小文字衝突が存在する場合	if( !collisions.isEmpty()) {
+src\jp\co\enterogawa\nfs\diagnostic\NfsDiagnostics.java	for-each	341	true	// 公開診断を整形する	for( ExportReport report : exportReports) {
+src\jp\co\enterogawa\nfs\diagnostic\NfsDiagnostics.java	if	360	true	// メッセージが存在しない場合	if( messages.isEmpty()) {
+src\jp\co\enterogawa\nfs\diagnostic\NfsDiagnostics.java	for-each	366	true	// メッセージを出力する	for( DiagnosticMessage message : messages) {
+src\jp\co\enterogawa\nfs\diagnostic\NfsDiagnostics.java	for-each	611	true	// メッセージを出力する	for( DiagnosticMessage message : messages) {
+src\jp\co\enterogawa\nfs\diagnostic\NfsDiagnostics.java	for-each	616	true	// 大文字小文字衝突を出力する	for( CaseCollision collision : caseCollisions) {
+src\jp\co\enterogawa\nfs\export\FileHandle.java	if	44	true	// 長さが一致しない場合	if( value.length != LENGTH) {
+src\jp\co\enterogawa\nfs\export\FileHandle.java	if	108	true	// 同一インスタンスの場合	if( this == obj) {
+src\jp\co\enterogawa\nfs\export\FileHandle.java	if	113	true	// 型が異なる場合	if( !(obj instanceof FileHandle other)) {
+src\jp\co\enterogawa\nfs\export\FileHandleTable.java	if	109	true	// 公開定義が存在しない場合	if(( exports == null || exports.isEmpty())) {
+src\jp\co\enterogawa\nfs\export\FileHandleTable.java	for-each	119	true	// 公開ルートのファイルハンドルを登録する	for( NfsExport export : this.exports) {
+src\jp\co\enterogawa\nfs\export\FileHandleTable.java	if	128	true	// 先頭公開ルートの場合	if( firstHandle == null) {
+src\jp\co\enterogawa\nfs\export\FileHandleTable.java	if	195	true	// 公開定義が存在しない場合	if( export == null) {
+src\jp\co\enterogawa\nfs\export\FileHandleTable.java	if	303	true	// 公開ルート外の場合	if( export == null) {
+src\jp\co\enterogawa\nfs\export\FileHandleTable.java	if	310	true	// 既存ファイルハンドルが存在する場合	if( handle != null) {
+src\jp\co\enterogawa\nfs\export\FileHandleTable.java	if	335	true	// ハンドルが存在する場合	if( handle != null) {
+src\jp\co\enterogawa\nfs\export\FileHandleTable.java	for-each	355	true	// 削除対象配下のファイルハンドルを集める	for( Map.Entry<Path, FileHandle> entry : pathMap.entrySet()) {
+src\jp\co\enterogawa\nfs\export\FileHandleTable.java	if	360	true	// ルートハンドルの場合	if( rootIds.contains( getFileId( handle))) {
+src\jp\co\enterogawa\nfs\export\FileHandleTable.java	if	365	true	// 対象配下の場合	if( entryPath.startsWith( normalized)) {
+src\jp\co\enterogawa\nfs\export\FileHandleTable.java	if	371	true	// 対象が存在しない場合	if( removePaths.isEmpty()) {
+src\jp\co\enterogawa\nfs\export\FileHandleTable.java	for-each	376	true	// ファイルハンドルを削除する	for( Path removePath : removePaths) {
+src\jp\co\enterogawa\nfs\export\FileHandleTable.java	if	380	true	// ハンドルが存在する場合	if( handle != null) {
+src\jp\co\enterogawa\nfs\export\FileHandleTable.java	if	405	true	// 公開ルート外の場合	if( !isSameExport( sourcePath, targetPath)) {
+src\jp\co\enterogawa\nfs\export\FileHandleTable.java	for-each	410	true	// 移動対象のファイルハンドルを集める	for( Map.Entry<Path, FileHandle> entry : pathMap.entrySet()) {
+src\jp\co\enterogawa\nfs\export\FileHandleTable.java	if	414	true	// 移動元配下の場合	if( entryPath.startsWith( sourcePath)) {
+src\jp\co\enterogawa\nfs\export\FileHandleTable.java	for-each	423	true	// 既存の移動対象ファイルハンドルを削除する	for( Path movedSource : targetMap.keySet()) {
+src\jp\co\enterogawa\nfs\export\FileHandleTable.java	if	427	true	// ハンドルが存在する場合	if( oldHandle != null) {
+src\jp\co\enterogawa\nfs\export\FileHandleTable.java	for-each	433	true	// 上書き先の既存ファイルハンドルを削除する	for( Path movedTarget : handleMoveMap.keySet()) {
+src\jp\co\enterogawa\nfs\export\FileHandleTable.java	if	437	true	// ハンドルが存在する場合	if( overwrittenHandle != null) {
+src\jp\co\enterogawa\nfs\export\FileHandleTable.java	for-each	443	true	// 移動後のファイルハンドルを登録する	for( Map.Entry<Path, FileHandle> entry : handleMoveMap.entrySet()) {
+src\jp\co\enterogawa\nfs\export\FileHandleTable.java	if	460	true	// 未保存変更が存在する場合	if( storeDirty) {
+src\jp\co\enterogawa\nfs\export\FileHandleTable.java	if	513	true	// 単一公開定義の場合	if( exports.size() == 1) {
+src\jp\co\enterogawa\nfs\export\FileHandleTable.java	for-each	519	true	// 公開定義から永続化キーを作成する	for( NfsExport export : exports) {
+src\jp\co\enterogawa\nfs\export\FileHandleTable.java	if	536	true	// 永続ファイルが存在しない場合	if( !Files.exists( storePath)) {
+src\jp\co\enterogawa\nfs\export\FileHandleTable.java	for-each	547	true	// 永続化済みパス定義をファイルハンドル表へ復元する	for( String key : properties.stringPropertyNames()) {
+src\jp\co\enterogawa\nfs\export\FileHandleTable.java	if	549	true	// パス定義以外の場合	if( !key.startsWith( "path.")) {
+src\jp\co\enterogawa\nfs\export\FileHandleTable.java	if	556	true	// ルートの場合	if( rootIds.contains( id)) {
+src\jp\co\enterogawa\nfs\export\FileHandleTable.java	if	563	true	// 公開定義が存在しない場合	if( export == null) {
+src\jp\co\enterogawa\nfs\export\FileHandleTable.java	if	570	true	// 公開ルート外の場合	if( !path.startsWith( export.getPath())) {
+src\jp\co\enterogawa\nfs\export\FileHandleTable.java	for-each	599	true	// 管理中のパスとファイルハンドルを永続化形式へ変換する	for( Map.Entry<Path, FileHandle> entry : pathMap.entrySet()) {
+src\jp\co\enterogawa\nfs\export\FileHandleTable.java	if	603	true	// ルートの場合	if( rootIds.contains( id)) {
+src\jp\co\enterogawa\nfs\export\FileHandleTable.java	if	610	true	// 公開定義が存在しない場合	if( export == null) {
+src\jp\co\enterogawa\nfs\export\FileHandleTable.java	if	623	true	// 親ディレクトリが存在する場合	if( parent != null) {
+src\jp\co\enterogawa\nfs\export\FileHandleTable.java	if	649	true	// 保存間隔が無効の場合	if( storeSaveIntervalMillis <= 0) {
+src\jp\co\enterogawa\nfs\export\FileHandleTable.java	if	657	true	// 保存間隔に達した場合	if( now - lastStoreSaveMillis >= storeSaveIntervalMillis) {
+src\jp\co\enterogawa\nfs\export\FileHandleTable.java	if	675	true	// 値がない場合	if(( value == null || value.isBlank())) {
+src\jp\co\enterogawa\nfs\export\FileHandleTable.java	if	699	true	// 値がない場合	if(( value == null || value.isBlank())) {
+src\jp\co\enterogawa\nfs\export\FileHandleTable.java	if	742	true	// パスが存在しない場合	if( path == null) {
+src\jp\co\enterogawa\nfs\export\FileHandleTable.java	for-each	749	true	// 公開定義を検索する	for( NfsExport export : exports) {
+src\jp\co\enterogawa\nfs\export\FileHandleTable.java	if	751	true	// 公開ルート内の場合	if( normalized.startsWith( export.getPath())) {
+src\jp\co\enterogawa\nfs\export\FileHandleTable.java	for-each	771	true	// 公開定義を検索する	for( NfsExport export : exports) {
+src\jp\co\enterogawa\nfs\export\FileHandleTable.java	if	773	true	// 公開名が一致する場合	if( export.getName().equals( name)) {
+src\jp\co\enterogawa\nfs\export\FileHandleTable.java	for	798	true	// ハッシュ先頭8バイトを識別用文字列へ変換する	for( int i = 0; i < 8; i++) {
+src\jp\co\enterogawa\nfs\export\NfsModeStore.java	if	74	true	// 公開定義が存在しない場合	if(( exports == null || exports.isEmpty())) {
+src\jp\co\enterogawa\nfs\export\NfsModeStore.java	if	100	true	// 管理対象外の場合	if( key == null) {
+src\jp\co\enterogawa\nfs\export\NfsModeStore.java	if	107	true	// 保存済みモードがない場合	if( mode == null) {
+src\jp\co\enterogawa\nfs\export\NfsModeStore.java	if	128	true	// 管理対象外の場合	if( key == null) {
+src\jp\co\enterogawa\nfs\export\NfsModeStore.java	if	151	true	// 管理対象外の場合	if( key == null) {
+src\jp\co\enterogawa\nfs\export\NfsModeStore.java	if	158	true	// 保存済みUIDがない場合	if( uid == null) {
+src\jp\co\enterogawa\nfs\export\NfsModeStore.java	if	180	true	// 管理対象外の場合	if( key == null) {
+src\jp\co\enterogawa\nfs\export\NfsModeStore.java	if	187	true	// 保存済みGIDがない場合	if( gid == null) {
+src\jp\co\enterogawa\nfs\export\NfsModeStore.java	if	209	true	// 管理対象外の場合	if( key == null) {
+src\jp\co\enterogawa\nfs\export\NfsModeStore.java	if	216	true	// UID指定がある場合	if( uid != null) {
+src\jp\co\enterogawa\nfs\export\NfsModeStore.java	if	222	true	// GID指定がある場合	if( gid != null) {
+src\jp\co\enterogawa\nfs\export\NfsModeStore.java	if	228	true	// 変更がある場合	if( changed) {
+src\jp\co\enterogawa\nfs\export\NfsModeStore.java	if	246	true	// 管理対象外の場合	if( key == null) {
+src\jp\co\enterogawa\nfs\export\NfsModeStore.java	if	256	true	// 削除対象が存在する場合	if( removed) {
+src\jp\co\enterogawa\nfs\export\NfsModeStore.java	if	274	true	// 公開定義が存在しない場合	if( export == null) {
+src\jp\co\enterogawa\nfs\export\NfsModeStore.java	if	281	true	// キーが作成できない場合	if( prefix == null) {
+src\jp\co\enterogawa\nfs\export\NfsModeStore.java	if	291	true	// 削除した場合	if( removed) {
+src\jp\co\enterogawa\nfs\export\NfsModeStore.java	if	311	true	// 公開定義が異なる場合	if(( sourceExport == null || sourceExport != targetExport)) {
+src\jp\co\enterogawa\nfs\export\NfsModeStore.java	if	321	true	// キーが作成できない場合	if(( sourcePrefix == null || targetPrefix == null)) {
+src\jp\co\enterogawa\nfs\export\NfsModeStore.java	if	331	true	// 移動対象が存在する場合	if( moved) {
+src\jp\co\enterogawa\nfs\export\NfsModeStore.java	if	345	true	// 未保存変更が存在する場合	if( storeDirty) {
+src\jp\co\enterogawa\nfs\export\NfsModeStore.java	if	373	true	// 永続ファイルが存在しない場合	if( !Files.exists( storePath)) {
+src\jp\co\enterogawa\nfs\export\NfsModeStore.java	for-each	383	true	// メタデータ定義を読み込む	for( String key : properties.stringPropertyNames()) {
+src\jp\co\enterogawa\nfs\export\NfsModeStore.java	if	385	true	// モード定義の場合	if( key.startsWith( "mode.")) {
+src\jp\co\enterogawa\nfs\export\NfsModeStore.java	if	391	true	// UID定義の場合	if( key.startsWith( "uid.")) {
+src\jp\co\enterogawa\nfs\export\NfsModeStore.java	if	397	true	// GID定義の場合	if( key.startsWith( "gid.")) {
+src\jp\co\enterogawa\nfs\export\NfsModeStore.java	for-each	417	true	// モード定義を保存する	for( Map.Entry<String, Integer> entry : modeMap.entrySet()) {
+src\jp\co\enterogawa\nfs\export\NfsModeStore.java	for-each	422	true	// UID定義を保存する	for( Map.Entry<String, Integer> entry : uidMap.entrySet()) {
+src\jp\co\enterogawa\nfs\export\NfsModeStore.java	for-each	427	true	// GID定義を保存する	for( Map.Entry<String, Integer> entry : gidMap.entrySet()) {
+src\jp\co\enterogawa\nfs\export\NfsModeStore.java	if	435	true	// 親ディレクトリが存在する場合	if( parent != null) {
+src\jp\co\enterogawa\nfs\export\NfsModeStore.java	if	461	true	// 保存間隔が無効の場合	if( storeSaveIntervalMillis <= 0) {
+src\jp\co\enterogawa\nfs\export\NfsModeStore.java	if	469	true	// 保存間隔に達した場合	if( now - lastStoreSaveMillis >= storeSaveIntervalMillis) {
+src\jp\co\enterogawa\nfs\export\NfsModeStore.java	if	487	true	// 値がない場合	if(( value == null || value.isBlank())) {
+src\jp\co\enterogawa\nfs\export\NfsModeStore.java	for-each	537	true	// 移動対象を集める	for( Map.Entry<String, Integer> entry : values.entrySet()) {
+src\jp\co\enterogawa\nfs\export\NfsModeStore.java	if	541	true	// 移動元配下の場合	if(( key.equals( sourcePrefix) || key.startsWith( sourcePrefix + "/"))) {
+src\jp\co\enterogawa\nfs\export\NfsModeStore.java	if	548	true	// 移動対象がない場合	if( movedMap.isEmpty()) {
+src\jp\co\enterogawa\nfs\export\NfsModeStore.java	if	572	true	// 公開定義が存在しない場合	if( export == null) {
+src\jp\co\enterogawa\nfs\export\NfsModeStore.java	if	592	true	// 公開ルート外の場合	if(( export == null || !path.startsWith( export.getPath()))) {
+src\jp\co\enterogawa\nfs\export\NfsModeStore.java	if	613	true	// パスが存在しない場合	if( path == null) {
+src\jp\co\enterogawa\nfs\export\NfsModeStore.java	for-each	620	true	// 公開定義を検索する	for( NfsExport export : exports) {
+src\jp\co\enterogawa\nfs\export\NfsModeStore.java	if	622	true	// 公開ルート内の場合	if( normalized.startsWith( export.getPath())) {
+src\jp\co\enterogawa\nfs\export\NfsModeStore.java	if	643	true	// 値がない場合	if(( value == null || value.isBlank())) {
+src\jp\co\enterogawa\nfs\export\NfsModeStore.java	if	667	true	// 値がない場合	if(( value == null || value.isBlank())) {
+src\jp\co\enterogawa\nfs\export\NfsModeStore.java	if	678	true	// 32bit範囲外の場合	if( (unsignedValue & 0xffffffff00000000L) != 0L) {
+src\jp\co\enterogawa\nfs\io\WriteFileCache.java	if	67	true	// キャッシュが有効な場合	if( enabled) {
+src\jp\co\enterogawa\nfs\io\WriteFileCache.java	if	93	true	// キャッシュが無効な場合	if( !enabled) {
+src\jp\co\enterogawa\nfs\io\WriteFileCache.java	if	104	true	// キャッシュに存在しない場合	if( entry == null) {
+src\jp\co\enterogawa\nfs\io\WriteFileCache.java	if	114	true	// 同期指定の場合	if( sync) {
+src\jp\co\enterogawa\nfs\io\WriteFileCache.java	if	140	true	// キャッシュ済みの場合	if( entry != null) {
+src\jp\co\enterogawa\nfs\io\WriteFileCache.java	if	164	true	// 対象がキャッシュに存在する場合	if( entry != null) {
+src\jp\co\enterogawa\nfs\io\WriteFileCache.java	if	188	true	// 対象ツリー配下の場合	if( current.getKey().startsWith( root)) {
+src\jp\co\enterogawa\nfs\io\WriteFileCache.java	if	209	true	// クリーナースレッドが存在する場合	if( cleanerThread != null) {
+src\jp\co\enterogawa\nfs\io\WriteFileCache.java	for-each	216	true	// 保持中の全キャッシュエントリを順次閉じる	for( Entry entry : entries.values()) {
+src\jp\co\enterogawa\nfs\io\WriteFileCache.java	if	227	true	// クローズ異常がある場合	if( failure != null) {
+src\jp\co\enterogawa\nfs\io\WriteFileCache.java	if	250	true	// 停止要求の場合	if( !running) {
+src\jp\co\enterogawa\nfs\io\WriteFileCache.java	if	290	true	// 同期指定の場合	if( sync) {
+src\jp\co\enterogawa\nfs\io\WriteFileCache.java	if	308	true	// 通常ファイルではない場合	if( !Files.isRegularFile( path, LinkOption.NOFOLLOW_LINKS)) {
+src\jp\co\enterogawa\nfs\io\WriteFileCache.java	if	334	true	// アイドル時間内の場合	if( now - current.getValue().getLastAccessMillis() <= idleMillis) {
+src\jp\co\enterogawa\nfs\io\WriteFileCache.java	if	356	true	// エントリが存在しない場合	if( !iterator.hasNext()) {
+src\jp\co\enterogawa\nfs\manager\ManagerMessages.java	if	135	true	// 設定がない場合	if(( language == null || language.isBlank())) {
+src\jp\co\enterogawa\nfs\manager\ManagerMessages.java	if	142	true	// 日本語の場合	if(( normalized.equals( "ja") || normalized.startsWith( "ja-" ) || normalized.startsWith( "ja_" ))) {
+src\jp\co\enterogawa\nfs\manager\ManagerMessages.java	if	147	true	// 英語の場合	if(( normalized.equals( "en") || normalized.startsWith( "en-" ) || normalized.startsWith( "en_" ))) {
+src\jp\co\enterogawa\nfs\manager\TinyWinNfsManager.java	if	228	true	// アイコンファイルが存在しない場合	if( !Files.exists( iconPath)) {
+src\jp\co\enterogawa\nfs\manager\TinyWinNfsManager.java	if	236	true	// 画像を読み込めた場合	if( image != null) {
+src\jp\co\enterogawa\nfs\manager\TinyWinNfsManager.java	if	448	true	// ボタンが存在する場合	if( button != null) {
+src\jp\co\enterogawa\nfs\manager\TinyWinNfsManager.java	if	555	true	// 設定ファイルが存在する場合	if( Files.exists( configPath)) {
+src\jp\co\enterogawa\nfs\manager\TinyWinNfsManager.java	if	644	true	// 保存に成功した場合	if( saved) {
+src\jp\co\enterogawa\nfs\manager\TinyWinNfsManager.java	if	667	true	// export名が不正な場合	if( !exportNameField.getText().trim().startsWith( "/")) {
+src\jp\co\enterogawa\nfs\manager\TinyWinNfsManager.java	if	672	true	// exportパスが未入力の場合	if( exportPathField.getText().trim().isEmpty()) {
+src\jp\co\enterogawa\nfs\manager\TinyWinNfsManager.java	if	679	true	// exportパスがフォルダではない場合	if( !Files.isDirectory( exportPath)) {
+src\jp\co\enterogawa\nfs\manager\TinyWinNfsManager.java	if	684	true	// クライアント側マウントポイントが不正な場合	if( !clientMountPointField.getText().trim().startsWith( "/")) {
+src\jp\co\enterogawa\nfs\manager\TinyWinNfsManager.java	if	689	true	// サーバーホストが未入力の場合	if( serverHostField.getText().trim().isEmpty()) {
+src\jp\co\enterogawa\nfs\manager\TinyWinNfsManager.java	if	708	true	// ポートが範囲外の場合	if( port > 65535) {
+src\jp\co\enterogawa\nfs\manager\TinyWinNfsManager.java	if	728	true	// 正数ではない場合	if( number <= 0) {
+src\jp\co\enterogawa\nfs\manager\TinyWinNfsManager.java	if	787	true	// 現在値が存在する場合	if( !exportPathField.getText().trim().isEmpty()) {
+src\jp\co\enterogawa\nfs\manager\TinyWinNfsManager.java	if	794	true	// 選択された場合	if( result == JFileChooser.APPROVE_OPTION) {
+src\jp\co\enterogawa\nfs\manager\TinyWinNfsManager.java	if	826	true	// ホスト名が取得できた場合	if(( hostName != null && !hostName.isBlank())) {
+src\jp\co\enterogawa\nfs\manager\TinyWinNfsManager.java	if	849	true	// ホストが未入力の場合	if( host.isEmpty()) {
+src\jp\co\enterogawa\nfs\manager\TinyWinNfsManager.java	if	854	true	// export名が未入力の場合	if( exportName.isEmpty()) {
+src\jp\co\enterogawa\nfs\manager\TinyWinNfsManager.java	if	859	true	// マウントポイントが未入力の場合	if( mountPoint.isEmpty()) {
+src\jp\co\enterogawa\nfs\manager\TinyWinNfsManager.java	if	914	true	// 状態が空の場合	if( status.isEmpty()) {
+src\jp\co\enterogawa\nfs\manager\TinyWinNfsManager.java	if	937	true	// はいが選択された場合	if( result == JOptionPane.YES_OPTION) {
+src\jp\co\enterogawa\nfs\manager\TinyWinNfsManager.java	for-each	956	true	// テストメッセージを追加する	for( String message : messages) {
+src\jp\co\enterogawa\nfs\manager\TinyWinNfsManager.java	if	989	true	// Portmapが返したNFSポートが一致しない場合	if( mappedNfsPort != nfsPort) {
+src\jp\co\enterogawa\nfs\manager\TinyWinNfsManager.java	if	1043	true	// mountが失敗した場合	if( status != 0) {
+src\jp\co\enterogawa\nfs\manager\TinyWinNfsManager.java	if	1068	true	// GETATTRが失敗した場合	if( status != 0) {
+src\jp\co\enterogawa\nfs\manager\TinyWinNfsManager.java	if	1075	true	// ルートがディレクトリではない場合	if( type != 2) {
+src\jp\co\enterogawa\nfs\manager\TinyWinNfsManager.java	if	1161	true	// 値が一致しない場合	if( expected != actual) {
+src\jp\co\enterogawa\nfs\manager\TinyWinNfsManager.java	if	1179	true	// スクリプトが存在しない場合	if( !Files.exists( scriptPath)) {
+src\jp\co\enterogawa\nfs\manager\TinyWinNfsManager.java	if	1213	true	// コマンドが失敗した場合	if( result.getExitCode() != 0) {
+src\jp\co\enterogawa\nfs\manager\TinyWinNfsManager.java	if	1218	true	// コールバックが存在する場合	if( callback != null) {
+src\jp\co\enterogawa\nfs\manager\TinyWinNfsManager.java	if	1300	true	// 環境変数指定がある場合	if(( home != null && !home.isBlank())) {
+src\jp\co\enterogawa\nfs\manager\TinyWinNfsManager.java	if	1307	true	// 旧環境変数指定がある場合	if(( home != null && !home.isBlank())) {
+src\jp\co\enterogawa\nfs\manager\TinyWinNfsManager.java	if	1314	true	// 旧環境変数指定がある場合	if(( home != null && !home.isBlank())) {
+src\jp\co\enterogawa\nfs\manager\TinyWinNfsManager.java	if	1321	true	// サービス登録先が取得できた場合	if( serviceRoot != null) {
+src\jp\co\enterogawa\nfs\manager\TinyWinNfsManager.java	if	1330	true	// binフォルダから起動している場合	if(( Files.isDirectory( location) && "bin".equalsIgnoreCase( location.getFileName().toString()))) {
+src\jp\co\enterogawa\nfs\manager\TinyWinNfsManager.java	if	1337	true	// jpackageのappフォルダから起動している場合	if(( parent != null && "app".equalsIgnoreCase( parent.getFileName().toString()))) {
+src\jp\co\enterogawa\nfs\manager\TinyWinNfsManager.java	if	1384	true	// サービスが登録されていない場合	if( pathName.isBlank()) {
+src\jp\co\enterogawa\nfs\manager\TinyWinNfsManager.java	if	1391	true	// 実行ファイルが取得できない場合	if( executablePath == null) {
+src\jp\co\enterogawa\nfs\manager\TinyWinNfsManager.java	if	1398	true	// WinSWフォルダが取得できない場合	if( winswDirectory == null) {
+src\jp\co\enterogawa\nfs\manager\TinyWinNfsManager.java	if	1405	true	// serviceフォルダが取得できない場合	if( serviceDirectory == null) {
+src\jp\co\enterogawa\nfs\manager\TinyWinNfsManager.java	if	1412	true	// ルートフォルダが取得できない場合	if( serviceRoot == null) {
+src\jp\co\enterogawa\nfs\manager\TinyWinNfsManager.java	if	1419	true	// 設定ファイルが存在する場合	if( Files.exists( configFile)) {
+src\jp\co\enterogawa\nfs\manager\TinyWinNfsManager.java	if	1445	true	// ダブルクォートで囲まれている場合	if( executable.startsWith( "\"" )) {
+src\jp\co\enterogawa\nfs\manager\TinyWinNfsManager.java	if	1449	true	// 終端クォートが存在する場合	if( endIndex > 1) {
+src\jp\co\enterogawa\nfs\manager\TinyWinNfsManager.java	if	1457	true	// exe拡張子が存在する場合	if( exeIndex >= 0) {
+src\jp\co\enterogawa\nfs\manager\TinyWinNfsManager.java	if	1477	true	// メッセージが空の場合	if(( text == null || text.isBlank())) {
+src\jp\co\enterogawa\nfs\manager\TinyWinNfsManager.java	if	1499	true	// 例外が存在する場合	if( exception != null) {
+src\jp\co\enterogawa\nfs\manager\TinyWinNfsSwtManager.java	if	358	true	// SWTイベントがない場合	if( !display.readAndDispatch()) {
+src\jp\co\enterogawa\nfs\manager\TinyWinNfsSwtManager.java	if	393	true	// アイコンファイルが存在しない場合	if( !Files.exists( iconPath)) {
+src\jp\co\enterogawa\nfs\manager\TinyWinNfsSwtManager.java	if	452	true	// 診断タブが選択され、未表示の場合	if(( folder.getSelection().length > 0 && folder.getSelection()[0] == diagnosticItem && diagnosticTable.getItemCount() == 0)) {
+src\jp\co\enterogawa\nfs\manager\TinyWinNfsSwtManager.java	if	768	true	// 自動更新が有効になった場合	if( logAutoRefreshButton.getSelection()) {
+src\jp\co\enterogawa\nfs\manager\TinyWinNfsSwtManager.java	if	844	true	// ボタンが存在する場合	if( buttonText != null) {
+src\jp\co\enterogawa\nfs\manager\TinyWinNfsSwtManager.java	if	1011	true	// 新設定ファイルが既に存在する場合	if( Files.exists( configPath)) {
+src\jp\co\enterogawa\nfs\manager\TinyWinNfsSwtManager.java	if	1016	true	// 旧設定ファイルが存在しない場合	if( !Files.exists( legacyConfigPath)) {
+src\jp\co\enterogawa\nfs\manager\TinyWinNfsSwtManager.java	if	1021	true	// 移行元と移行先が同一の場合	if( legacyConfigPath.equals( configPath)) {
+src\jp\co\enterogawa\nfs\manager\TinyWinNfsSwtManager.java	if	1048	true	// 設定ファイルが存在する場合	if( Files.exists( configPath)) {
+src\jp\co\enterogawa\nfs\manager\TinyWinNfsSwtManager.java	if	1153	true	// 未設定の場合	if(( value == null || value.isBlank())) {
+src\jp\co\enterogawa\nfs\manager\TinyWinNfsSwtManager.java	if	1174	true	// 複数共有定義が存在する場合	if( count > 0) {
+src\jp\co\enterogawa\nfs\manager\TinyWinNfsSwtManager.java	for	1176	true	// 設定ファイル上の共有定義を順に読み込む	for( int i = 1; i <= count; i++) {
+src\jp\co\enterogawa\nfs\manager\TinyWinNfsSwtManager.java	if	1184	true	// 共有定義が入力されている場合	if(( !name.isEmpty() && !path.isEmpty())) {
+src\jp\co\enterogawa\nfs\manager\TinyWinNfsSwtManager.java	if	1191	true	// 共有定義が存在しない場合	if( shareEntries.isEmpty()) {
+src\jp\co\enterogawa\nfs\manager\TinyWinNfsSwtManager.java	for-each	1215	true	// 共有定義を表示する	for( ShareEntry entry : shareEntries) {
+src\jp\co\enterogawa\nfs\manager\TinyWinNfsSwtManager.java	if	1236	true	// 選択位置が不正な場合	if(( index < 0 || index >= shareEntries.size())) {
+src\jp\co\enterogawa\nfs\manager\TinyWinNfsSwtManager.java	if	1301	true	// 選択中共有が存在しない場合	if(( selectedShareIndex < 0 || selectedShareIndex >= shareEntries.size())) {
+src\jp\co\enterogawa\nfs\manager\TinyWinNfsSwtManager.java	if	1321	true	// 選択中共有が存在しない場合	if(( selectedShareIndex < 0 || selectedShareIndex >= shareEntries.size())) {
+src\jp\co\enterogawa\nfs\manager\TinyWinNfsSwtManager.java	if	1359	true	// 選択中共有が存在する場合	if(( selectedShareIndex >= 0 && selectedShareIndex < shareEntries.size())) {
+src\jp\co\enterogawa\nfs\manager\TinyWinNfsSwtManager.java	if	1364	true	// 共有定義が存在する場合	if( !shareEntries.isEmpty()) {
+src\jp\co\enterogawa\nfs\manager\TinyWinNfsSwtManager.java	if	1410	true	// export名が不正な場合	if( !isValidExportName( entry.getName())) {
+src\jp\co\enterogawa\nfs\manager\TinyWinNfsSwtManager.java	if	1415	true	// exportパスが未入力の場合	if( entry.getPath().isEmpty()) {
+src\jp\co\enterogawa\nfs\manager\TinyWinNfsSwtManager.java	if	1422	true	// exportパスがフォルダではない場合	if( !Files.isDirectory( exportPath)) {
+src\jp\co\enterogawa\nfs\manager\TinyWinNfsSwtManager.java	if	1427	true	// exportパスが読込不可の場合	if( !Files.isReadable( exportPath)) {
+src\jp\co\enterogawa\nfs\manager\TinyWinNfsSwtManager.java	if	1432	true	// 書込可能設定だがフォルダへ書き込めない場合	if(( entry.isWritable() && !Files.isWritable( exportPath))) {
+src\jp\co\enterogawa\nfs\manager\TinyWinNfsSwtManager.java	for	1440	true	// 共有定義の重複を検証する	for( int i = 0; i < shareEntries.size(); i++) {
+src\jp\co\enterogawa\nfs\manager\TinyWinNfsSwtManager.java	if	1442	true	// 自分自身の場合	if( i == selfIndex) {
+src\jp\co\enterogawa\nfs\manager\TinyWinNfsSwtManager.java	if	1449	true	// export名が重複している場合	if( existing.getName().equals( entry.getName())) {
+src\jp\co\enterogawa\nfs\manager\TinyWinNfsSwtManager.java	if	1456	true	// exportパスが重複している場合	if( existingPath.equals( normalized)) {
+src\jp\co\enterogawa\nfs\manager\TinyWinNfsSwtManager.java	if	1461	true	// exportパスが入れ子の場合	if(( existingPath.startsWith( normalized) || normalized.startsWith( existingPath))) {
+src\jp\co\enterogawa\nfs\manager\TinyWinNfsSwtManager.java	if	1483	true	// 公開名が絶対パス形式ではない場合	if(( value == null || value.isBlank() || !value.startsWith( "/") || "/".equals( value))) {
+src\jp\co\enterogawa\nfs\manager\TinyWinNfsSwtManager.java	if	1488	true	// 公開名が不正文字を含む場合	if(( value.contains( "\\" ) || value.contains( "//"))) {
+src\jp\co\enterogawa\nfs\manager\TinyWinNfsSwtManager.java	for	1493	true	// 公開名の各文字を確認する	for( int i = 0; i < value.length(); i++) {
+src\jp\co\enterogawa\nfs\manager\TinyWinNfsSwtManager.java	if	1495	true	// 空白文字の場合	if( Character.isWhitespace( value.charAt( i))) {
+src\jp\co\enterogawa\nfs\manager\TinyWinNfsSwtManager.java	for-each	1503	true	// パスセグメントを確認する	for( String segment : segments) {
+src\jp\co\enterogawa\nfs\manager\TinyWinNfsSwtManager.java	if	1505	true	// 親ディレクトリセグメントの場合	if( "..".equals( segment)) {
+src\jp\co\enterogawa\nfs\manager\TinyWinNfsSwtManager.java	if	1524	true	// 未設定の場合	if(( value == null || value.isBlank())) {
+src\jp\co\enterogawa\nfs\manager\TinyWinNfsSwtManager.java	for-each	1531	true	// 許可クライアントを検証する	for( String entry : entries) {
+src\jp\co\enterogawa\nfs\manager\TinyWinNfsSwtManager.java	if	1535	true	// 空要素の場合	if( address.isEmpty()) {
+src\jp\co\enterogawa\nfs\manager\TinyWinNfsSwtManager.java	if	1540	true	// IPv4アドレスではない場合	if( !isExactIpv4Address( address)) {
+src\jp\co\enterogawa\nfs\manager\TinyWinNfsSwtManager.java	if	1564	true	// 4オクテットではない場合	if( parts.length != 4) {
+src\jp\co\enterogawa\nfs\manager\TinyWinNfsSwtManager.java	for-each	1569	true	// 各オクテットを検証する	for( String part : parts) {
+src\jp\co\enterogawa\nfs\manager\TinyWinNfsSwtManager.java	if	1571	true	// 空オクテットの場合	if( part.isEmpty()) {
+src\jp\co\enterogawa\nfs\manager\TinyWinNfsSwtManager.java	if	1579	true	// 範囲外の場合	if(( octet < 0 || octet > 255)) {
+src\jp\co\enterogawa\nfs\manager\TinyWinNfsSwtManager.java	if	1602	true	// 設定ファイルが存在する場合	if( Files.exists( configPath)) {
+src\jp\co\enterogawa\nfs\manager\TinyWinNfsSwtManager.java	if	1671	true	// Comboが存在しない場合	if(( combo == null || combo.isDisposed())) {
+src\jp\co\enterogawa\nfs\manager\TinyWinNfsSwtManager.java	if	1678	true	// 選択値が範囲外の場合	if(( value < 0 || value >= combo.getItemCount())) {
+src\jp\co\enterogawa\nfs\manager\TinyWinNfsSwtManager.java	if	1705	true	// 保護されたインストール先に一般ユーザーで保存する場合	if( shouldRequireAdministratorForConfigSave( configDirectory)) {
+src\jp\co\enterogawa\nfs\manager\TinyWinNfsSwtManager.java	if	1717	true	// バックアップを作成した場合	if( backupPath != null) {
+src\jp\co\enterogawa\nfs\manager\TinyWinNfsSwtManager.java	for	1761	true	// 共有定義を出力する	for( int i = 0; i < shareEntries.size(); i++) {
+src\jp\co\enterogawa\nfs\manager\TinyWinNfsSwtManager.java	if	1810	true	// Comboが存在しない場合	if(( combo == null || combo.isDisposed() || combo.getSelectionIndex() < 0)) {
+src\jp\co\enterogawa\nfs\manager\TinyWinNfsSwtManager.java	if	1860	true	// 保存先が選択されなかった場合	if( selected == null) {
+src\jp\co\enterogawa\nfs\manager\TinyWinNfsSwtManager.java	if	1888	true	// インポート元が選択されなかった場合	if( selected == null) {
+src\jp\co\enterogawa\nfs\manager\TinyWinNfsSwtManager.java	if	1923	true	// バックアップを作成した場合	if( backupPath != null) {
+src\jp\co\enterogawa\nfs\manager\TinyWinNfsSwtManager.java	if	1945	true	// はいが選択されなかった場合	if( result != SWT.YES) {
+src\jp\co\enterogawa\nfs\manager\TinyWinNfsSwtManager.java	if	1952	true	// 既定設定の保存に成功した場合	if( saveConfig()) {
+src\jp\co\enterogawa\nfs\manager\TinyWinNfsSwtManager.java	for-each	1970	true	// 診断メッセージをログへ出力する	for( DiagnosticMessage message : messages) {
+src\jp\co\enterogawa\nfs\manager\TinyWinNfsSwtManager.java	if	1972	true	// 情報メッセージの場合	if( "INFO".equals( message.getSeverity())) {
+src\jp\co\enterogawa\nfs\manager\TinyWinNfsSwtManager.java	if	2021	true	// 既に管理者権限を持つ場合	if( isAdministrator()) {
+src\jp\co\enterogawa\nfs\manager\TinyWinNfsSwtManager.java	if	2068	true	// 環境変数が未設定の場合	if(( value == null || value.isBlank())) {
+src\jp\co\enterogawa\nfs\manager\TinyWinNfsSwtManager.java	if	2103	true	// 保存に成功した場合	if( saved) {
+src\jp\co\enterogawa\nfs\manager\TinyWinNfsSwtManager.java	if	2109	true	// 再起動に成功した場合	if( result.getExitCode() == 0) {
+src\jp\co\enterogawa\nfs\manager\TinyWinNfsSwtManager.java	if	2149	true	// 共有定義が存在しない場合	if( shareEntries.isEmpty()) {
+src\jp\co\enterogawa\nfs\manager\TinyWinNfsSwtManager.java	for	2154	true	// 共有定義を検証する	for( int i = 0; i < shareEntries.size(); i++) {
+src\jp\co\enterogawa\nfs\manager\TinyWinNfsSwtManager.java	if	2159	true	// クライアント側マウントポイントが不正な場合	if( !isValidClientMountPoint( clientMountPointText.getText().trim())) {
+src\jp\co\enterogawa\nfs\manager\TinyWinNfsSwtManager.java	if	2164	true	// サーバーホストが未入力の場合	if( serverHostText.getText().trim().isEmpty()) {
+src\jp\co\enterogawa\nfs\manager\TinyWinNfsSwtManager.java	if	2185	true	// Windowsクライアントの場合	if( selectedComboIndex( mountClientCombo, MOUNT_CLIENT_QNX) == MOUNT_CLIENT_WINDOWS) {
+src\jp\co\enterogawa\nfs\manager\TinyWinNfsSwtManager.java	if	2206	true	// ポートが範囲外の場合	if( port > 65535) {
+src\jp\co\enterogawa\nfs\manager\TinyWinNfsSwtManager.java	if	2226	true	// 正数ではない場合	if( number <= 0) {
+src\jp\co\enterogawa\nfs\manager\TinyWinNfsSwtManager.java	if	2248	true	// 正数ではない場合	if( number <= 0L) {
+src\jp\co\enterogawa\nfs\manager\TinyWinNfsSwtManager.java	if	2266	true	// NFSファイル名上限を超える場合	if( value > 255) {
+src\jp\co\enterogawa\nfs\manager\TinyWinNfsSwtManager.java	if	2282	true	// NFS nsecondsの範囲外の場合	if( value > 999999999) {
+src\jp\co\enterogawa\nfs\manager\TinyWinNfsSwtManager.java	if	2356	true	// 値がない場合	if(( value == null || value.isBlank())) {
+src\jp\co\enterogawa\nfs\manager\TinyWinNfsSwtManager.java	if	2393	true	// 現在値が存在する場合	if( !exportPathText.getText().trim().isEmpty()) {
+src\jp\co\enterogawa\nfs\manager\TinyWinNfsSwtManager.java	if	2400	true	// 選択された場合	if( selected != null) {
+src\jp\co\enterogawa\nfs\manager\TinyWinNfsSwtManager.java	if	2432	true	// ホスト名が取得できた場合	if(( hostName != null && !hostName.isBlank())) {
+src\jp\co\enterogawa\nfs\manager\TinyWinNfsSwtManager.java	if	2456	true	// ホストが未入力の場合	if( host.isEmpty()) {
+src\jp\co\enterogawa\nfs\manager\TinyWinNfsSwtManager.java	if	2461	true	// export名が未入力の場合	if( exportName.isEmpty()) {
+src\jp\co\enterogawa\nfs\manager\TinyWinNfsSwtManager.java	if	2466	true	// マウントポイントが未入力の場合	if( mountPoint.isEmpty()) {
+src\jp\co\enterogawa\nfs\manager\TinyWinNfsSwtManager.java	if	2518	true	// Windows Client for NFSの場合	if( client == MOUNT_CLIENT_WINDOWS) {
+src\jp\co\enterogawa\nfs\manager\TinyWinNfsSwtManager.java	if	2524	true	// Linux/WSLの場合	if( client == MOUNT_CLIENT_LINUX) {
+src\jp\co\enterogawa\nfs\manager\TinyWinNfsSwtManager.java	if	2561	true	// NFSv3/TCPの場合	if( protocol == MOUNT_PROTOCOL_V3_TCP) {
+src\jp\co\enterogawa\nfs\manager\TinyWinNfsSwtManager.java	if	2566	true	// NFSv3/UDPの場合	if( protocol == MOUNT_PROTOCOL_V3_UDP) {
+src\jp\co\enterogawa\nfs\manager\TinyWinNfsSwtManager.java	for-each	2614	true	// 公開定義を出力する	for( ShareEntry entry : shareEntries) {
+src\jp\co\enterogawa\nfs\manager\TinyWinNfsSwtManager.java	if	2665	true	// 状態が空の場合	if( status.isEmpty()) {
+src\jp\co\enterogawa\nfs\manager\TinyWinNfsSwtManager.java	if	2670	true	// 未インストールの場合	if( "Not installed".equals( status)) {
+src\jp\co\enterogawa\nfs\manager\TinyWinNfsSwtManager.java	if	2690	true	// サービス情報表示が存在しない場合	if(( serviceInfoText == null || serviceInfoText.isDisposed())) {
+src\jp\co\enterogawa\nfs\manager\TinyWinNfsSwtManager.java	if	2727	true	// 診断ビューが存在しない場合	if(( diagnosticTable == null || diagnosticTable.isDisposed())) {
+src\jp\co\enterogawa\nfs\manager\TinyWinNfsSwtManager.java	for-each	2776	true	// 設定診断を追加する	for( DiagnosticMessage message : report.getConfigurationMessages()) {
+src\jp\co\enterogawa\nfs\manager\TinyWinNfsSwtManager.java	for-each	2781	true	// export診断を追加する	for( NfsDiagnostics.ExportReport exportReport : report.getExportReports()) {
+src\jp\co\enterogawa\nfs\manager\TinyWinNfsSwtManager.java	for-each	2785	true	// 公開フォルダごとの診断メッセージを行へ展開する	for( DiagnosticMessage message : exportReport.getMessages()) {
+src\jp\co\enterogawa\nfs\manager\TinyWinNfsSwtManager.java	if	2807	true	// エラーがなく警告がある場合	if(( "INFO".equals( severity) && exportReport.getMessages().stream().anyMatch( message -> "WARNING".equals( message.getSeverity())))) {
+src\jp\co\enterogawa\nfs\manager\TinyWinNfsSwtManager.java	for-each	2837	true	// 診断行を表示する	for( DiagnosticRow row : rows) {
+src\jp\co\enterogawa\nfs\manager\TinyWinNfsSwtManager.java	if	2839	true	// 重大度フィルタに一致しない場合	if( !matchesDiagnosticSeverity( row)) {
+src\jp\co\enterogawa\nfs\manager\TinyWinNfsSwtManager.java	if	2867	true	// すべて表示の場合	if( selection == 0) {
+src\jp\co\enterogawa\nfs\manager\TinyWinNfsSwtManager.java	if	2872	true	// エラーのみの場合	if( selection == 1) {
+src\jp\co\enterogawa\nfs\manager\TinyWinNfsSwtManager.java	if	2877	true	// 警告のみの場合	if( selection == 2) {
+src\jp\co\enterogawa\nfs\manager\TinyWinNfsSwtManager.java	if	2911	true	// エラーの場合	if( "ERROR".equals( severity)) {
+src\jp\co\enterogawa\nfs\manager\TinyWinNfsSwtManager.java	if	2916	true	// 警告の場合	if( "WARNING".equals( severity)) {
+src\jp\co\enterogawa\nfs\manager\TinyWinNfsSwtManager.java	if	3006	true	// Package情報が存在する場合	if(( packageInfo != null && packageInfo.getImplementationVersion() != null)) {
+src\jp\co\enterogawa\nfs\manager\TinyWinNfsSwtManager.java	if	3103	true	// 通常ファイルではない場合	if( !Files.isRegularFile( filePath)) {
+src\jp\co\enterogawa\nfs\manager\TinyWinNfsSwtManager.java	if	3127	true	// ディレクトリではない場合	if( !Files.isDirectory( directory)) {
+src\jp\co\enterogawa\nfs\manager\TinyWinNfsSwtManager.java	for-each	3138	true	// 対象ファイルを追加する	for( Path file : files) {
+src\jp\co\enterogawa\nfs\manager\TinyWinNfsSwtManager.java	if	3140	true	// 拡張子が対象外の場合	if( !hasAnyExtension( file, extensions)) {
+src\jp\co\enterogawa\nfs\manager\TinyWinNfsSwtManager.java	for-each	3168	true	// 拡張子を確認する	for( String extension : extensions) {
+src\jp\co\enterogawa\nfs\manager\TinyWinNfsSwtManager.java	if	3170	true	// 拡張子が一致する場合	if( fileName.endsWith( extension.toLowerCase())) {
+src\jp\co\enterogawa\nfs\manager\TinyWinNfsSwtManager.java	if	3191	true	// パスが存在する場合	if( Files.exists( path)) {
+src\jp\co\enterogawa\nfs\manager\TinyWinNfsSwtManager.java	if	3193	true	// ディレクトリ必須でディレクトリではない場合	if(( directoryRequired && !Files.isDirectory( path))) {
+src\jp\co\enterogawa\nfs\manager\TinyWinNfsSwtManager.java	if	3203	true	// 親パスが書込可能な場合	if(( parent != null && Files.exists( parent) && Files.isWritable( parent))) {
+src\jp\co\enterogawa\nfs\manager\TinyWinNfsSwtManager.java	if	3222	true	// ポートTextが存在しない場合	if(( portText == null || portText.isDisposed())) {
+src\jp\co\enterogawa\nfs\manager\TinyWinNfsSwtManager.java	if	3297	true	// 状態が空の場合	if( output.isBlank()) {
+src\jp\co\enterogawa\nfs\manager\TinyWinNfsSwtManager.java	if	3302	true	// 未インストールの場合	if( "Not installed".equals( output)) {
+src\jp\co\enterogawa\nfs\manager\TinyWinNfsSwtManager.java	if	3328	true	// サービス実行ファイルが取得できる場合	if(( serviceExecutable != null && serviceExecutable.getParent() != null)) {
+src\jp\co\enterogawa\nfs\manager\TinyWinNfsSwtManager.java	if	3349	true	// ファイルが存在する場合	if( Files.isRegularFile( normalized)) {
+src\jp\co\enterogawa\nfs\manager\TinyWinNfsSwtManager.java	if	3355	true	// ディレクトリが存在する場合	if( Files.isDirectory( normalized)) {
+src\jp\co\enterogawa\nfs\manager\TinyWinNfsSwtManager.java	if	3363	true	// 親ディレクトリが存在する場合	if(( parent != null && Files.isDirectory( parent))) {
+src\jp\co\enterogawa\nfs\manager\TinyWinNfsSwtManager.java	if	3383	true	// サーバーログビューが存在しない場合	if(( serverLogText == null || serverLogText.isDisposed())) {
+src\jp\co\enterogawa\nfs\manager\TinyWinNfsSwtManager.java	if	3412	true	// ログファイルが存在しない場合	if( !Files.isRegularFile( logPath)) {
+src\jp\co\enterogawa\nfs\manager\TinyWinNfsSwtManager.java	if	3427	true	// これ以上skipできない場合	if( additional <= 0L) {
+src\jp\co\enterogawa\nfs\manager\TinyWinNfsSwtManager.java	if	3437	true	// 途中から読んだ場合	if( skip > 0L) {
+src\jp\co\enterogawa\nfs\manager\TinyWinNfsSwtManager.java	if	3441	true	// 先頭の途中行を除去できる場合	if(( lineBreak >= 0 && lineBreak + 1 < content.length())) {
+src\jp\co\enterogawa\nfs\manager\TinyWinNfsSwtManager.java	if	3462	true	// サーバーログビューが存在しない場合	if(( serverLogText == null || serverLogText.isDisposed())) {
+src\jp\co\enterogawa\nfs\manager\TinyWinNfsSwtManager.java	for-each	3472	true	// ログ行をフィルタする	for( String line : lines) {
+src\jp\co\enterogawa\nfs\manager\TinyWinNfsSwtManager.java	if	3474	true	// 空行の場合	if( line.isBlank()) {
+src\jp\co\enterogawa\nfs\manager\TinyWinNfsSwtManager.java	if	3479	true	// 検索文字列に一致しない場合	if(( !search.isEmpty() && !line.toLowerCase().contains( search))) {
+src\jp\co\enterogawa\nfs\manager\TinyWinNfsSwtManager.java	if	3484	true	// 種別フィルタに一致しない場合	if( !matchesLogFilter( line, filter)) {
+src\jp\co\enterogawa\nfs\manager\TinyWinNfsSwtManager.java	if	3494	true	// 末尾追従が有効な場合	if(( logAutoRefreshButton != null && !logAutoRefreshButton.isDisposed() && logAutoRefreshButton.getSelection())) {
+src\jp\co\enterogawa\nfs\manager\TinyWinNfsSwtManager.java	if	3516	true	// すべて表示の場合	if( filter == 0) {
+src\jp\co\enterogawa\nfs\manager\TinyWinNfsSwtManager.java	if	3521	true	// エラー系の場合	if( filter == 1) {
+src\jp\co\enterogawa\nfs\manager\TinyWinNfsSwtManager.java	if	3529	true	// 変更操作の場合	if( filter == 2) {
+src\jp\co\enterogawa\nfs\manager\TinyWinNfsSwtManager.java	for-each	3553	true	// 語句を確認する	for( String keyword : keywords) {
+src\jp\co\enterogawa\nfs\manager\TinyWinNfsSwtManager.java	if	3555	true	// 語句を含む場合	if( value.contains( keyword)) {
+src\jp\co\enterogawa\nfs\manager\TinyWinNfsSwtManager.java	if	3573	true	// 自動更新が無効な場合	if(( logAutoRefreshButton == null || logAutoRefreshButton.isDisposed() || !logAutoRefreshButton.getSelection())) {
+src\jp\co\enterogawa\nfs\manager\TinyWinNfsSwtManager.java	if	3599	true	// はいが選択された場合	if( result == SWT.YES) {
+src\jp\co\enterogawa\nfs\manager\TinyWinNfsSwtManager.java	for-each	3619	true	// テストメッセージを追加する	for( String message : messages) {
+src\jp\co\enterogawa\nfs\manager\TinyWinNfsSwtManager.java	if	3656	true	// Portmapが返したNFSポートが一致しない場合	if( mappedNfsPort != nfsPort) {
+src\jp\co\enterogawa\nfs\manager\TinyWinNfsSwtManager.java	if	3710	true	// mountが失敗した場合	if( status != 0) {
+src\jp\co\enterogawa\nfs\manager\TinyWinNfsSwtManager.java	if	3735	true	// GETATTRが失敗した場合	if( status != 0) {
+src\jp\co\enterogawa\nfs\manager\TinyWinNfsSwtManager.java	if	3742	true	// ルートがディレクトリではない場合	if( type != 2) {
+src\jp\co\enterogawa\nfs\manager\TinyWinNfsSwtManager.java	if	3828	true	// 値が一致しない場合	if( expected != actual) {
+src\jp\co\enterogawa\nfs\manager\TinyWinNfsSwtManager.java	if	3871	true	// 管理者権限がない場合	if( !isAdministrator()) {
+src\jp\co\enterogawa\nfs\manager\TinyWinNfsSwtManager.java	if	3895	true	// スクリプトが存在しない場合	if( !Files.exists( scriptPath)) {
+src\jp\co\enterogawa\nfs\manager\TinyWinNfsSwtManager.java	if	3912	true	// コールバックが存在する場合	if( callback != null) {
+src\jp\co\enterogawa\nfs\manager\TinyWinNfsSwtManager.java	for-each	3929	true	// サービス操作ボタンを切り替える	for( Button button : serviceActionButtons) {
+src\jp\co\enterogawa\nfs\manager\TinyWinNfsSwtManager.java	if	3931	true	// ボタンが破棄済みではない場合	if( !button.isDisposed()) {
+src\jp\co\enterogawa\nfs\manager\TinyWinNfsSwtManager.java	if	3949	true	// サービス結果表示が存在しない場合	if(( serviceResultText == null || serviceResultText.isDisposed())) {
+src\jp\co\enterogawa\nfs\manager\TinyWinNfsSwtManager.java	if	3959	true	// 標準出力が存在する場合	if( !result.getOutput().isBlank()) {
+src\jp\co\enterogawa\nfs\manager\TinyWinNfsSwtManager.java	if	3964	true	// 標準エラーが存在する場合	if( !result.getErrorOutput().isBlank()) {
+src\jp\co\enterogawa\nfs\manager\TinyWinNfsSwtManager.java	if	3983	true	// 成功の場合	if( result.getExitCode() == 0) {
+src\jp\co\enterogawa\nfs\manager\TinyWinNfsSwtManager.java	if	3990	true	// 管理者権限不足の場合	if(( output.contains( "access is denied" ) || output.contains( "administrator" ) || output.contains( "管理者" ))) {
+src\jp\co\enterogawa\nfs\manager\TinyWinNfsSwtManager.java	if	3995	true	// ポート使用中の場合	if(( output.contains( "address already in use" ) || output.contains( "bind" ) || output.contains( "port" ) || output.contains( "ポート" ))) {
+src\jp\co\enterogawa\nfs\manager\TinyWinNfsSwtManager.java	if	4000	true	// サービス未登録の場合	if(( output.contains( "does not exist" ) || output.contains( "not installed" ) || output.contains( "not found" ) || output.contains( "見つかりません" ))) {
+src\jp\co\enterogawa\nfs\manager\TinyWinNfsSwtManager.java	if	4027	true	// コマンドが失敗した場合	if( result.getExitCode() != 0) {
+src\jp\co\enterogawa\nfs\manager\TinyWinNfsSwtManager.java	if	4032	true	// コールバックが存在する場合	if( callback != null) {
+src\jp\co\enterogawa\nfs\manager\TinyWinNfsSwtManager.java	if	4157	true	// 環境変数指定がある場合	if(( home != null && !home.isBlank())) {
+src\jp\co\enterogawa\nfs\manager\TinyWinNfsSwtManager.java	if	4164	true	// 旧環境変数指定がある場合	if(( home != null && !home.isBlank())) {
+src\jp\co\enterogawa\nfs\manager\TinyWinNfsSwtManager.java	if	4171	true	// 旧環境変数指定がある場合	if(( home != null && !home.isBlank())) {
+src\jp\co\enterogawa\nfs\manager\TinyWinNfsSwtManager.java	if	4178	true	// サービス登録先が取得できた場合	if( serviceRoot != null) {
+src\jp\co\enterogawa\nfs\manager\TinyWinNfsSwtManager.java	if	4187	true	// binフォルダから起動している場合	if(( Files.isDirectory( location) && "bin".equalsIgnoreCase( location.getFileName().toString()))) {
+src\jp\co\enterogawa\nfs\manager\TinyWinNfsSwtManager.java	if	4194	true	// jpackageのappフォルダから起動している場合	if(( parent != null && "app".equalsIgnoreCase( parent.getFileName().toString()))) {
+src\jp\co\enterogawa\nfs\manager\TinyWinNfsSwtManager.java	if	4217	true	// 実行ファイルが取得できない場合	if( executablePath == null) {
+src\jp\co\enterogawa\nfs\manager\TinyWinNfsSwtManager.java	if	4224	true	// WinSWフォルダが取得できない場合	if( winswDirectory == null) {
+src\jp\co\enterogawa\nfs\manager\TinyWinNfsSwtManager.java	if	4231	true	// serviceフォルダが取得できない場合	if( serviceDirectory == null) {
+src\jp\co\enterogawa\nfs\manager\TinyWinNfsSwtManager.java	if	4238	true	// ルートフォルダが取得できない場合	if( serviceRoot == null) {
+src\jp\co\enterogawa\nfs\manager\TinyWinNfsSwtManager.java	if	4282	true	// サービスが登録されていない場合	if( pathName.isBlank()) {
+src\jp\co\enterogawa\nfs\manager\TinyWinNfsSwtManager.java	if	4310	true	// ダブルクォートで囲まれている場合	if( executable.startsWith( "\"" )) {
+src\jp\co\enterogawa\nfs\manager\TinyWinNfsSwtManager.java	if	4314	true	// 終端クォートが存在する場合	if( endIndex > 1) {
+src\jp\co\enterogawa\nfs\manager\TinyWinNfsSwtManager.java	if	4322	true	// exe拡張子が存在する場合	if( exeIndex >= 0) {
+src\jp\co\enterogawa\nfs\manager\TinyWinNfsSwtManager.java	if	4340	true	// Displayが破棄済みの場合	if( display.isDisposed()) {
+src\jp\co\enterogawa\nfs\manager\TinyWinNfsSwtManager.java	if	4345	true	// UIスレッドの場合	if( Thread.currentThread() == display.getThread()) {
+src\jp\co\enterogawa\nfs\manager\TinyWinNfsSwtManager.java	if	4352	true	// Shellが破棄済みではない場合	if(( shell != null && !shell.isDisposed())) {
+src\jp\co\enterogawa\nfs\manager\TinyWinNfsSwtManager.java	if	4369	true	// UIスレッドではない場合	if( Thread.currentThread() != display.getThread()) {
+src\jp\co\enterogawa\nfs\manager\TinyWinNfsSwtManager.java	if	4377	true	// メッセージが空の場合	if(( text == null || text.isBlank() || logText == null || logText.isDisposed())) {
+src\jp\co\enterogawa\nfs\manager\TinyWinNfsSwtManager.java	if	4397	true	// UIスレッドではない場合	if( Thread.currentThread() != display.getThread()) {
+src\jp\co\enterogawa\nfs\manager\TinyWinNfsSwtManager.java	if	4405	true	// 例外が存在する場合	if( exception != null) {
+src\jp\co\enterogawa\nfs\manager\TinyWinNfsSwtManager.java	if	4579	true	// エラー出力がない場合	if( errorOutput.isBlank()) {
+src\jp\co\enterogawa\nfs\manager\TinyWinNfsSwtManager.java	if	4584	true	// 標準出力がない場合	if( output.isBlank()) {
+src\jp\co\enterogawa\nfs\program\MountV1Program.java	if	186	true	// 公開名が一致しない場合	if( export == null) {
+src\jp\co\enterogawa\nfs\program\MountV1Program.java	if	193	true	// クライアントが許可されていない場合	if( !export.allowsClient( RpcRequestContext.current().getClientAddress())) {
+src\jp\co\enterogawa\nfs\program\MountV1Program.java	if	203	true	// MOUNT v3の場合	if( call.getVersion() == 3) {
+src\jp\co\enterogawa\nfs\program\MountV1Program.java	if	238	true	// 詳細が存在する場合	if(( detail != null && !detail.isBlank())) {
+src\jp\co\enterogawa\nfs\program\MountV1Program.java	for-each	256	true	// 公開定義を出力する	for( NfsExport export : config.getExports()) {
+src\jp\co\enterogawa\nfs\program\NfsV2Program.java	if	348	true	// WRITE引数の解析に失敗した場合は調査用ログを出力する	if( call.getProcedure() == PROC_WRITE) {
+src\jp\co\enterogawa\nfs\program\NfsV2Program.java	if	375	true	// ファイルハンドルが不明な場合	if( path == null) {
+src\jp\co\enterogawa\nfs\program\NfsV2Program.java	if	381	true	// クライアントが許可されていない場合	if( !isClientAllowed( path)) {
+src\jp\co\enterogawa\nfs\program\NfsV2Program.java	if	407	true	// ディレクトリハンドルが不明な場合	if( directory == null) {
+src\jp\co\enterogawa\nfs\program\NfsV2Program.java	if	413	true	// クライアントが許可されていない場合	if( !isClientAllowed( directory)) {
+src\jp\co\enterogawa\nfs\program\NfsV2Program.java	if	420	true	// ディレクトリではない場合	if( !Files.isDirectory( directory, LinkOption.NOFOLLOW_LINKS)) {
+src\jp\co\enterogawa\nfs\program\NfsV2Program.java	if	426	true	// 名前が不正な場合	if( !isValidLookupName( name)) {
+src\jp\co\enterogawa\nfs\program\NfsV2Program.java	if	441	true	// 公開ルート外の場合	if( !isInSameExportRoot( directory, child)) {
+src\jp\co\enterogawa\nfs\program\NfsV2Program.java	if	447	true	// 子パスが存在しない場合	if( !Files.exists( child, LinkOption.NOFOLLOW_LINKS)) {
+src\jp\co\enterogawa\nfs\program\NfsV2Program.java	if	474	true	// ファイルハンドルが不明な場合	if( path == null) {
+src\jp\co\enterogawa\nfs\program\NfsV2Program.java	if	480	true	// クライアントが許可されていない場合	if( !isClientAllowed( path)) {
+src\jp\co\enterogawa\nfs\program\NfsV2Program.java	if	487	true	// シンボリックリンクではない場合	if( !Files.isSymbolicLink( path)) {
+src\jp\co\enterogawa\nfs\program\NfsV2Program.java	if	528	true	// ファイルハンドルが不明な場合	if( path == null) {
+src\jp\co\enterogawa\nfs\program\NfsV2Program.java	if	534	true	// クライアントが許可されていない場合	if( !isClientAllowed( path)) {
+src\jp\co\enterogawa\nfs\program\NfsV2Program.java	if	541	true	// 通常ファイルではない場合	if( !Files.isRegularFile( path, LinkOption.NOFOLLOW_LINKS)) {
+src\jp\co\enterogawa\nfs\program\NfsV2Program.java	if	556	true	// EOFの場合	if( actualLength < 0) {
+src\jp\co\enterogawa\nfs\program\NfsV2Program.java	if	584	true	// ファイルハンドルが不明な場合	if( path == null) {
+src\jp\co\enterogawa\nfs\program\NfsV2Program.java	if	591	true	// クライアントが許可されていない場合	if( !isClientAllowed( path)) {
+src\jp\co\enterogawa\nfs\program\NfsV2Program.java	if	598	true	// 書込不可の場合	if( !isWritable( path)) {
+src\jp\co\enterogawa\nfs\program\NfsV2Program.java	if	609	true	// 属性反映が失敗した場合	if( status != NfsStatus.OK) {
+src\jp\co\enterogawa\nfs\program\NfsV2Program.java	if	645	true	// ファイルハンドルが不明な場合	if( path == null) {
+src\jp\co\enterogawa\nfs\program\NfsV2Program.java	if	652	true	// クライアントが許可されていない場合	if( !isClientAllowed( path)) {
+src\jp\co\enterogawa\nfs\program\NfsV2Program.java	if	659	true	// 書込不可の場合	if( !isWritable( path)) {
+src\jp\co\enterogawa\nfs\program\NfsV2Program.java	if	666	true	// 通常ファイルではない場合	if( !Files.isRegularFile( path, LinkOption.NOFOLLOW_LINKS)) {
+src\jp\co\enterogawa\nfs\program\NfsV2Program.java	if	698	true	// WRITE countが有効な場合はQNX互換の固定長opaque形式を確認する	if( isValidWriteCount( totalCount)) {
+src\jp\co\enterogawa\nfs\program\NfsV2Program.java	if	702	true	// QNX 4.25はNFSv2 WRITEのdataを長さなし固定長opaqueとして送る場合がある。	if( arguments.remainingLength() == getPaddedLength( count)) {
+src\jp\co\enterogawa\nfs\program\NfsV2Program.java	if	716	true	// QNX 4.25はNFSv2 WRITEのdataを長さ付きだがpaddingなしで送る場合がある。	if( unpaddedData != null) {
+src\jp\co\enterogawa\nfs\program\NfsV2Program.java	if	721	true	// data lengthが付かない古いクライアント向けの限定的な互換処理	if(( isValidWriteCount( totalCount) && arguments.remainingLength() == getPaddedLength( (int)totalCount))) {
+src\jp\co\enterogawa\nfs\program\NfsV2Program.java	if	743	true	// lengthフィールドが存在しない場合	if( arguments.remainingLength() < Integer.BYTES) {
+src\jp\co\enterogawa\nfs\program\NfsV2Program.java	if	751	true	// lengthが不正な場合	if( !isValidWriteCount( dataLength)) {
+src\jp\co\enterogawa\nfs\program\NfsV2Program.java	if	757	true	// paddingなしのデータ長と一致する場合	if( arguments.remainingLength() == (int)dataLength) {
+src\jp\co\enterogawa\nfs\program\NfsV2Program.java	if	791	true	// デバッグログの場合のみファイル内容を含み得るHEXを出力する	if( ServerLog.isDebugEnabled()) {
+src\jp\co\enterogawa\nfs\program\NfsV2Program.java	if	831	true	// 既存フィールドがある場合は区切り文字を追加する	if( builder.length() > 0) {
+src\jp\co\enterogawa\nfs\program\NfsV2Program.java	if	838	true	// 対象フィールドが引数バイト列に収まらない場合は欠落として出力する	if( data.length < offset + Integer.BYTES) {
+src\jp\co\enterogawa\nfs\program\NfsV2Program.java	for	880	true	// 出力対象バイトをHEX文字列へ変換する	for( int i = 0; i < length; i++) {
+src\jp\co\enterogawa\nfs\program\NfsV2Program.java	if	882	true	// 2バイト目以降は可読性のため空白で区切る	if( i > 0) {
+src\jp\co\enterogawa\nfs\program\NfsV2Program.java	if	890	true	// 出力上限を超えた場合は省略表示を追加する	if( data.length > maxBytes) {
+src\jp\co\enterogawa\nfs\program\NfsV2Program.java	if	945	true	// 対象パスが不正な場合	if( !target.isOk()) {
+src\jp\co\enterogawa\nfs\program\NfsV2Program.java	if	952	true	// クライアントが許可されていない場合	if( !isClientAllowed( target.getPath())) {
+src\jp\co\enterogawa\nfs\program\NfsV2Program.java	if	959	true	// 書込不可の場合	if( !isWritable( target.getPath())) {
+src\jp\co\enterogawa\nfs\program\NfsV2Program.java	if	966	true	// 対象ファイルが既に存在する場合	if( Files.exists( target.getPath(), LinkOption.NOFOLLOW_LINKS)) {
+src\jp\co\enterogawa\nfs\program\NfsV2Program.java	if	978	true	// 属性反映が失敗した場合	if( status != NfsStatus.OK) {
+src\jp\co\enterogawa\nfs\program\NfsV2Program.java	if	1010	true	// 対象パスが不正な場合	if( !target.isOk()) {
+src\jp\co\enterogawa\nfs\program\NfsV2Program.java	if	1017	true	// クライアントが許可されていない場合	if( !isClientAllowed( target.getPath())) {
+src\jp\co\enterogawa\nfs\program\NfsV2Program.java	if	1024	true	// 書込不可の場合	if( !isWritable( target.getPath())) {
+src\jp\co\enterogawa\nfs\program\NfsV2Program.java	if	1031	true	// 対象ファイルが存在しない場合	if( !Files.exists( target.getPath(), LinkOption.NOFOLLOW_LINKS)) {
+src\jp\co\enterogawa\nfs\program\NfsV2Program.java	if	1049	true	// QNX 4.xはディレクトリ削除時に .nfsX* へリネームしてからREMOVEする場合がある	if(( directoryTarget && ioex instanceof DirectoryNotEmptyException && isQnxSillyRenamePath( target.getPath()))) {
+src\jp\co\enterogawa\nfs\program\NfsV2Program.java	if	1088	true	// 移動元が不正な場合	if( !source.isOk()) {
+src\jp\co\enterogawa\nfs\program\NfsV2Program.java	if	1095	true	// 移動先が不正な場合	if( !target.isOk()) {
+src\jp\co\enterogawa\nfs\program\NfsV2Program.java	if	1102	true	// クライアントが許可されていない場合	if(( !isClientAllowed( source.getPath()) || !isClientAllowed( target.getPath()))) {
+src\jp\co\enterogawa\nfs\program\NfsV2Program.java	if	1109	true	// 書込不可の場合	if(( !isWritable( source.getPath()) || !isWritable( target.getPath()))) {
+src\jp\co\enterogawa\nfs\program\NfsV2Program.java	if	1116	true	// 公開ルートを跨ぐ場合	if( !handleTable.isSameExport( source.getPath(), target.getPath())) {
+src\jp\co\enterogawa\nfs\program\NfsV2Program.java	if	1123	true	// 移動元が存在しない場合	if( !Files.exists( source.getPath(), LinkOption.NOFOLLOW_LINKS)) {
+src\jp\co\enterogawa\nfs\program\NfsV2Program.java	if	1162	true	// 移動元が不明な場合	if( source == null) {
+src\jp\co\enterogawa\nfs\program\NfsV2Program.java	if	1169	true	// 移動先が不正な場合	if( !target.isOk()) {
+src\jp\co\enterogawa\nfs\program\NfsV2Program.java	if	1176	true	// クライアントが許可されていない場合	if(( !isClientAllowed( source) || !isClientAllowed( target.getPath()))) {
+src\jp\co\enterogawa\nfs\program\NfsV2Program.java	if	1183	true	// 公開ルートを跨ぐ場合	if( !handleTable.isSameExport( source, target.getPath())) {
+src\jp\co\enterogawa\nfs\program\NfsV2Program.java	if	1190	true	// 書込不可の場合	if( !isWritable( target.getPath())) {
+src\jp\co\enterogawa\nfs\program\NfsV2Program.java	if	1197	true	// 移動元が存在しない場合	if( !Files.exists( source, LinkOption.NOFOLLOW_LINKS)) {
+src\jp\co\enterogawa\nfs\program\NfsV2Program.java	if	1204	true	// ディレクトリへのハードリンクの場合	if( Files.isDirectory( source, LinkOption.NOFOLLOW_LINKS)) {
+src\jp\co\enterogawa\nfs\program\NfsV2Program.java	if	1211	true	// 移動先が存在済みの場合	if( Files.exists( target.getPath(), LinkOption.NOFOLLOW_LINKS)) {
+src\jp\co\enterogawa\nfs\program\NfsV2Program.java	if	1250	true	// 対象パスが不正な場合	if( !target.isOk()) {
+src\jp\co\enterogawa\nfs\program\NfsV2Program.java	if	1257	true	// クライアントが許可されていない場合	if( !isClientAllowed( target.getPath())) {
+src\jp\co\enterogawa\nfs\program\NfsV2Program.java	if	1264	true	// 書込不可の場合	if( !isWritable( target.getPath())) {
+src\jp\co\enterogawa\nfs\program\NfsV2Program.java	if	1271	true	// リンク先パスが長すぎる場合	if( linkTarget.getBytes( filenameCharset).length > MAX_PATH_BYTES) {
+src\jp\co\enterogawa\nfs\program\NfsV2Program.java	if	1278	true	// 対象が存在済みの場合	if( Files.exists( target.getPath(), LinkOption.NOFOLLOW_LINKS)) {
+src\jp\co\enterogawa\nfs\program\NfsV2Program.java	if	1290	true	// 属性反映が失敗した場合	if( status != NfsStatus.OK) {
+src\jp\co\enterogawa\nfs\program\NfsV2Program.java	if	1333	true	// 対象パスが不正な場合	if( !target.isOk()) {
+src\jp\co\enterogawa\nfs\program\NfsV2Program.java	if	1340	true	// クライアントが許可されていない場合	if( !isClientAllowed( target.getPath())) {
+src\jp\co\enterogawa\nfs\program\NfsV2Program.java	if	1347	true	// 書込不可の場合	if( !isWritable( target.getPath())) {
+src\jp\co\enterogawa\nfs\program\NfsV2Program.java	if	1359	true	// 属性反映が失敗した場合	if( status != NfsStatus.OK) {
+src\jp\co\enterogawa\nfs\program\NfsV2Program.java	if	1391	true	// 対象パスが不正な場合	if( !target.isOk()) {
+src\jp\co\enterogawa\nfs\program\NfsV2Program.java	if	1398	true	// クライアントが許可されていない場合	if( !isClientAllowed( target.getPath())) {
+src\jp\co\enterogawa\nfs\program\NfsV2Program.java	if	1405	true	// 書込不可の場合	if( !isWritable( target.getPath())) {
+src\jp\co\enterogawa\nfs\program\NfsV2Program.java	if	1412	true	// 対象がディレクトリではない場合	if( !Files.isDirectory( target.getPath(), LinkOption.NOFOLLOW_LINKS)) {
+src\jp\co\enterogawa\nfs\program\NfsV2Program.java	if	1449	true	// ファイルハンドルが不明な場合	if( directory == null) {
+src\jp\co\enterogawa\nfs\program\NfsV2Program.java	if	1455	true	// クライアントが許可されていない場合	if( !isClientAllowed( directory)) {
+src\jp\co\enterogawa\nfs\program\NfsV2Program.java	if	1462	true	// ディレクトリではない場合	if( !Files.isDirectory( directory, LinkOption.NOFOLLOW_LINKS)) {
+src\jp\co\enterogawa\nfs\program\NfsV2Program.java	for	1473	true	// ディレクトリエントリを応答サイズ範囲で書き込む	for( int i = index; i < entries.size(); i++) {
+src\jp\co\enterogawa\nfs\program\NfsV2Program.java	if	1479	true	// 指定サイズを超過する場合	if(( writtenBytes > 0 && writtenBytes + estimatedBytes > count)) {
+src\jp\co\enterogawa\nfs\program\NfsV2Program.java	if	1510	true	// 先頭cookieの場合	if( cookie == 0) {
+src\jp\co\enterogawa\nfs\program\NfsV2Program.java	for	1515	true	// 前回cookieの次位置を検索する	for( int i = 0; i < entries.size(); i++) {
+src\jp\co\enterogawa\nfs\program\NfsV2Program.java	if	1517	true	// cookieが一致する場合	if( entries.get( i).getCookie() == cookie) {
+src\jp\co\enterogawa\nfs\program\NfsV2Program.java	if	1566	true	// カレントディレクトリの場合	if( ".".equals( name)) {
+src\jp\co\enterogawa\nfs\program\NfsV2Program.java	if	1571	true	// 親ディレクトリの場合	if( "..".equals( name)) {
+src\jp\co\enterogawa\nfs\program\NfsV2Program.java	if	1578	true	// 親が存在しない、または公開ルート外の場合	if(( parent == null || !parent.toAbsolutePath().normalize().startsWith( rootPath))) {
+src\jp\co\enterogawa\nfs\program\NfsV2Program.java	if	1604	true	// カレントディレクトリの場合	if( ".".equals( name)) {
+src\jp\co\enterogawa\nfs\program\NfsV2Program.java	if	1609	true	// 親ディレクトリの場合	if( "..".equals( name)) {
+src\jp\co\enterogawa\nfs\program\NfsV2Program.java	if	1614	true	// 空文字の場合	if(( name == null || name.isEmpty())) {
+src\jp\co\enterogawa\nfs\program\NfsV2Program.java	if	1619	true	// NFSv2ファイル名長を超過する場合	if( name.getBytes( filenameCharset).length > MAX_NAME_BYTES) {
+src\jp\co\enterogawa\nfs\program\NfsV2Program.java	if	1624	true	// パス区切りを含む場合	if(( name.indexOf( '/') != -1 || name.indexOf( '\\') != -1)) {
+src\jp\co\enterogawa\nfs\program\NfsV2Program.java	if	1629	true	// Windowsファイル名として不正な場合	if( hasInvalidWindowsNameCharacter( name)) {
+src\jp\co\enterogawa\nfs\program\NfsV2Program.java	for	1652	true	// ファイル名を1文字ずつ検証する	for( int i = 0; i < name.length(); i++) {
+src\jp\co\enterogawa\nfs\program\NfsV2Program.java	if	1656	true	// 制御文字またはWindows予約文字の場合	if(( value < 0x20 || value == '<' || value == '>' || value == ':' || value == '"' || value == '|' || value == '?' || value == '*')) {
+src\jp\co\enterogawa\nfs\program\NfsV2Program.java	if	1737	true	// 公開定義が取得できない場合	if( export == null) {
+src\jp\co\enterogawa\nfs\program\NfsV2Program.java	if	1760	true	// ディレクトリハンドルが不明な場合	if( directory == null) {
+src\jp\co\enterogawa\nfs\program\NfsV2Program.java	if	1765	true	// ディレクトリではない場合	if( !Files.isDirectory( directory, LinkOption.NOFOLLOW_LINKS)) {
+src\jp\co\enterogawa\nfs\program\NfsV2Program.java	if	1770	true	// 名前が不正な場合	if( !isValidLookupName( name)) {
+src\jp\co\enterogawa\nfs\program\NfsV2Program.java	if	1783	true	// 公開ルート外の場合	if( !isInSameExportRoot( directory, target)) {
+src\jp\co\enterogawa\nfs\program\NfsV2Program.java	if	1833	true	// サイズ指定がある場合	if( attributes.hasSize()) {
+src\jp\co\enterogawa\nfs\program\NfsV2Program.java	if	1835	true	// サイズ変更不可の場合	if(( !allowSize || !Files.isRegularFile( path, LinkOption.NOFOLLOW_LINKS))) {
+src\jp\co\enterogawa\nfs\program\NfsV2Program.java	if	1846	true	// モード指定がある場合	if( attributes.hasMode()) {
+src\jp\co\enterogawa\nfs\program\NfsV2Program.java	if	1851	true	// 所有者指定がある場合	if(( attributes.hasUid() || attributes.hasGid())) {
+src\jp\co\enterogawa\nfs\program\NfsV2Program.java	if	1861	true	// 時刻属性が設定可能な場合	if(( view != null && (attributes.getAccessTime() != null || attributes.getModifiedTime() != null))) {
+src\jp\co\enterogawa\nfs\program\NfsV2Program.java	if	1884	true	// DOS属性が利用可能な場合	if( dosView != null) {
+src\jp\co\enterogawa\nfs\program\NfsV2Program.java	if	1891	true	// Java標準の書込属性だけが利用可能な場合	if( !path.toFile().setWritable( !readOnly, false)) {
+src\jp\co\enterogawa\nfs\program\NfsV2Program.java	if	1913	true	// UID指定がある場合	if(( attributes != null && attributes.hasUid())) {
+src\jp\co\enterogawa\nfs\program\NfsV2Program.java	if	1918	true	// GID指定がある場合	if(( attributes != null && attributes.hasGid())) {
+src\jp\co\enterogawa\nfs\program\NfsV2Program.java	if	1938	true	// 未指定の場合	if(( seconds == -1 || micros == -1)) {
+src\jp\co\enterogawa\nfs\program\NfsV2Program.java	if	1958	true	// 対象が存在しない場合	if( ioex instanceof NoSuchFileException) {
+src\jp\co\enterogawa\nfs\program\NfsV2Program.java	if	1963	true	// 対象が存在済みの場合	if( ioex instanceof FileAlreadyExistsException) {
+src\jp\co\enterogawa\nfs\program\NfsV2Program.java	if	1968	true	// ディレクトリが空ではない場合	if( ioex instanceof DirectoryNotEmptyException) {
+src\jp\co\enterogawa\nfs\program\NfsV2Program.java	if	1973	true	// アクセス拒否の場合	if( ioex instanceof AccessDeniedException) {
+src\jp\co\enterogawa\nfs\program\NfsV2Program.java	if	1994	true	// Windowsのsymlink権限不足は汎用FileSystemExceptionになることがある	if(( status == NfsStatus.IO && ioex instanceof FileSystemException)) {
+src\jp\co\enterogawa\nfs\program\NfsV2Program.java	if	2019	true	// ファイル名が取得できない場合	if( fileName == null) {
+src\jp\co\enterogawa\nfs\program\NfsV2Program.java	if	2048	true	// 子要素の処理で異常が発生した場合	if( exception != null) {
+src\jp\co\enterogawa\nfs\program\NfsV2Program.java	if	2090	true	// ディレクトリの場合	if( Files.isDirectory( path, LinkOption.NOFOLLOW_LINKS)) {
+src\jp\co\enterogawa\nfs\program\NfsV2Program.java	if	2112	true	// DOS属性を扱えないファイルシステムの場合	if( view == null) {
+src\jp\co\enterogawa\nfs\program\NfsV2Program.java	if	2135	true	// 高頻度の成功ログを抑制する場合	if( !ServerLog.shouldLogOperation( operation, status)) {
+src\jp\co\enterogawa\nfs\program\NfsV2Program.java	if	2150	true	// パスが存在する場合	if( path != null) {
+src\jp\co\enterogawa\nfs\program\NfsV2Program.java	if	2155	true	// 詳細が存在する場合	if(( detail != null && !detail.isBlank())) {
+src\jp\co\enterogawa\nfs\program\NfsV2Program.java	if	2193	true	// ファイルハンドルが不明な場合	if( path == null) {
+src\jp\co\enterogawa\nfs\program\NfsV2Program.java	if	2199	true	// クライアントが許可されていない場合	if( !isClientAllowed( path)) {
+src\jp\co\enterogawa\nfs\program\NfsV2Program.java	if	2233	true	// 正の値の場合	if( value > 0) {
+src\jp\co\enterogawa\nfs\program\NfsV2Program.java	for-each	2306	true	// エントリを検索する	for( DirectoryEntry entry : entries) {
+src\jp\co\enterogawa\nfs\program\NfsV2Program.java	if	2308	true	// cookieが一致する場合	if( entry.getCookie() == cookie) {
+src\jp\co\enterogawa\nfs\program\NfsV2Program.java	if	2344	true	// パスが存在しない場合	if( !Files.exists( path, LinkOption.NOFOLLOW_LINKS)) {
+src\jp\co\enterogawa\nfs\program\NfsV2Program.java	if	2367	true	// パスが存在しない場合	if( !Files.exists( path, LinkOption.NOFOLLOW_LINKS)) {
+src\jp\co\enterogawa\nfs\program\NfsV2Program.java	if	2397	true	// ディレクトリの場合	if( directory) {
+src\jp\co\enterogawa\nfs\program\NfsV2Program.java	if	2402	true	// シンボリックリンクの場合	else if( symbolicLink) {
+src\jp\co\enterogawa\nfs\program\NfsV2Program.java	if	2410	true	// 読込専用属性が設定されている場合	if( isReadOnlyPath( path)) {
+src\jp\co\enterogawa\nfs\program\NfsV2Program.java	if	2446	true	// ディレクトリの場合	if( type == NFDIR) {
+src\jp\co\enterogawa\nfs\program\NfsV2Program.java	if	2450	true	// シンボリックリンクの場合	else if( type == NFLNK) {
+src\jp\co\enterogawa\nfs\program\NfsV2Program.java	if	2482	true	// クライアント資格情報を反映しない場合	if( !config.isClientIdentityEnabled()) {
+src\jp\co\enterogawa\nfs\program\NfsV2Program.java	if	2514	true	// クライアント資格情報を反映しない場合	if( !config.isClientIdentityEnabled()) {
+src\jp\co\enterogawa\nfs\program\NfsV2Program.java	if	2562	true	// 数値属性の場合	if( value instanceof Number number) {
+src\jp\co\enterogawa\nfs\program\NfsV2Program.java	if	2570	true	// ディレクトリの場合	if( directory) {
+src\jp\co\enterogawa\nfs\program\NfsV2Program.java	if	2593	true	// 既存グループが存在しない場合	if( group == null) {
+src\jp\co\enterogawa\nfs\program\NfsV2Program.java	if	2617	true	// グループが存在しない場合	if( group == null) {
+src\jp\co\enterogawa\nfs\program\NfsV2Program.java	if	2643	true	// グループが存在しない場合	if( group == null) {
+src\jp\co\enterogawa\nfs\program\NfsV2Program.java	if	2666	true	// グループが存在しない場合	if( group == null) {
+src\jp\co\enterogawa\nfs\program\NfsV2Program.java	if	2939	true	// モード指定がある場合	if( hasMode()) {
+src\jp\co\enterogawa\nfs\program\NfsV2Program.java	if	2944	true	// UID指定がある場合	if( uid != -1) {
+src\jp\co\enterogawa\nfs\program\NfsV2Program.java	if	2949	true	// GID指定がある場合	if( gid != -1) {
+src\jp\co\enterogawa\nfs\program\NfsV2Program.java	if	2954	true	// サイズ指定がある場合	if( hasSize()) {
+src\jp\co\enterogawa\nfs\program\NfsV2Program.java	if	2959	true	// アクセス時刻指定がある場合	if( accessTime != null) {
+src\jp\co\enterogawa\nfs\program\NfsV2Program.java	if	2964	true	// 更新時刻指定がある場合	if( modifiedTime != null) {
+src\jp\co\enterogawa\nfs\program\NfsV3Program.java	if	431	true	// ファイルハンドルが不明な場合	if( path == null) {
+src\jp\co\enterogawa\nfs\program\NfsV3Program.java	if	437	true	// クライアントが許可されていない場合	if( !isClientAllowed( path)) {
+src\jp\co\enterogawa\nfs\program\NfsV3Program.java	if	464	true	// guard時刻が存在する場合	if( guarded) {
+src\jp\co\enterogawa\nfs\program\NfsV3Program.java	if	473	true	// ファイルハンドルが不明な場合	if( path == null) {
+src\jp\co\enterogawa\nfs\program\NfsV3Program.java	if	481	true	// クライアントが許可されていない場合	if( !isClientAllowed( path)) {
+src\jp\co\enterogawa\nfs\program\NfsV3Program.java	if	489	true	// 書込不可の場合	if( !isWritable( path)) {
+src\jp\co\enterogawa\nfs\program\NfsV3Program.java	if	528	true	// 対象パスが不正な場合	if( !target.isOk()) {
+src\jp\co\enterogawa\nfs\program\NfsV3Program.java	if	537	true	// 子パスが存在しない場合	if( !Files.exists( path, LinkOption.NOFOLLOW_LINKS)) {
+src\jp\co\enterogawa\nfs\program\NfsV3Program.java	if	567	true	// ファイルハンドルが不明な場合	if( path == null) {
+src\jp\co\enterogawa\nfs\program\NfsV3Program.java	if	574	true	// クライアントが許可されていない場合	if( !isClientAllowed( path)) {
+src\jp\co\enterogawa\nfs\program\NfsV3Program.java	if	603	true	// ファイルハンドルが不明な場合	if( path == null) {
+src\jp\co\enterogawa\nfs\program\NfsV3Program.java	if	610	true	// クライアントが許可されていない場合	if( !isClientAllowed( path)) {
+src\jp\co\enterogawa\nfs\program\NfsV3Program.java	if	618	true	// シンボリックリンクではない場合	if( !Files.isSymbolicLink( path)) {
+src\jp\co\enterogawa\nfs\program\NfsV3Program.java	if	663	true	// ファイルハンドルが不明な場合	if( path == null) {
+src\jp\co\enterogawa\nfs\program\NfsV3Program.java	if	670	true	// クライアントが許可されていない場合	if( !isClientAllowed( path)) {
+src\jp\co\enterogawa\nfs\program\NfsV3Program.java	if	678	true	// 通常ファイルではない場合	if( !Files.isRegularFile( path, LinkOption.NOFOLLOW_LINKS)) {
+src\jp\co\enterogawa\nfs\program\NfsV3Program.java	if	695	true	// EOFの場合	if( actualLength < 0) {
+src\jp\co\enterogawa\nfs\program\NfsV3Program.java	if	730	true	// ファイルハンドルが不明な場合	if( path == null) {
+src\jp\co\enterogawa\nfs\program\NfsV3Program.java	if	737	true	// クライアントが許可されていない場合	if( !isClientAllowed( path)) {
+src\jp\co\enterogawa\nfs\program\NfsV3Program.java	if	745	true	// 書込不可の場合	if( !isWritable( path)) {
+src\jp\co\enterogawa\nfs\program\NfsV3Program.java	if	753	true	// 通常ファイルではない場合	if( !Files.isRegularFile( path, LinkOption.NOFOLLOW_LINKS)) {
+src\jp\co\enterogawa\nfs\program\NfsV3Program.java	if	797	true	// 属性指定がある場合	if(( mode == CREATE_UNCHECKED || mode == CREATE_GUARDED)) {
+src\jp\co\enterogawa\nfs\program\NfsV3Program.java	if	801	true	// 排他作成の場合	else if( mode == CREATE_EXCLUSIVE) {
+src\jp\co\enterogawa\nfs\program\NfsV3Program.java	if	806	true	// 対象パスが不正な場合	if( !target.isOk()) {
+src\jp\co\enterogawa\nfs\program\NfsV3Program.java	if	817	true	// 書込不可の場合	if( !isWritable( path)) {
+src\jp\co\enterogawa\nfs\program\NfsV3Program.java	if	824	true	// guarded作成で既に存在する場合	if(( mode == CREATE_GUARDED && Files.exists( path, LinkOption.NOFOLLOW_LINKS))) {
+src\jp\co\enterogawa\nfs\program\NfsV3Program.java	if	834	true	// ファイルが存在しない場合	if( !Files.exists( path, LinkOption.NOFOLLOW_LINKS)) {
+src\jp\co\enterogawa\nfs\program\NfsV3Program.java	if	840	true	// 新規作成の場合	if( created) {
+src\jp\co\enterogawa\nfs\program\NfsV3Program.java	if	845	true	// 属性が指定されている場合	if( attributes != null) {
+src\jp\co\enterogawa\nfs\program\NfsV3Program.java	if	877	true	// 対象パスが不正な場合	if( !target.isOk()) {
+src\jp\co\enterogawa\nfs\program\NfsV3Program.java	if	886	true	// 書込不可の場合	if( !isWritable( path)) {
+src\jp\co\enterogawa\nfs\program\NfsV3Program.java	if	925	true	// 対象パスが不正な場合	if( !target.isOk()) {
+src\jp\co\enterogawa\nfs\program\NfsV3Program.java	if	934	true	// 書込不可の場合	if( !isWritable( path)) {
+src\jp\co\enterogawa\nfs\program\NfsV3Program.java	if	945	true	// mode指定がある場合	if( attributes.hasMode()) {
+src\jp\co\enterogawa\nfs\program\NfsV3Program.java	if	997	true	// 対象パスが不正な場合	if( !target.isOk()) {
+src\jp\co\enterogawa\nfs\program\NfsV3Program.java	if	1007	true	// 書込不可の場合	if( !isWritable( path)) {
+src\jp\co\enterogawa\nfs\program\NfsV3Program.java	if	1048	true	// 対象パスが不正な場合	if( !target.isOk()) {
+src\jp\co\enterogawa\nfs\program\NfsV3Program.java	if	1058	true	// 書込不可の場合	if( !isWritable( path)) {
+src\jp\co\enterogawa\nfs\program\NfsV3Program.java	if	1066	true	// 対象が存在しない場合	if( !Files.exists( path, LinkOption.NOFOLLOW_LINKS)) {
+src\jp\co\enterogawa\nfs\program\NfsV3Program.java	if	1074	true	// 対象がディレクトリではない場合	if( !Files.isDirectory( path, LinkOption.NOFOLLOW_LINKS)) {
+src\jp\co\enterogawa\nfs\program\NfsV3Program.java	if	1114	true	// 移動元が不正な場合	if( !source.isOk()) {
+src\jp\co\enterogawa\nfs\program\NfsV3Program.java	if	1122	true	// 移動先が不正な場合	if( !target.isOk()) {
+src\jp\co\enterogawa\nfs\program\NfsV3Program.java	if	1133	true	// 書込不可の場合	if(( !isWritable( source.getPath()) || !isWritable( target.getPath()))) {
+src\jp\co\enterogawa\nfs\program\NfsV3Program.java	if	1180	true	// 移動元が不明な場合	if( source == null) {
+src\jp\co\enterogawa\nfs\program\NfsV3Program.java	if	1188	true	// クライアントが許可されていない場合	if( !isClientAllowed( source)) {
+src\jp\co\enterogawa\nfs\program\NfsV3Program.java	if	1196	true	// 対象パスが不正な場合	if( !target.isOk()) {
+src\jp\co\enterogawa\nfs\program\NfsV3Program.java	if	1204	true	// 書込不可の場合	if(( !isWritable( source) || !isWritable( target.getPath()))) {
+src\jp\co\enterogawa\nfs\program\NfsV3Program.java	if	1247	true	// READDIRPLUSの場合	if( plus) {
+src\jp\co\enterogawa\nfs\program\NfsV3Program.java	if	1259	true	// ファイルハンドルが不明な場合	if( directory == null) {
+src\jp\co\enterogawa\nfs\program\NfsV3Program.java	if	1266	true	// クライアントが許可されていない場合	if( !isClientAllowed( directory)) {
+src\jp\co\enterogawa\nfs\program\NfsV3Program.java	if	1274	true	// ディレクトリではない場合	if( !Files.isDirectory( directory, LinkOption.NOFOLLOW_LINKS)) {
+src\jp\co\enterogawa\nfs\program\NfsV3Program.java	for-each	1288	true	// ディレクトリエントリを出力する	for( DirectoryEntry entry : entries) {
+src\jp\co\enterogawa\nfs\program\NfsV3Program.java	if	1290	true	// 既に返却済みのentryの場合	if( entry.getCookie() <= cookie) {
+src\jp\co\enterogawa\nfs\program\NfsV3Program.java	if	1297	true	// 最大応答サイズを超える場合	if(( encodedSize + entrySize > maxCount && encodedSize > 16)) {
+src\jp\co\enterogawa\nfs\program\NfsV3Program.java	if	1309	true	// READDIRPLUSの場合	if( plus) {
+src\jp\co\enterogawa\nfs\program\NfsV3Program.java	if	1337	true	// READDIRPLUSの場合	if( plus) {
+src\jp\co\enterogawa\nfs\program\NfsV3Program.java	if	1360	true	// ファイルハンドルが不明な場合	if( path == null) {
+src\jp\co\enterogawa\nfs\program\NfsV3Program.java	if	1367	true	// クライアントが許可されていない場合	if( !isClientAllowed( path)) {
+src\jp\co\enterogawa\nfs\program\NfsV3Program.java	if	1405	true	// ファイルハンドルが不明な場合	if( path == null) {
+src\jp\co\enterogawa\nfs\program\NfsV3Program.java	if	1412	true	// クライアントが許可されていない場合	if( !isClientAllowed( path)) {
+src\jp\co\enterogawa\nfs\program\NfsV3Program.java	if	1464	true	// ファイルハンドルが不明な場合	if( path == null) {
+src\jp\co\enterogawa\nfs\program\NfsV3Program.java	if	1471	true	// クライアントが許可されていない場合	if( !isClientAllowed( path)) {
+src\jp\co\enterogawa\nfs\program\NfsV3Program.java	if	1506	true	// ファイルハンドルが不明な場合	if( path == null) {
+src\jp\co\enterogawa\nfs\program\NfsV3Program.java	if	1513	true	// クライアントが許可されていない場合	if( !isClientAllowed( path)) {
+src\jp\co\enterogawa\nfs\program\NfsV3Program.java	if	1552	true	// ディレクトリハンドルが不明な場合	if( directory == null) {
+src\jp\co\enterogawa\nfs\program\NfsV3Program.java	if	1557	true	// クライアントが許可されていない場合	if( !isClientAllowed( directory)) {
+src\jp\co\enterogawa\nfs\program\NfsV3Program.java	if	1563	true	// ディレクトリではない場合	if( !Files.isDirectory( directory, LinkOption.NOFOLLOW_LINKS)) {
+src\jp\co\enterogawa\nfs\program\NfsV3Program.java	if	1568	true	// 名前が不正な場合	if( !isValidLookupName( name)) {
+src\jp\co\enterogawa\nfs\program\NfsV3Program.java	if	1576	true	// 公開ルート外の場合	if( !handleTable.isSameExport( directory, child)) {
+src\jp\co\enterogawa\nfs\program\NfsV3Program.java	if	1651	true	// 正常終了の場合	if( status == NfsStatus.OK) {
+src\jp\co\enterogawa\nfs\program\NfsV3Program.java	if	1673	true	// パスが存在しない場合	if(( path == null || !Files.exists( path, LinkOption.NOFOLLOW_LINKS))) {
+src\jp\co\enterogawa\nfs\program\NfsV3Program.java	if	1742	true	// パスが存在しない場合	if( !attributes.exists()) {
+src\jp\co\enterogawa\nfs\program\NfsV3Program.java	if	1766	true	// パスが存在しない場合	if(( path == null || !Files.exists( path, LinkOption.NOFOLLOW_LINKS))) {
+src\jp\co\enterogawa\nfs\program\NfsV3Program.java	if	1794	true	// ディレクトリの場合	if( directory) {
+src\jp\co\enterogawa\nfs\program\NfsV3Program.java	if	1799	true	// シンボリックリンクの場合	else if( symbolicLink) {
+src\jp\co\enterogawa\nfs\program\NfsV3Program.java	if	1807	true	// 読込専用属性が設定されている場合	if( isReadOnlyPath( path)) {
+src\jp\co\enterogawa\nfs\program\NfsV3Program.java	if	1842	true	// ディレクトリの場合	if( type == NF3DIR) {
+src\jp\co\enterogawa\nfs\program\NfsV3Program.java	if	1846	true	// シンボリックリンクの場合	else if( type == NF3LNK) {
+src\jp\co\enterogawa\nfs\program\NfsV3Program.java	if	1878	true	// クライアント資格情報を反映しない場合	if( !config.isClientIdentityEnabled()) {
+src\jp\co\enterogawa\nfs\program\NfsV3Program.java	if	1910	true	// クライアント資格情報を反映しない場合	if( !config.isClientIdentityEnabled()) {
+src\jp\co\enterogawa\nfs\program\NfsV3Program.java	if	1949	true	// 値が指定されていない場合	if( !arguments.readBoolean()) {
+src\jp\co\enterogawa\nfs\program\NfsV3Program.java	if	1968	true	// 値が指定されていない場合	if( !arguments.readBoolean()) {
+src\jp\co\enterogawa\nfs\program\NfsV3Program.java	if	1989	true	// サーバー時刻指定の場合	if( mode == TIME_SET_TO_SERVER) {
+src\jp\co\enterogawa\nfs\program\NfsV3Program.java	if	1993	true	// クライアント時刻指定の場合	else if( mode == TIME_SET_TO_CLIENT) {
+src\jp\co\enterogawa\nfs\program\NfsV3Program.java	if	2014	true	// サイズ指定がある場合	if(( attributes.hasSize() && allowSize)) {
+src\jp\co\enterogawa\nfs\program\NfsV3Program.java	if	2022	true	// モード指定がある場合	if( attributes.hasMode()) {
+src\jp\co\enterogawa\nfs\program\NfsV3Program.java	if	2027	true	// 所有者指定がある場合	if(( attributes.hasUid() || attributes.hasGid())) {
+src\jp\co\enterogawa\nfs\program\NfsV3Program.java	if	2037	true	// 時刻指定がある場合	if(( attributes.getAccessTime() != null || attributes.getModifiedTime() != null)) {
+src\jp\co\enterogawa\nfs\program\NfsV3Program.java	if	2060	true	// DOS属性が利用できる場合	if( view != null) {
+src\jp\co\enterogawa\nfs\program\NfsV3Program.java	if	2070	true	// Java標準の書込属性だけが利用可能な場合	if( !path.toFile().setWritable( writable, false)) {
+src\jp\co\enterogawa\nfs\program\NfsV3Program.java	if	2092	true	// UID指定がある場合	if(( attributes != null && attributes.hasUid())) {
+src\jp\co\enterogawa\nfs\program\NfsV3Program.java	if	2097	true	// GID指定がある場合	if(( attributes != null && attributes.hasGid())) {
+src\jp\co\enterogawa\nfs\program\NfsV3Program.java	if	2119	true	// 読込可能な場合	if( Files.isReadable( path)) {
+src\jp\co\enterogawa\nfs\program\NfsV3Program.java	if	2124	true	// ディレクトリの場合	if( Files.isDirectory( path, LinkOption.NOFOLLOW_LINKS)) {
+src\jp\co\enterogawa\nfs\program\NfsV3Program.java	if	2129	true	// 実行可能な場合	if( Files.isExecutable( path)) {
+src\jp\co\enterogawa\nfs\program\NfsV3Program.java	if	2134	true	// 書込可能な場合	if(( isWritable( path) && Files.isWritable( path) && !isReadOnlyPath( path))) {
+src\jp\co\enterogawa\nfs\program\NfsV3Program.java	for-each	2160	true	// ディレクトリエントリを収集する	for( Path child : paths) {
+src\jp\co\enterogawa\nfs\program\NfsV3Program.java	if	2227	true	// 名前が空の場合	if(( name == null || name.isEmpty())) {
+src\jp\co\enterogawa\nfs\program\NfsV3Program.java	if	2232	true	// パス区切りを含む場合	if(( name.contains( "/" ) || name.contains( "\\"))) {
+src\jp\co\enterogawa\nfs\program\NfsV3Program.java	if	2237	true	// 親ディレクトリ参照の場合	if( "..".equals( name)) {
+src\jp\co\enterogawa\nfs\program\NfsV3Program.java	if	2285	true	// 数値属性の場合	if( value instanceof Number number) {
+src\jp\co\enterogawa\nfs\program\NfsV3Program.java	if	2293	true	// ディレクトリの場合	if( directory) {
+src\jp\co\enterogawa\nfs\program\NfsV3Program.java	if	2316	true	// 既存グループが存在しない場合	if( group == null) {
+src\jp\co\enterogawa\nfs\program\NfsV3Program.java	if	2340	true	// グループが存在しない場合	if( group == null) {
+src\jp\co\enterogawa\nfs\program\NfsV3Program.java	if	2366	true	// グループが存在しない場合	if( group == null) {
+src\jp\co\enterogawa\nfs\program\NfsV3Program.java	if	2389	true	// グループが存在しない場合	if( group == null) {
+src\jp\co\enterogawa\nfs\program\NfsV3Program.java	if	2422	true	// 対象が存在しない場合	if( ioex instanceof NoSuchFileException) {
+src\jp\co\enterogawa\nfs\program\NfsV3Program.java	if	2427	true	// アクセス拒否の場合	if( ioex instanceof AccessDeniedException) {
+src\jp\co\enterogawa\nfs\program\NfsV3Program.java	if	2432	true	// 対象が存在済みの場合	if( ioex instanceof FileAlreadyExistsException) {
+src\jp\co\enterogawa\nfs\program\NfsV3Program.java	if	2437	true	// ディレクトリが空ではない場合	if( ioex instanceof DirectoryNotEmptyException) {
+src\jp\co\enterogawa\nfs\program\NfsV3Program.java	if	2458	true	// Windowsのsymlink権限不足は汎用FileSystemExceptionになることがある	if(( status == NfsStatus.IO && ioex instanceof FileSystemException)) {
+src\jp\co\enterogawa\nfs\program\NfsV3Program.java	if	2526	true	// ディレクトリの場合	if( Files.isDirectory( path, LinkOption.NOFOLLOW_LINKS)) {
+src\jp\co\enterogawa\nfs\program\NfsV3Program.java	if	2563	true	// 高頻度の成功ログを抑制する場合	if( !ServerLog.shouldLogOperation( operation, status)) {
+src\jp\co\enterogawa\nfs\program\NfsV3Program.java	if	2575	true	// パスが存在する場合	if( path != null) {
+src\jp\co\enterogawa\nfs\program\NfsV3Program.java	if	2580	true	// 詳細が存在する場合	if(( detail != null && !detail.isBlank())) {
+src\jp\co\enterogawa\nfs\program\NfsV3Program.java	if	2942	true	// モード指定がある場合	if( mode != null) {
+src\jp\co\enterogawa\nfs\program\NfsV3Program.java	if	2947	true	// UID指定がある場合	if( uid != null) {
+src\jp\co\enterogawa\nfs\program\NfsV3Program.java	if	2952	true	// GID指定がある場合	if( gid != null) {
+src\jp\co\enterogawa\nfs\program\NfsV3Program.java	if	2957	true	// サイズ指定がある場合	if( size != null) {
+src\jp\co\enterogawa\nfs\program\NfsV3Program.java	if	2962	true	// アクセス時刻指定がある場合	if( accessTime != null) {
+src\jp\co\enterogawa\nfs\program\NfsV3Program.java	if	2967	true	// 更新時刻指定がある場合	if( modifiedTime != null) {
+src\jp\co\enterogawa\nfs\program\PortmapV2Program.java	if	149	true	// TCP/UDP要求の場合	if(( protocol == RpcConstants.IPPROTO_UDP || protocol == RpcConstants.IPPROTO_TCP)) {
+src\jp\co\enterogawa\nfs\program\PortmapV2Program.java	if	151	true	// NFS要求の場合	if(( program == RpcConstants.PROGRAM_NFS && (version == 2 || version == 3))) {
+src\jp\co\enterogawa\nfs\program\PortmapV2Program.java	if	155	true	// MOUNT要求の場合	else if(( program == RpcConstants.PROGRAM_MOUNT && (version == 1 || version == 2 || version == 3))) {
+src\jp\co\enterogawa\nfs\program\PortmapV2Program.java	if	159	true	// Portmap v2要求の場合	else if(( program == RpcConstants.PROGRAM_PORTMAP && version == VERSION)) {
+src\jp\co\enterogawa\nfs\rpc\RpcCall.java	if	93	true	// CALL以外の場合	if( messageType != RpcConstants.MSG_CALL) {
+src\jp\co\enterogawa\nfs\rpc\RpcCall.java	if	100	true	// RPCバージョンが一致しない場合	if( rpcVersion != RpcConstants.RPC_VERSION) {
+src\jp\co\enterogawa\nfs\rpc\RpcCall.java	if	128	true	// XIDが存在しない場合	if( length < 4) {
+src\jp\co\enterogawa\nfs\rpc\RpcCallHandler.java	if	80	true	// Programが一致しない場合	if( call.getProgram() != program.getProgramNumber()) {
+src\jp\co\enterogawa\nfs\rpc\RpcCallHandler.java	if	84	true	// Versionが未対応の場合	else if( !program.supportsVersion( call.getVersion())) {
+src\jp\co\enterogawa\nfs\rpc\RpcCallHandler.java	if	95	true	// NFS/MOUNTの結果ステータスが存在する場合	if(( acceptStatus == RpcConstants.ACCEPT_SUCCESS && bodyBytes.length >= Integer.BYTES)) {
+src\jp\co\enterogawa\nfs\rpc\RpcCallHandler.java	if	100	true	// 要求ログを出力する場合	if( shouldLogRequest( call, acceptStatus, resultStatus)) {
+src\jp\co\enterogawa\nfs\rpc\RpcCallHandler.java	if	146	true	// デバッグログが有効な場合	if( ServerLog.isDebugEnabled()) {
+src\jp\co\enterogawa\nfs\rpc\RpcCallHandler.java	if	151	true	// RPC層のエラーは常に出力する	if( acceptStatus != RpcConstants.ACCEPT_SUCCESS) {
+src\jp\co\enterogawa\nfs\rpc\RpcCallHandler.java	if	156	true	// 通常の要求ログが無効な場合	if( !ServerLog.isRequestLogEnabled()) {
+src\jp\co\enterogawa\nfs\rpc\RpcCallHandler.java	if	182	true	// 結果ステータスが存在しない場合	if( resultStatus == null) {
+src\jp\co\enterogawa\nfs\rpc\RpcCredential.java	if	154	true	// AUTH_SYS以外の場合	if( flavor != RpcConstants.AUTH_SYS) {
+src\jp\co\enterogawa\nfs\rpc\RpcProgramRouter.java	if	60	true	// Program番号が異なる場合	if( program.getProgramNumber() != programNumber) {
+src\jp\co\enterogawa\nfs\rpc\RpcProgramRouter.java	if	132	true	// Versionが未対応の場合	if( program == null) {
+src\jp\co\enterogawa\nfs\rpc\RpcReplyWriter.java	if	56	true	// 本文がある場合	if( body.length > 0) {
+src\jp\co\enterogawa\nfs\rpc\RpcRequestContext.java	if	129	true	// コンテキストが未設定の場合	if( context == null) {
+src\jp\co\enterogawa\nfs\rpc\RpcRequestContext.java	if	163	true	// 直前のコンテキストが存在しない場合	if( previous == null) {
+src\jp\co\enterogawa\nfs\rpc\TcpRpcServer.java	if	125	true	// 既に開始済みの場合	if( running) {
+src\jp\co\enterogawa\nfs\rpc\TcpRpcServer.java	if	151	true	// サーバーソケットが存在する場合	if( serverSocket != null) {
+src\jp\co\enterogawa\nfs\rpc\TcpRpcServer.java	for-each	161	true	// 接続中ソケットを閉じる	for( Socket socket : connections) {
+src\jp\co\enterogawa\nfs\rpc\TcpRpcServer.java	if	186	true	// 停止中の場合	if( !running) {
+src\jp\co\enterogawa\nfs\rpc\TcpRpcServer.java	if	234	true	// クライアントが正常切断した場合	if( request == null) {
+src\jp\co\enterogawa\nfs\rpc\TcpRpcServer.java	if	247	true	// 停止中の場合	if( running) {
+src\jp\co\enterogawa\nfs\rpc\TcpRpcServer.java	if	281	true	// record途中ではない場合	if( record.size() == 0) {
+src\jp\co\enterogawa\nfs\rpc\TcpRpcServer.java	if	292	true	// fragment長が不正な場合	if( length <= 0) {
+src\jp\co\enterogawa\nfs\rpc\TcpRpcServer.java	if	297	true	// record長が上限を超える場合	if( record.size() + length > MAX_RECORD_SIZE) {
+src\jp\co\enterogawa\nfs\rpc\TcpRpcServer.java	if	304	true	// fragmentが途中で終端した場合	if( fragment.length != length) {
+src\jp\co\enterogawa\nfs\rpc\UdpRpcServer.java	if	117	true	// 既に開始済みの場合	if( running) {
+src\jp\co\enterogawa\nfs\rpc\UdpRpcServer.java	if	140	true	// ソケットが存在する場合	if( socket != null) {
+src\jp\co\enterogawa\nfs\rpc\UdpRpcServer.java	if	145	true	// ワーカーが存在する場合	if( workerPool != null) {
+src\jp\co\enterogawa\nfs\rpc\UdpRpcServer.java	if	169	true	// 停止中の場合	if( !running) {
+src\jp\co\enterogawa\nfs\rpc\UdpRpcServer.java	if	194	true	// ワーカーが無効の場合	if( workerPool == null) {
+src\jp\co\enterogawa\nfs\rpc\UdpRpcServer.java	if	216	true	// 停止中の場合	if( running) {
+src\jp\co\enterogawa\nfs\server\NfsServer.java	if	127	true	// 既に開始済みの場合	if( started) {
+src\jp\co\enterogawa\nfs\server\NfsServer.java	for-each	135	true	// RPCサーバーを開始する	for( RpcServer server : servers) {
+src\jp\co\enterogawa\nfs\server\NfsServer.java	if	155	true	// 未開始の場合	if( !started) {
+src\jp\co\enterogawa\nfs\server\NfsServer.java	for-each	180	true	// RPCサーバーを停止する	for( RpcServer server : servers) {
+src\jp\co\enterogawa\nfs\server\NfsServer.java	for-each	207	true	// 公開パスを検証する	for( NfsExport export : config.getExports()) {
+src\jp\co\enterogawa\nfs\server\NfsServer.java	if	209	true	// 公開パスがディレクトリではない場合	if( !Files.isDirectory( export.getPath(), LinkOption.NOFOLLOW_LINKS)) {
+src\jp\co\enterogawa\nfs\server\NfsServer.java	if	214	true	// 書込可能設定だがフォルダへ書き込めない場合	if(( export.isWritable() && !Files.isWritable( export.getPath()))) {
+src\jp\co\enterogawa\nfs\util\ServerLog.java	if	69	true	// コンソールログが有効な場合	if( isConsoleEnabled()) {
+src\jp\co\enterogawa\nfs\util\ServerLog.java	if	80	true	// ログパスが変わった場合	if(( writer == null || writerPath == null || !writerPath.equals( path))) {
+src\jp\co\enterogawa\nfs\util\ServerLog.java	if	126	true	// デバッグログまたは詳細変更ログが有効な場合	if(( isDebugEnabled() || isVerboseMutationLogEnabled())) {
+src\jp\co\enterogawa\nfs\util\ServerLog.java	if	131	true	// エラーの場合	if( status != 0) {
+src\jp\co\enterogawa\nfs\util\ServerLog.java	if	217	true	// 親ディレクトリが存在する場合	if( directory != null) {
+src\jp\co\enterogawa\nfs\util\ServerLog.java	if	240	true	// Writerが存在しない場合	if( writer == null) {
+src\jp\co\enterogawa\nfs\xdr\XdrReader.java	if	134	true	// XDRの可変長データ長が負値の場合は不正入力として扱う	if( length < 0) {
+src\jp\co\enterogawa\nfs\xdr\XdrReader.java	if	154	true	// 固定長データ長が負値の場合は不正入力として扱う	if( length < 0) {
+src\jp\co\enterogawa\nfs\xdr\XdrReader.java	if	177	true	// パディングなし固定長データ長が負値の場合は不正入力として扱う	if( length < 0) {
+src\jp\co\enterogawa\nfs\xdr\XdrReader.java	if	255	true	// 読込位置がバッファ範囲外の場合は不正入力として扱う	if(( position < 0 || position > data.length)) {
+src\jp\co\enterogawa\nfs\xdr\XdrReader.java	if	305	true	// パディングが存在する場合	if( padding > 0) {
+src\jp\co\enterogawa\nfs\xdr\XdrReader.java	if	322	true	// データが不足する場合	if( position + length > data.length) {
+src\jp\co\enterogawa\nfs\xdr\XdrWriter.java	for	190	true	// パディングバイト分繰り返す	for( int i = 0; i < padding; i++) {
+test\jp\co\enterogawa\nfs\AllTests.java	if	89	true	// テスト種別が不正な場合	if(( args.length > 1 || !List.of( "unit", "transport", "all").contains( suite))) {
+test\jp\co\enterogawa\nfs\AllTests.java	if	108	true	// 通信テストだけを実行する場合	if( "transport".equals( suite)) {
+test\jp\co\enterogawa\nfs\AllTests.java	if	118	true	// 通信テストを含めて実行する場合	if( "all".equals( suite)) {
+test\jp\co\enterogawa\nfs\AllTests.java	for	654	true	// バックアップ保持世代を超える回数の保存を行う	for( int i = 1; i <= 12; i++) {
+test\jp\co\enterogawa\nfs\AllTests.java	for	848	true	// 複数ページの READDIR 応答を検証するために大量のファイルを用意する	for( int i = 0; i < 180; i++) {
+test\jp\co\enterogawa\nfs\AllTests.java	for	857	true	// EOF になるまで上限ページ数の範囲でディレクトリを読み込む	for( int page = 0; page < 40 && !eof; page++) {
+test\jp\co\enterogawa\nfs\AllTests.java	if	864	true	// 途中ページの場合	if( !eof) {
+test\jp\co\enterogawa\nfs\AllTests.java	if	1533	true	// Windows環境でsymlink作成権限がない場合は安定したエラーを確認する	if( status != NfsStatus.OK) {
+test\jp\co\enterogawa\nfs\AllTests.java	if	1567	true	// Windows 側で symlink を作成できない場合は検証を省略する	if( !createLocalSymbolicLink( linkPath, linkTarget)) {
+test\jp\co\enterogawa\nfs\AllTests.java	if	2613	true	// Windowsの読み取り専用属性を含むQNX削除用一時ディレクトリを確認する	if( dosView != null) {
+test\jp\co\enterogawa\nfs\AllTests.java	if	2882	true	// Windows環境でsymlink作成権限がない場合は安定したエラーを確認する	if( status != NfsStatus.OK) {
+test\jp\co\enterogawa\nfs\AllTests.java	if	2911	true	// Windows 側で symlink を作成できない場合は検証を省略する	if( !createLocalSymbolicLink( linkPath, linkTarget)) {
+test\jp\co\enterogawa\nfs\AllTests.java	if	3053	true	// Windowsのsymlink権限不足やファイルシステム非対応は作成不可として扱う	if( status == NfsStatus.PERM || status == NfsStatus.ACCES || status == NfsStatus.NOTSUPP) {
+test\jp\co\enterogawa\nfs\AllTests.java	if	3198	true	// 分割しない場合	if( !fragmented || record.length < 8) {
+test\jp\co\enterogawa\nfs\AllTests.java	if	3539	true	// ディレクトリが存在しない場合	if( !Files.exists( path, LinkOption.NOFOLLOW_LINKS)) {
+test\jp\co\enterogawa\nfs\AllTests.java	for-each	3547	true	// 子から順に削除する	for( Path target : paths) {
+test\jp\co\enterogawa\nfs\AllTests.java	for	3564	true	// fattrの17個のint値を読み飛ばす	for( int i = 0; i < 17; i++) {
+test\jp\co\enterogawa\nfs\AllTests.java	if	3600	true	// 属性が存在しない場合	if( !reader.readBoolean()) {
+test\jp\co\enterogawa\nfs\AllTests.java	if	3635	true	// pre_op_attrが存在する場合	if( reader.readBoolean()) {
+test\jp\co\enterogawa\nfs\AllTests.java	if	3987	true	// 条件を満たさない場合	if( !actual) {
+test\jp\co\enterogawa\nfs\AllTests.java	if	4004	true	// 条件がtrueの場合	if( actual) {
+test\jp\co\enterogawa\nfs\AllTests.java	if	4043	true	// 値が一致しない場合	if( expected != actual) {
+test\jp\co\enterogawa\nfs\AllTests.java	if	4061	true	// 値が一致しない場合	if( expected != actual) {
+test\jp\co\enterogawa\nfs\AllTests.java	if	4079	true	// 値が一致しない場合	if( !expected.equals( actual)) {
+test\jp\co\enterogawa\nfs\AllTests.java	for	4099	true	// バイト配列を先頭から比較する	for( int i = 0; i < expected.length; i++) {
+test\jp\co\enterogawa\nfs\LocalRpcBenchmark.java	if	129	true	// 回数指定の測定で繰り返し回数に達した場合	if( !options.longRun && loop >= options.loops) {
+test\jp\co\enterogawa\nfs\LocalRpcBenchmark.java	if	134	true	// 長時間測定の終了時刻に達した場合	if( options.longRun && System.nanoTime() >= deadline) {
+test\jp\co\enterogawa\nfs\LocalRpcBenchmark.java	if	140	true	// NFS プログラムの初期化が完了している場合	if( program != null) {
+test\jp\co\enterogawa\nfs\LocalRpcBenchmark.java	for	165	true	// 指定した数のファイルを作成し、データを書き込む	for( int i = 0; i < options.files; i++) {
+test\jp\co\enterogawa\nfs\LocalRpcBenchmark.java	for-each	176	true	// 作成した全ファイルの LOOKUP を測定する	for( FileEntry file : files) {
+test\jp\co\enterogawa\nfs\LocalRpcBenchmark.java	for-each	184	true	// 作成した全ディレクトリの READDIR を測定する	for( DirectoryNode directory : directories) {
+test\jp\co\enterogawa\nfs\LocalRpcBenchmark.java	for-each	191	true	// 作成した全ファイルの RENAME を測定する	for( FileEntry file : files) {
+test\jp\co\enterogawa\nfs\LocalRpcBenchmark.java	for-each	200	true	// 作成した全ファイルを削除する	for( FileEntry file : files) {
+test\jp\co\enterogawa\nfs\LocalRpcBenchmark.java	for	204	true	// 子ディレクトリから親ディレクトリの順に削除する	for( int i = directories.size() - 1; i >= 0; i--) {
+test\jp\co\enterogawa\nfs\LocalRpcBenchmark.java	if	207	true	// 測定用のルート以外のディレクトリである場合	if( directory.parent != null) {
+test\jp\co\enterogawa\nfs\LocalRpcBenchmark.java	for	230	true	// 指定した数のディレクトリツリーを作成する	for( int i = 0; i < directoryCount; i++) {
+test\jp\co\enterogawa\nfs\LocalRpcBenchmark.java	for	234	true	// 指定した深さまで子ディレクトリを作成する	for( int level = 0; level < depth; level++) {
+test\jp\co\enterogawa\nfs\LocalRpcBenchmark.java	for-each	264	true	// 祖先ディレクトリを親から子の順に測定対象へ追加する	for( DirectoryNode node : stack) {
+test\jp\co\enterogawa\nfs\LocalRpcBenchmark.java	if	266	true	// 測定対象にまだ登録されていないディレクトリの場合	if( !directories.contains( node)) {
+test\jp\co\enterogawa\nfs\LocalRpcBenchmark.java	for	286	true	// ファイル番号と位置から再現可能な書き込みデータを生成する	for( int i = 0; i < data.length; i++) {
+test\jp\co\enterogawa\nfs\LocalRpcBenchmark.java	if	409	true	// エントリがなく EOF でもない不正な READDIR 応答の場合	if( !any && !eof) {
+test\jp\co\enterogawa\nfs\LocalRpcBenchmark.java	if	494	true	// RPC 要求が受け付けられなかった場合	if( status != RpcConstants.ACCEPT_SUCCESS) {
+test\jp\co\enterogawa\nfs\LocalRpcBenchmark.java	if	572	true	// NFS ステータスが期待値と異なる場合	if( actual != expected) {
+test\jp\co\enterogawa\nfs\LocalRpcBenchmark.java	for-each	619	true	// 各測定結果を Markdown と CSV の行に変換する	for( Result result : results) {
+test\jp\co\enterogawa\nfs\LocalRpcBenchmark.java	if	717	true	// 削除対象のパスが存在しない場合	if( !Files.exists( path, LinkOption.NOFOLLOW_LINKS)) {
+test\jp\co\enterogawa\nfs\LocalRpcBenchmark.java	for-each	725	true	// 子から親の順に測定用ファイルとディレクトリを削除する	for( Path target : paths) {
+test\jp\co\enterogawa\nfs\LocalRpcBenchmark.java	for	812	true	// コマンドライン引数から測定オプションを読み取る	for( int i = 0; i < args.length; i++) {
+test\jp\co\enterogawa\nfs\LocalRpcBenchmark.java	if	816	true	// 長時間測定モードが指定された場合	if( "--long-run".equals( arg)) {
+test\jp\co\enterogawa\nfs\LocalRpcBenchmark.java	if	822	true	// 値を伴うオプション名と後続の値が指定された場合	if( arg.startsWith( "--" ) && i + 1 < args.length) {
+test\jp\co\enterogawa\nfs\LocalRpcBenchmark.java	if	843	true	// 結果の出力先が指定された場合	if( values.containsKey( "out" )) {
+test\jp\co\enterogawa\nfs\LocalRpcBenchmark.java	if	848	true	// 最大ファイルサイズが最小ファイルサイズより小さい場合	if( options.maxSize < options.minSize) {
+test\jp\co\enterogawa\nfs\ServiceSmokeTest.java	if	86	true	// 確認対象を指定する引数がある場合	if( args.length > 0) {
+test\jp\co\enterogawa\nfs\ServiceSmokeTest.java	if	88	true	// TCP 通信の確認が指定された場合	if( args.length == 1 && "tcp".equals( args[0])) {
+test\jp\co\enterogawa\nfs\ServiceSmokeTest.java	if	95	true	// 再起動後のファイルハンドル確認の準備が指定された場合	if( args.length == 2 && "prepare-handle-persistence".equals( args[0])) {
+test\jp\co\enterogawa\nfs\ServiceSmokeTest.java	if	101	true	// 再起動後のファイルハンドル確認が指定された場合	if( args.length == 2 && "verify-handle-persistence".equals( args[0])) {
+test\jp\co\enterogawa\nfs\ServiceSmokeTest.java	if	107	true	// ファイル整合性の確認が指定された場合	if( args.length == 2 && "verify-file-integrity".equals( args[0])) {
+test\jp\co\enterogawa\nfs\ServiceSmokeTest.java	if	113	true	// 大量ディレクトリ整合性確認の場合	if( args.length == 2 && "verify-large-tree-integrity".equals( args[0])) {
+test\jp\co\enterogawa\nfs\ServiceSmokeTest.java	if	162	true	// 状態ファイルに親ディレクトリがある場合	if( parent != null) {
+test\jp\co\enterogawa\nfs\ServiceSmokeTest.java	if	233	true	// RENAME 後も移動元の一時ファイルが残っている場合	if( Files.exists( temporaryPath)) {
+test\jp\co\enterogawa\nfs\ServiceSmokeTest.java	for	271	true	// alpha配下に複数ファイルを作成する	for( int i = 0; i < 12; i++) {
+test\jp\co\enterogawa\nfs\ServiceSmokeTest.java	for	276	true	// beta配下に複数ファイルを作成する	for( int i = 0; i < 12; i++) {
+test\jp\co\enterogawa\nfs\ServiceSmokeTest.java	for	287	true	// alpha配下のファイルを削除する	for( int i = 1; i < 12; i++) {
+test\jp\co\enterogawa\nfs\ServiceSmokeTest.java	for	294	true	// beta配下のファイルを削除する	for( int i = 0; i < 12; i++) {
+test\jp\co\enterogawa\nfs\ServiceSmokeTest.java	if	307	true	// ディレクトリが残っている場合	if( Files.exists( directoryPath)) {
+test\jp\co\enterogawa\nfs\ServiceSmokeTest.java	if	337	true	// NFSポートが一致しない場合	if( port != NFS_PORT) {
+test\jp\co\enterogawa\nfs\ServiceSmokeTest.java	if	361	true	// mountが失敗した場合	if( status != 0) {
+test\jp\co\enterogawa\nfs\ServiceSmokeTest.java	if	387	true	// GETATTRが失敗した場合	if( status != 0) {
+test\jp\co\enterogawa\nfs\ServiceSmokeTest.java	if	394	true	// ルートがディレクトリではない場合	if( type != 2) {
+test\jp\co\enterogawa\nfs\ServiceSmokeTest.java	if	453	true	// CREATEが失敗した場合	if( status != 0) {
+test\jp\co\enterogawa\nfs\ServiceSmokeTest.java	if	482	true	// MKDIRが失敗した場合	if( status != NfsStatus.OK) {
+test\jp\co\enterogawa\nfs\ServiceSmokeTest.java	if	507	true	// ディレクトリREMOVEが失敗した場合	if( status != NfsStatus.OK) {
+test\jp\co\enterogawa\nfs\ServiceSmokeTest.java	if	520	true	// QNX一時リネームディレクトリREMOVEが失敗した場合	if( status != NfsStatus.OK) {
+test\jp\co\enterogawa\nfs\ServiceSmokeTest.java	if	527	true	// ディレクトリが残っている場合	if( status != NfsStatus.NOENT) {
+test\jp\co\enterogawa\nfs\ServiceSmokeTest.java	if	551	true	// LOOKUPが失敗した場合	if( status != 0) {
+test\jp\co\enterogawa\nfs\ServiceSmokeTest.java	if	618	true	// WRITEが失敗した場合	if( status != 0) {
+test\jp\co\enterogawa\nfs\ServiceSmokeTest.java	if	646	true	// WRITEが失敗した場合	if( status != 0) {
+test\jp\co\enterogawa\nfs\ServiceSmokeTest.java	if	675	true	// WRITEが失敗した場合	if( status != 0) {
+test\jp\co\enterogawa\nfs\ServiceSmokeTest.java	if	719	true	// RENAMEが失敗した場合	if( status != 0) {
+test\jp\co\enterogawa\nfs\ServiceSmokeTest.java	if	743	true	// 軽量なファイルはNFS READでも内容を確認する	if( content.length() <= 1024) {
+test\jp\co\enterogawa\nfs\ServiceSmokeTest.java	if	798	true	// RMDIRが失敗した場合	if( status != NfsStatus.OK) {
+test\jp\co\enterogawa\nfs\ServiceSmokeTest.java	for	832	true	// 指定長まで決定的な内容を生成する	for( int i = 0; i < length; i++) {
+test\jp\co\enterogawa\nfs\ServiceSmokeTest.java	if	851	true	// ディレクトリが存在しない場合	if( !Files.exists( path)) {
+test\jp\co\enterogawa\nfs\ServiceSmokeTest.java	for-each	859	true	// 子から順に削除する	for( Path target : paths) {
+test\jp\co\enterogawa\nfs\ServiceSmokeTest.java	if	886	true	// READが失敗した場合	if( status != 0) {
+test\jp\co\enterogawa\nfs\ServiceSmokeTest.java	if	920	true	// SETATTRが失敗した場合	if( status != 0) {
+test\jp\co\enterogawa\nfs\ServiceSmokeTest.java	if	951	true	// SETATTRが失敗した場合	if( status != 0) {
+test\jp\co\enterogawa\nfs\ServiceSmokeTest.java	if	971	true	// REMOVEが失敗した場合	if( status != NfsStatus.OK) {
+test\jp\co\enterogawa\nfs\ServiceSmokeTest.java	if	991	true	// 削除できない場合	if( status != NfsStatus.OK && status != NfsStatus.NOENT) {
+test\jp\co\enterogawa\nfs\ServiceSmokeTest.java	if	1032	true	// TCP transportの場合	if( tcpTransport) {
+test\jp\co\enterogawa\nfs\ServiceSmokeTest.java	for	1216	true	// fattrの17個のint値を読み飛ばす	for( int i = 0; i < 17; i++) {
+test\jp\co\enterogawa\nfs\ServiceSmokeTest.java	if	1234	true	// 値が一致しない場合	if( expected != actual) {
+test\jp\co\enterogawa\nfs\ServiceSmokeTest.java	if	1252	true	// 値が一致しない場合	if( expected != actual) {
+test\jp\co\enterogawa\nfs\ServiceSmokeTest.java	if	1270	true	// 値が一致しない場合	if( !expected.equals( actual)) {
+sample\AplMain.java	if	45	true	// 名前が指定されていない場合	if( name == null) {

@@ -2,7 +2,7 @@
   <id>TinyWinNfsServer</id>
   <name>TinyWinNFS Server</name>
   <description>Java NFSv2/NFSv3 server for Windows clients.</description>
-  <executable>C:\develop\tools\eclipse202503\eclipse\jdk-21.0.8+9\bin\java.exe</executable>
+  <executable>%TINYWIN_NFS_JDK%\bin\java.exe</executable>
   <workingdirectory>%ProgramData%\EnterOgawa\TinyWinNFS Server</workingdirectory>
   <arguments>-Dtinywin.nfs.log="%ProgramData%\EnterOgawa\TinyWinNFS Server\logs\nfs-server.log" -cp "%BASE%\..\..\bin" jp.co.enterogawa.nfs.NfsServerMain "%ProgramData%\EnterOgawa\TinyWinNFS Server\conf\nfs-server.properties"</arguments>
   <stoptimeout>15 sec</stoptimeout>
