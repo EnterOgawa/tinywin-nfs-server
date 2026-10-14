@@ -1,7 +1,8 @@
 /bin/
 /.metadata/
 /.recommenders/
-/work/tmp/
+/work/
+/AGENTS.md
 /qnxwork/
 /logs/
 /service/winsw/nfs-server.exe
